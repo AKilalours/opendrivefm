@@ -20,12 +20,12 @@ A computer vision pipeline for autonomous driving that transforms six 2D camera 
        ├──► CameraTrustScorer  ──────────────────────────────┐
        │     ├─ CNN branch: learns visual quality features   │
        │     └─ Stats branch: blur variance, luminance,      │  trust ∈ (0,1)
-       │                       edge density                   │  per camera
-       │                                                      │
+       │                       edge density                  │  per camera
+       │                                                     │
        └──► CNN Stem (7×7 + 3×3 conv) → TemporalTransformer  │
-                 (d=384, 4 layers, 6 heads)                   │
-                       │                                      │
-                       └──► TrustWeightedFusion ◄─────────────┘
+                 (d=384, 4 layers, 6 heads)                  │
+                       │                                     │
+                       └──► TrustWeightedFusion ◄────────────┘
                                  softmax(trust) × features
                                        │
                      ┌─────────────────┴──────────────────┐
