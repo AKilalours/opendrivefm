@@ -37,17 +37,17 @@ LiDAR GT              scene splits       (p=0.5/batch)       Traj Head         r
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    TRAINING PIPELINE                             │
+│                    TRAINING PIPELINE                            │
 │  nuScenes → Manifest → Labels → Augment → Model → Checkpoint    │
-│  AdamW lr=1e-4 · BCE+Dice · CosineAnnealingLR · 8 train scenes │
+│  AdamW lr=1e-4 · BCE+Dice · CosineAnnealingLR · 8 train scenes  │
 └─────────────────────────────────────────────────────────────────┘
                               │
                     best_val_ade.ckpt
                               │
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SERVING PIPELINE                              │
-│  6 cameras (90×160) → CNN → Trust → BEV Lift → Decode          │
-│  p50=3.15ms · p95=3.22ms · 317 FPS · B=1 · Apple MPS           │
+│                    SERVING PIPELINE                             │
+│  6 cameras (90×160) → CNN → Trust → BEV Lift → Decode           │
+│  p50=3.15ms · p95=3.22ms · 317 FPS · B=1 · Apple MPS            │
 └─────────────────────────────────────────────────────────────────┘
                               │
               ┌───────────────┴───────────────┐
