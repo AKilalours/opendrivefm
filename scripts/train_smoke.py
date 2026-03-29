@@ -57,7 +57,7 @@ def main():
     ckpt = ModelCheckpoint(
         dirpath="artifacts/checkpoints",
         save_top_k=1,
-        monitor="val_loss",
+        monitor="val/loss",
         mode="min",
         save_last=True,
         filename="{epoch:02d}-{step}",

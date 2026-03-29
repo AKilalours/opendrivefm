@@ -1,0 +1,7 @@
+bev: 64
+d: 384
+enable_trust: true
+grad_clip: 1.0
+horizon: 12
+lr: 0.0001
+weight_decay: 0.0001
