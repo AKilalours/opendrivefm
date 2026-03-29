@@ -1,1 +1,0 @@
-{"columns": ["n_cameras_faulted", "BEV_IoU", "ADE_m", "trust_faulted", "trust_clean"], "data": [[0, 0.136, 2.7402, null, null], [1, 0.1421, 2.7558, 0.305, 0.448], [2, 0.1441, 2.8039, 0.3, 0.45], [3, 0.1469, 2.8504, 0.301, 0.45]]}

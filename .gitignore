@@ -5,3 +5,7 @@ __pycache__/
 artifacts/
 reports/
 data/
+outputs/
+dataset/
+wandb/
+lightning_logs/
