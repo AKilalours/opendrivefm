@@ -274,7 +274,7 @@ class CameraTrustScorer(nn.Module):
 
 ## 🆚 Comparison with CVPR Papers
 
-| Feature | ProtoOcc (CVPR 25) | GAFusion (CVPR 24) | Cam4DOcc (CVPR 24) | **OpenDriveFM** |
+| Feature | ProtoOcc (CVPR 25) | GAFusion (CVPR 24) | PointBeV (CVPR 24) | **OpenDriveFM** |
 |---------|-------------------|-------------------|-------------------|----------------|
 | Camera-only | ✅ | ❌ LiDAR req | ✅ | ✅ |
 | Trajectory | ❌ | ❌ | ❌ | ✅ ADE=2.457m |
