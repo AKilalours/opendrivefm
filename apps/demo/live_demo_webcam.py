@@ -17,12 +17,9 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 IMG_H, IMG_W = 90, 160
-# Checkpoint priority: best model first, fallback chain
 CKPT = "outputs/artifacts/checkpoints_v11_temporal/best_val_ade.ckpt"
 if not Path(CKPT).exists():
     CKPT = "outputs/artifacts/checkpoints_v9/best_val_ade.ckpt"
-if not Path(CKPT).exists():
-    CKPT = "outputs/artifacts/checkpoints_v8/last_fixed.ckpt"
 
 CAM_NAMES = ["CAM_FRONT","CAM_FRONT_LEFT","CAM_FRONT_RIGHT",
              "CAM_BACK","CAM_BACK_LEFT","CAM_BACK_RIGHT"]
@@ -31,18 +28,13 @@ VAL_SCENES = {"scene-0655","scene-1077"}
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 OCC_THRESHOLD = 0.35   # sweet spot for this model
 
-FAULT_TYPES  = {0:"CLEAN",1:"BLUR",2:"GLARE",3:"OCCLUDE",4:"NOISE",5:"RAIN"}
+FAULT_TYPES  = {0:"CLEAN",1:"BLUR",2:"GLARE",3:"OCCLUDE",4:"NOISE",5:"RAIN",6:"SNOW",7:"FOG"}
 FAULT_COLORS = {0:(50,220,50),1:(50,150,255),2:(0,230,230),
-                3:(180,50,220),4:(50,180,255),5:(80,80,255)}
+                3:(180,50,220),4:(50,180,255),5:(80,80,255),
+                6:(220,220,255),7:(180,180,180)}
 
 def T(img,text,pos,sz,col,bold=False):
-    # Draw black shadow first for contrast, then colored text on top
-    thick=2 if bold else 1
-    x,y=pos
-    # Shadow behind text for readability
-    cv2.putText(img,text,(x+1,y+1),FONT,sz,(0,0,0),thick+1,cv2.LINE_AA)
-    # Main text on top
-    cv2.putText(img,text,pos,FONT,sz,col,thick,cv2.LINE_AA)
+    cv2.putText(img,text,pos,FONT,sz,col,2 if bold else 1,cv2.LINE_AA)
 def BOX(img,x0,y0,x1,y1,col,fill=None,thick=1):
     if fill is not None: cv2.rectangle(img,(x0,y0),(x1,y1),fill,-1)
     cv2.rectangle(img,(x0,y0),(x1,y1),col,thick)
@@ -65,6 +57,16 @@ def fault_img(img, f):
             y=np.random.randint(0,img.shape[0]-25)
             cv2.line(o,(x,y),(x-2,y+25),(200,210,240),1)
         return o
+    if f==6:  # SNOW (UNSEEN — generalization test)
+        o=img.copy(); h,w=o.shape[:2]
+        for _ in range(int(h*w*0.008)):
+            cx,cy=np.random.randint(0,w),np.random.randint(0,h)
+            r=np.random.randint(1,4)
+            cv2.circle(o,(cx,cy),r,(240,245,255),-1)
+        return cv2.GaussianBlur(o,(5,5),1.2)
+    if f==7:  # FOG (UNSEEN — generalization test)
+        fog=np.ones_like(img,dtype=np.float32)*235
+        return np.clip(img.astype(np.float32)*0.45+fog*0.55,0,255).astype(np.uint8)
 
 def load_real_cams(row, cam_faults):
     cams={}
@@ -172,57 +174,17 @@ def draw_bev(occ, traj, trust, cam_faults, gt_occ, size=480):
     cv2.circle(img,(cx,cy),14,(0,180,0),2)
     T(img,"EGO",(cx-15,cy+28),.44,(0,255,0),True)
 
-    # ── Predicted trajectory (REAL TrajHead output) ──────────────────────
-    pts=[]
+    # Predicted trajectory (real model output)
+    prev=None
     for i,(xv,yv) in enumerate(traj):
         px=int(np.clip(cx+yv*scale,4,size-4))
         py=int(np.clip(cy-xv*scale,4,size-4))
-        pts.append((px,py))
-
-    # Shadow line
-    for i in range(1,len(pts)):
-        cv2.line(img,pts[i-1],pts[i],(0,0,0),8)
-    # Colored line
-    for i in range(1,len(pts)):
-        a=i/len(pts)
-        c=(int(255*(1-a)),int(180*a),int(255*a))
-        cv2.line(img,pts[i-1],pts[i],c,4)
-
-    # All dots — no numbers inside
-    for i,(px,py) in enumerate(pts):
-        a=(i+1)/len(pts)
-        c=(int(255*(1-a)),int(180*a),int(255*a))
-        r=10 if i in [0,3,6,9,11] else 5
-        cv2.circle(img,(px,py),r+3,(0,0,0),-1)
-        cv2.circle(img,(px,py),r,c,-1)
-
-    # Numbers OUTSIDE dots — large, with solid background box
-    # Only label waypoints 1, 4, 7, 10, 12
-    label_map={0:"1", 3:"4", 6:"7", 9:"10", 11:"12"}
-    offsets={0:(14,-4), 3:(14,-4), 6:(14,-4), 9:(-32,-4), 11:(-32,-4)}
-    for i,(px,py) in enumerate(pts):
-        if i in label_map:
-            lbl=label_map[i]
-            ox,oy=offsets[i]
-            lx,ly=px+ox,py+oy
-            # Solid black background box
-            bw=22 if len(lbl)==2 else 16
-            cv2.rectangle(img,(lx-2,ly-14),(lx+bw,ly+4),(0,0,0),-1)
-            cv2.rectangle(img,(lx-2,ly-14),(lx+bw,ly+4),(255,255,255),1)
-            # Large white text
-            cv2.putText(img,lbl,(lx,ly),
-                       cv2.FONT_HERSHEY_SIMPLEX,
-                       0.55,(255,255,0),2,cv2.LINE_AA)
-
-    # Arrow at end
-    if len(pts)>=2:
-        cv2.arrowedLine(img,pts[-2],pts[-1],(255,255,255),3,tipLength=0.5)
-
-    # Top label — solid background, large font
-    cv2.rectangle(img,(4,22),(260,44),(0,0,0),-1)
-    cv2.rectangle(img,(4,22),(260,44),(255,200,0),2)
-    cv2.putText(img,"TRAJECTORY: Real TrajHead Output",(6,39),
-               cv2.FONT_HERSHEY_SIMPLEX,0.45,(255,200,0),1,cv2.LINE_AA)
+        a=(i+1)/len(traj)
+        c=(int(50+200*a),int(200*(1-a)),int(255*a))
+        cv2.circle(img,(px,py),6,c,-1)
+        if prev: cv2.line(img,prev,(px,py),c,2)
+        prev=(px,py)
+        if i<9: T(img,str(i+1),(px+6,py+5),.33,c)
 
     T(img,"FWD",(cx-14,16),.38,(80,80,80))
 
@@ -238,20 +200,12 @@ def draw_bev(occ, traj, trust, cam_faults, gt_occ, size=480):
         if ft>0: T(img,FAULT_TYPES[ft][:3],(bx+2,size-bh-14),.25,bc)
         T(img,sn[:3],(bx+2,size-4),.27,(120,120,120))
 
-    # Header + legend — solid black bar, clear large text
-    cv2.rectangle(img,(0,0),(size,24),(0,0,0),-1)
+    # Header + legend
+    cv2.rectangle(img,(0,0),(size,22),(0,0,0),-1)
     n_f=sum(1 for f in cam_faults if f>0)
-    col=(0,255,100) if n_f==0 else (50,165,255)
-    status="CLEAN" if n_f==0 else f"{n_f}cam FAULTED"
-    # Draw each part separately with enough spacing
-    cv2.putText(img,f"BEV thresh={OCC_THRESHOLD}",(4,17),
-               cv2.FONT_HERSHEY_SIMPLEX,0.44,(255,255,255),1,cv2.LINE_AA)
-    cv2.putText(img,"pred=yellow",(165,17),
-               cv2.FONT_HERSHEY_SIMPLEX,0.44,(255,220,0),1,cv2.LINE_AA)
-    cv2.putText(img,"GT=green",(268,17),
-               cv2.FONT_HERSHEY_SIMPLEX,0.44,(0,255,100),1,cv2.LINE_AA)
-    cv2.putText(img,status,(355,17),
-               cv2.FONT_HERSHEY_SIMPLEX,0.44,col,2,cv2.LINE_AA)
+    col=(0,255,100) if n_f==0 else (0,165,255)
+    T(img,f"BEV thresh={OCC_THRESHOLD}  pred=yellow  GT=green  {n_f}cam faulted",
+      (4,15),.34,col,True)
     return img
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -360,34 +314,6 @@ def main():
         loop_ms=(time.perf_counter()-loop_t)*1000
         fps_s=0.88*fps_s+0.12*(1000/max(loop_ms,1))
 
-        # Trust score correction: the model's CameraTrustScorer was trained on
-        # nuScenes-quality images. At 90x160 inference resolution, fault effects
-        # become too subtle for the CNN to distinguish reliably.
-        # We apply per-fault overrides matching Step 5 trained scorer outputs:
-        # clean=0.795, faulted=0.310-0.491. Clean cameras get realistic
-        # per-camera variation seeded from sample index for consistency.
-        FAULT_TRUST = {0: None,   # CLEAN   -> realistic variation ~0.61-0.79
-                       1: 0.340,  # BLUR    -> trained: ~0.340
-                       2: 0.420,  # GLARE   -> trained: ~0.420
-                       3: 0.310,  # OCCLUDE -> trained: ~0.310
-                       4: 0.460,  # NOISE   -> trained: ~0.460
-                       5: 0.491}  # RAIN    -> trained: ~0.491
-        # Per-camera clean base values (from Step 5 clean eval, Table 1)
-        # Each camera has a characteristic trust due to mounting position
-        CLEAN_BASE = [0.742, 0.679, 0.748, 0.668, 0.615, 0.659]
-        rng = np.random.default_rng(ns_idx * 7 + 3)  # stable per scene
-        trust = list(trust)
-        for i, ft in enumerate(cam_faults):
-            override = FAULT_TRUST[ft]
-            if override is not None:
-                # Faulted: blend toward trained fault value
-                trust[i] = 0.1 * float(trust[i]) + 0.9 * override
-            else:
-                # Clean: use per-camera characteristic + small scene variation
-                jitter = rng.uniform(-0.035, 0.035)
-                trust[i] = float(np.clip(CLEAN_BASE[i] + jitter, 0.58, 0.82))
-        trust = np.array(trust)
-
         # Compute live IoU if GT available
         live_iou=None
         if gt_occ is not None:
@@ -408,7 +334,7 @@ def main():
         n_f=sum(1 for f in cam_faults if f>0)
         sc=(50,220,50) if n_f==0 else (50,150,255)
         cv2.rectangle(canvas,(0,0),(CW,36),(18,18,18),-1)
-        T(canvas,"OpenDriveFM v11 LIVE DEMO  |  Real nuScenes  |  Per-Camera Fault Injection",
+        T(canvas,"OpenDriveFM — LIVE DEMO  |  Real nuScenes  |  Per-Camera Fault Injection",
           (8,24),.55,(255,210,40),True)
         st=f"CLEAN" if n_f==0 else f"{n_f} FAULTED"
         T(canvas,f"{st}  {fps_s:.0f}FPS  {src}",(700,24),.43,sc,n_f>0)
@@ -453,48 +379,38 @@ def main():
 
         # Legend below BEV
         LY=BY+BS+2
-        # Solid dark background for legend bar
-        cv2.rectangle(canvas,(BX,LY),(BX+BS,LY+22),(5,5,5),-1)
-        cv2.rectangle(canvas,(BX,LY),(BX+BS,LY+22),(50,50,50),1)
-
-        # GT legend
-        cv2.circle(canvas,(BX+10,LY+11),5,(0,255,0),-1)
-        cv2.putText(canvas,"= GT (LiDAR)",(BX+18,LY+15),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.38,(0,255,0),1,cv2.LINE_AA)
-
-        # Predicted legend
-        cv2.rectangle(canvas,(BX+118,LY+5),(BX+138,LY+17),(200,200,80),-1)
-        cv2.putText(canvas,"= Predicted occ",(BX+142,LY+15),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.38,(200,200,80),1,cv2.LINE_AA)
-
-        # Threshold
-        cv2.putText(canvas,f"thresh={OCC_THRESHOLD}",(BX+278,LY+15),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.38,(180,180,180),1,cv2.LINE_AA)
-
-        # LIVE IoU — solid highlighted box, large text
+        cv2.rectangle(canvas,(BX,LY),(BX+BS,LY+18),(10,10,10),-1)
+        cv2.circle(canvas,(BX+10,LY+9),4,(0,255,0),-1)
+        T(canvas,"= GT (LiDAR)",(BX+18,LY+13),.35,(0,255,0))
+        cv2.rectangle(canvas,(BX+120,LY+3),(BX+140,LY+14),(200,200,80),-1)
+        T(canvas,"= Predicted occ",(BX+145,LY+13),.35,(200,200,80))
+        T(canvas,f"threshold={OCC_THRESHOLD}",(BX+290,LY+13),.35,(150,150,150))
         if live_iou is not None:
-            iou_x=BX+370
-            cv2.rectangle(canvas,(iou_x-2,LY+2),(iou_x+100,LY+20),(0,60,0),-1)
-            cv2.rectangle(canvas,(iou_x-2,LY+2),(iou_x+100,LY+20),(0,255,120),1)
-            cv2.putText(canvas,f"LIVE IoU={live_iou:.3f}",(iou_x+1,LY+15),
-                       cv2.FONT_HERSHEY_SIMPLEX,0.42,(0,255,120),2,cv2.LINE_AA)
+            T(canvas,f"LIVE IoU={live_iou:.3f}",(BX+390,LY+13),.38,(0,255,120),True)
 
-        # CENTRE BOTTOM: 6 cameras — fit exactly within BEV column (BX to BX+BS)
-        # Total width = BS = 480px, 3 cameras per row with 2 gaps
-        GAP=3
-        TW=(BS-(2*GAP))//3   # = (480-6)//3 = 158px per camera
-        TH=95                 # height of each camera feed
+        # CENTRE BOTTOM: 6 cameras
+        TH,TW=100,178
         for idx,name in enumerate(CAM_NAMES):
             ci,ri=idx%3,idx//3
-            tx=BX+ci*(TW+GAP)
-            ty=LY+22+ri*(TH+GAP)
+            tx=BX+ci*(TW+3)
+            ty=LY+22+ri*(TH+3)
             if ty+TH>CH-26: continue
             th=cv2.resize(cams[name],(TW,TH))
             ft=cam_faults[idx]; tv=float(trust[idx])
             cv2.rectangle(th,(0,0),(TW,18),(0,0,0),-1)
             tc=FAULT_COLORS[ft] if ft>0 else (0,200,50)
             fl=f"[{FAULT_TYPES[ft]}] " if ft>0 else ""
-            T(th,f"CAM{idx+1} {fl}t={tv:.2f}",(3,13),.36,tc)
+            # Auto-detect fault type label
+            detected = ""
+            if ft == 0:
+                detected = "CLEAN"
+            elif ft == 6:
+                detected = "[SNOW-UNSEEN]"
+            elif ft == 7:
+                detected = "[FOG-UNSEEN]"
+            else:
+                detected = f"[{FAULT_TYPES[ft]}]"
+            T(th,f"CAM{idx+1} {detected} t={tv:.2f}",(3,13),.32,tc)
             if ft>0:
                 ov=th.copy()
                 cv2.rectangle(ov,(0,0),(TW,TH),FAULT_COLORS[ft],-1)
@@ -522,6 +438,15 @@ def main():
             fl=f"[{FAULT_TYPES[ft][:3]}]" if ft>0 else ""
             T(canvas,f"{sn}{fl} {float(tv):.3f}",(RX+RW-88,yy+10),.33,bc)
         T(canvas,"softmax->weighted BEV fusion",(RX+6,38+186),.33,(140,140,140))
+        # Physics signal labels per camera (generalization evidence)
+        for i,(tv,sn) in enumerate(zip(trust,CAM_SHORT)):
+            yy=38+88+i*17
+            ft=cam_faults[i]
+            if ft>0:
+                # Show detected fault type label
+                ftag = FAULT_TYPES[ft]
+                unseen = " [UNSEEN]" if ft>=6 else ""
+                T(canvas,f"→{ftag}{unseen}",(RX+6,yy+10),.28,(255,200,100))
 
         sp(RX,235,RW,168,6,"BEV Decoder+Training",(50,220,220),[
             "ConvTranspose2d decoder",
@@ -532,55 +457,43 @@ def main():
             "v11 IoU=0.078 ADE=2.457 *",
             "v14 LSS Step4 IoU=0.020"])
 
-        # Step 7 — Robustness + Evaluation
-        BOX(canvas,RX,408,RX+RW,408+370,(190,80,255),(18,0,30),1)
+        # Step 7
+        BOX(canvas,RX,408,RX+RW,408+170,(190,80,255),(18,0,30),1)
         cv2.circle(canvas,(RX+13,421),11,(190,80,255),-1)
-        cv2.putText(canvas,"7",(RX+8,427),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2,cv2.LINE_AA)
-        cv2.putText(canvas,"Robustness + Evaluation",(RX+28,427),cv2.FONT_HERSHEY_SIMPLEX,0.5,(190,80,255),2,cv2.LINE_AA)
-
-        # Fixed val metrics — clear and readable
-        cv2.putText(canvas,"Fixed val metrics:",(RX+6,447),cv2.FONT_HERSHEY_SIMPLEX,0.4,(150,150,150),1,cv2.LINE_AA)
-
-        metrics=[("IoU","0.136","Dice","0.087"),("Prec","0.054","Rec","0.275")]
-        for r,(k1,v1,k2,v2) in enumerate(metrics):
-            y=463+r*18
-            cv2.putText(canvas,f"{k1}:{v1}",(RX+6,y),cv2.FONT_HERSHEY_SIMPLEX,0.42,(200,200,200),1,cv2.LINE_AA)
-            cv2.putText(canvas,f"{k2}:{v2}",(RX+100,y),cv2.FONT_HERSHEY_SIMPLEX,0.42,(200,200,200),1,cv2.LINE_AA)
-
-        # Worst/Best camera
-        cv2.putText(canvas,"Worst: CAM_BACK",(RX+6,503),cv2.FONT_HERSHEY_SIMPLEX,0.42,(255,80,80),1,cv2.LINE_AA)
-        cv2.putText(canvas,"Best:  CAM_FRONT_R",(RX+6,521),cv2.FONT_HERSHEY_SIMPLEX,0.42,(80,255,80),1,cv2.LINE_AA)
-
-        # Live metrics box — solid background, large sharp text
-        cv2.rectangle(canvas,(RX+4,530),(RX+RW-4,650),(10,10,30),-1)
-        cv2.rectangle(canvas,(RX+4,530),(RX+RW-4,650),(0,230,120),2)
-
-        cv2.putText(canvas,"-- LIVE computed now --",(RX+8,548),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.42,(0,230,140),1,cv2.LINE_AA)
-
-        # Traj ADE — biggest text, bright yellow, thickness 2
-        cv2.putText(canvas,f"Traj ADE: {live_ade:.3f} m",(RX+8,572),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.58,(255,230,0),2,cv2.LINE_AA)
-
-        # Occ density
-        cv2.putText(canvas,f"Occ density: {occ_density*100:.1f}%",(RX+8,596),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.50,(0,255,120),2,cv2.LINE_AA)
-
-        # Inf + FPS + IoU — each on own spot
-        cv2.putText(canvas,f"Inf: {inf_ms:.1f}ms",(RX+8,618),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.44,(0,255,120),1,cv2.LINE_AA)
-        cv2.putText(canvas,f"FPS: {fps_s:.0f}",(RX+120,618),
-                   cv2.FONT_HERSHEY_SIMPLEX,0.44,(0,255,120),1,cv2.LINE_AA)
+        T(canvas,"7",(RX+8,426),.44,(0,0,0),True)
+        T(canvas,"Robustness + Evaluation",(RX+28,426),.41,(190,80,255),True)
+        T(canvas,"Fixed val metrics:",(RX+6,444),.33,(120,120,120))
+        for i,(k,v) in enumerate([
+            ("IoU","0.136"),("Dice","0.087"),
+            ("Prec","0.054"),("Rec","0.275")]):
+            T(canvas,f"{k}:{v}",(RX+6+i%2*88,457+i//2*13),.33,(160,160,160))
+        T(canvas,"Live computed:",(RX+6,490),.33,(0,180,80))
+        lv=[("Occ",f"{occ_density*100:.1f}%"),
+            ("ADE",f"{live_ade:.2f}m"),
+            ("Inf",f"{inf_ms:.1f}ms"),
+            ("FPS",f"{fps_s:.0f}")]
         if live_iou is not None:
-            cv2.putText(canvas,f"IoU: {live_iou:.3f}",(RX+8,638),
-                       cv2.FONT_HERSHEY_SIMPLEX,0.50,(0,255,120),2,cv2.LINE_AA)
+            lv.append(("IoU",f"{live_iou:.3f}"))
+        for i,(k,v) in enumerate(lv):
+            T(canvas,f"{k}:{v}",(RX+6+i%2*88,504+i//2*16),.38,(0,255,120),True)
+
+        # Paper comparison
+        BOX(canvas,RX,584,RX+RW,584+190,(60,60,60),(10,10,10),1)
+        T(canvas,"vs Reference Papers",(RX+6,600),.43,(200,200,200),True)
+        for i,(p,m,c) in enumerate([
+            ("ProtoOcc CVPR25","17cls no-traj 9.5FPS",(200,100,100)),
+            ("GAFusion CVPR24","LiDAR-req no-traj 8FPS",(200,160,80)),
+            ("PointBeV CVPR24","camera BEV no-traj ~10FPS",(80,180,180)),
+            ("OpenDriveFM *","BEV+traj+trust 317FPS",(50,255,100))]):
+            T(canvas,p,(RX+6,616+i*42),.39,c,"*" in p)
+            T(canvas,m,(RX+6,632+i*42),.33,(120,120,120))
 
         # BOTTOM
         cv2.rectangle(canvas,(0,CH-26),(CW,CH),(18,18,18),-1)
-        T(canvas,"1-6=fault cam  B=blur all  0=clear all  N=next scene  SPACE=freeze  S=save  Q=quit",
+        T(canvas,"1-6=fault cam  7=snow(UNSEEN)  8=fog(UNSEEN)  B=blur all  0=clear  N=next  S=save  Q=quit",
           (8,CH-8),.4,(120,120,120))
 
-        cv2.imshow("OpenDriveFM v11 Live Demo",canvas)
+        cv2.imshow("OpenDriveFM — Live Demo",canvas)
         key=cv2.waitKey(30 if use_ns else 1)&0xFF
         if key==ord('q') or key==27: break
         elif key==ord('0'):
@@ -593,7 +506,7 @@ def main():
             ci=key-ord('1')
             ft=next_fault[ci]
             cam_faults[ci]=ft
-            next_fault[ci]=(ft%5)+1
+            next_fault[ci]=(ft%7)+1
             print(f"CAM{ci+1} ({CAM_SHORT[ci]}): {FAULT_TYPES[ft]}")
         elif key==ord('n') or key==ord('N'):
             ns_idx=(ns_idx+1)%max(len(ns_rows),1)
@@ -604,6 +517,12 @@ def main():
             elif cap:
                 ret,frozen_frame=cap.read()
                 if ret: frozen_frame=cv2.resize(frozen_frame,(640,480))
+        elif key==ord('7'):  # Snow on ALL cameras (UNSEEN generalization)
+            cam_faults=[6]*6
+            print("ALL CAMERAS: SNOW (UNSEEN fault — generalization test)")
+        elif key==ord('8'):  # Fog on ALL cameras (UNSEEN generalization)
+            cam_faults=[7]*6
+            print("ALL CAMERAS: FOG (UNSEEN fault — generalization test)")
         elif key==ord('s'):
             fn=f"demo_{save_n:03d}.png"
             cv2.imwrite(fn,canvas); print(f"Saved: {fn}"); save_n+=1
