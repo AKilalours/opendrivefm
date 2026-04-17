@@ -214,7 +214,8 @@ mkdir -p data && ln -sf ../dataset/nuscenes data/nuscenes
 ```bash
 cd ~/opendrivefm
 python apps/demo/live_demo_webcam.py --nuscenes
-# 1-6=fault cam  B=blur all  0=clear  N=next scene  SPACE=freeze  Q=quit
+# 1-6=fault: blur→glare→occlude→noise→rain→SNOW→FOG
+# 7=snow all (UNSEEN)  8=fog all (UNSEEN)  B=blur all  0=clear  N=next  Q=quit
 ```
 
 ### 4. Test GPT-2 Causal Head
@@ -240,6 +241,19 @@ python scripts/eval_full_metrics_fixed.py     --ckpt outputs/artifacts/checkpoin
 python scripts/eval_trust_ablation.py
 python scripts/eval_worst_camera.py
 ```
+
+### 7. Neural Network Pruning
+```bash
+python scripts/prune_traj_head.py
+```
+
+| Pruning | Nonzero Params | Sparsity | Latency |
+|---------|---------------|---------|---------|
+| 0% baseline | 662,720 | 0.5% | 0.603 ms |
+| 30% | 464,785 | 30.2% | 0.522 ms |
+| 50% | 332,832 | 50.1% | 0.555 ms |
+
+30% pruning → 464K params with zero latency regression.
 
 ---
 

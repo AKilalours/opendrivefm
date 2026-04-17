@@ -14,7 +14,7 @@ import torch, numpy as np
 sys.path.insert(0, 'src')
 
 from opendrivefm.data.nuscenes_mini import NuScenesMiniMultiView
-from opendrivefm.train.lightning_module import LitOpenDriveFM
+from opendrivefm.training.lightning_module import LitOpenDriveFM
 from opendrivefm.robustness.perturbations import (
     GaussianBlur, GlareOverlay, OcclusionPatch, RainStreaks, SaltPepperNoise)
 from torch.utils.data import DataLoader
@@ -96,7 +96,10 @@ def main():
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
     print(f"Device: {device}")
 
-    lit = LitOpenDriveFM.load_from_checkpoint(args.ckpt, map_location=device)
+    ckpt = torch.load(args.ckpt, map_location=device)
+    lit = LitOpenDriveFM(bev=64)
+    state = {k.replace("model.","",1):v for k,v in ckpt["state_dict"].items()}
+    lit.model.load_state_dict(state, strict=False)
     model = lit.model.eval().to(device)
 
     ds = NuScenesMiniMultiView(

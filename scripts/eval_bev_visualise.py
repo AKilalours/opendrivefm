@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, Subset
 
 from opendrivefm.data.nuscenes_mini import NuScenesMiniMultiView
-from opendrivefm.train.lightning_module import LitOpenDriveFM, _dl_kwargs
+from opendrivefm.training.lightning_module import LitOpenDriveFM, _dl_kwargs
 from opendrivefm.robustness.perturbations import PERTURBATIONS
 
 
