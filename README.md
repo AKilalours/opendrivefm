@@ -449,7 +449,7 @@ Versions:      13 checkpoints v2 to v14
 @misc{opendrivefm2026,
   title  = {OpenDriveFM: Trust-Aware Multi-Camera BEV Perception
             with GPT-2 Causal Trajectory Prediction},
-  author = {Akila Lourdes and Akilan Manivannan and Rashmi},
+  author = {Akila Lourdes and Akilan Manivannan},
   year   = {2026},
   school = {LIU},
   note   = {Image and Vision Computing Course Project.
