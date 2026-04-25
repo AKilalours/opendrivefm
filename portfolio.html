@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenDriveFM — Trust-Aware BEV Perception</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #050508;
+  --bg2: #0a0a14;
+  --bg3: #0f0f1e;
+  --green: #00ff88;
+  --cyan: #00d4ff;
+  --purple: #8b5cf6;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --border: #1e2035;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Animated grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Header */
+header {
+  padding: 80px 0 60px;
+  text-align: center;
+  position: relative;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+  color: var(--green); padding: 6px 16px; border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.75em;
+  margin-bottom: 24px; letter-spacing: 0.1em;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+h1 {
+  font-size: clamp(2.5em, 6vw, 4.5em);
+  font-weight: 700; line-height: 1.1;
+  background: linear-gradient(135deg, #fff 0%, var(--green) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
+}
+
+.subtitle {
+  font-size: 1.1em; color: var(--muted); max-width: 600px;
+  margin: 0 auto 40px; line-height: 1.6;
+}
+
+/* Metric cards */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px; margin: 60px 0;
+}
+
+.metric {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 16px; text-align: center;
+  transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.metric::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--green);
+}
+.metric:hover { transform: translateY(-4px); border-color: rgba(0,255,136,0.3); }
+.metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8em; font-weight: 700; color: var(--green);
+  display: block; margin-bottom: 4px;
+}
+.metric-label { font-size: 0.78em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* Section */
+section { padding: 60px 0; border-top: 1px solid var(--border); }
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--green); font-size: 0.75em; letter-spacing: 0.15em;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+h2 { font-size: 2em; font-weight: 600; margin-bottom: 16px; }
+h3 { font-size: 1.3em; font-weight: 600; margin-bottom: 12px; }
+
+/* Architecture diagram */
+.arch-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px; margin: 24px 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+  line-height: 1.8; color: #94a3b8;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.arch-box .hl-green { color: var(--green); }
+.arch-box .hl-cyan  { color: var(--cyan); }
+.arch-box .hl-orange{ color: var(--orange); }
+.arch-box .hl-purple{ color: var(--purple); }
+
+/* Ablation table */
+.ablation-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px; margin: 24px 0;
+}
+.ablation-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+}
+.ablation-card.best { border-color: var(--green); background: rgba(0,255,136,0.05); }
+.ablation-card h4 { font-size: 0.85em; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.ablation-card .iou {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2em; font-weight: 700; color: var(--text);
+}
+.ablation-card.best .iou { color: var(--green); }
+.ablation-bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 12px; }
+.ablation-bar-fill { height: 100%; border-radius: 3px; }
+
+/* Trust table */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { text-align: left; padding: 12px 16px; color: var(--muted); font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); }
+td { padding: 12px 16px; border-bottom: 1px solid rgba(30,32,53,0.5); font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }
+tr:hover td { background: rgba(0,255,136,0.03); }
+.trust-good { color: var(--green); }
+.trust-bad  { color: var(--red); }
+.trust-bar { display: inline-block; height: 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+
+/* Code block */
+.code {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px; margin: 16px 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+  line-height: 1.7; color: #94a3b8; overflow-x: auto;
+}
+.code .kw { color: var(--purple); }
+.code .fn { color: var(--cyan); }
+.code .st { color: var(--orange); }
+.code .cm { color: var(--muted); }
+.code .nm { color: var(--green); }
+
+/* Feature grid */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 24px 0; }
+.feature {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+  transition: all 0.3s;
+}
+.feature:hover { border-color: rgba(0,212,255,0.3); transform: translateY(-2px); }
+.feature-icon { font-size: 1.8em; margin-bottom: 12px; }
+.feature h4 { font-size: 1em; margin-bottom: 8px; color: var(--cyan); }
+.feature p { font-size: 0.85em; color: var(--muted); line-height: 1.6; }
+
+/* CTA */
+.cta-section { text-align: center; padding: 80px 0; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; border-radius: 8px; font-size: 0.95em;
+  font-weight: 600; text-decoration: none; margin: 6px;
+  transition: all 0.3s; cursor: pointer; border: none;
+}
+.btn-primary { background: var(--green); color: #000; }
+.btn-primary:hover { background: #00cc6e; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,136,0.3); }
+.btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* Training history */
+.version-list { margin: 24px 0; }
+.version {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+}
+.version.best { border-color: var(--green); background: rgba(0,255,136,0.05); }
+.version-tag { color: var(--muted); width: 40px; flex-shrink: 0; }
+.version.best .version-tag { color: var(--green); }
+.version-desc { flex: 1; color: var(--text); }
+.version-metric { color: var(--cyan); text-align: right; }
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 0; text-align: center;
+  color: var(--muted); font-size: 0.85em;
+}
+footer a { color: var(--green); text-decoration: none; }
+
+/* Animations */
+.fade-in { opacity: 0; transform: translateY(20px); transition: all 0.6s; }
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+.tag {
+  display: inline-block; padding: 3px 10px; border-radius: 100px;
+  font-size: 0.72em; font-weight: 600; margin: 2px;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+}
+.tag-green { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+.tag-cyan  { background: rgba(0,212,255,0.1); color: var(--cyan);  border: 1px solid rgba(0,212,255,0.2); }
+.tag-orange{ background: rgba(245,158,11,0.1);color: var(--orange);border: 1px solid rgba(245,158,11,0.2); }
+.tag-purple{ background: rgba(139,92,246,0.1);color: var(--purple);border: 1px solid rgba(139,92,246,0.2); }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="badge">🟢 LIVE · nuScenes · Apple Silicon MPS</div>
+    <h1>OpenDriveFM</h1>
+    <p class="subtitle">
+      Trust-Aware Multi-Camera BEV Occupancy Prediction<br>
+      with GPT-2 Causal Trajectory Estimation
+    </p>
+    <div>
+      <span class="tag tag-green">Self-Supervised</span>
+      <span class="tag tag-cyan">BEV Perception</span>
+      <span class="tag tag-orange">LLM Fine-tuning</span>
+      <span class="tag tag-purple">Sparse Training</span>
+      <span class="tag tag-green">Imitation Learning</span>
+      <span class="tag tag-cyan">World Model</span>
+      <span class="tag tag-orange">Neural Pruning</span>
+      <span class="tag tag-purple">C++ LibTorch</span>
+    </div>
+  </header>
+
+  <!-- METRICS -->
+  <div class="metrics-grid fade-in">
+    <div class="metric">
+      <span class="metric-value">317</span>
+      <span class="metric-label">FPS (MPS)</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">3.15ms</span>
+      <span class="metric-label">p50 Latency</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">2.457m</span>
+      <span class="metric-label">Traj ADE</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">18.4%</span>
+      <span class="metric-label">Over CV Baseline</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0.136</span>
+      <span class="metric-label">BEV IoU</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">100%</span>
+      <span class="metric-label">Fault Detection</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">553K</span>
+      <span class="metric-label">Parameters</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">83×</span>
+      <span class="metric-label">Smaller than ProtoOcc</span>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <section class="fade-in">
+    <div class="section-label">Architecture</div>
+    <h2>System Overview</h2>
+    <p style="color:var(--muted);margin-bottom:24px;">
+      Camera-only pipeline — no LiDAR at inference. 6 surround cameras → BEV occupancy + ego trajectory.
+    </p>
+
+    <div class="arch-box"><span class="hl-cyan">6 × Camera (90×160px)</span>
+         │
+         ▼
+<span class="hl-green">CNN Stem</span> <span style="color:#475569">or</span> <span class="hl-purple">ViTStem</span> (patch_size=16, 50 patches/cam)
+Shared weights × 6  →  (B·V, 384, H/8, W/8)
+         │
+    ┌────┴────────────────────────┐
+    ▼                             ▼
+<span class="hl-cyan">BEV Lifter (LSS)</span>              <span class="hl-orange">CameraTrustScorer</span>
+K⁻¹×[u,v,1]=ray              Laplacian + Sobel physics gate
+T_cam→ego frame               self-supervised, zero fault labels
+→ (B, 192, 64, 64)            score t ∈ [0,1] per camera
+    │                             │
+    └──── <span class="hl-green">Trust-Weighted Fusion</span> ────┘
+          softmax(t) × BEV_features
+          bev_pool_kernel.py  2.1× speedup
+                   │
+      ┌────────────┴────────────┐
+      ▼                         ▼
+<span class="hl-cyan">BEV Decoder</span>               <span class="hl-purple">CausalTrajHead</span>
+4×ConvTranspose2d         GPT-2 transformer
+IoU = 0.136               3 layers, 4 heads, 666K params
+                          ADE = 2.457m</div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🧠</div>
+        <h4>GPT-2 Causal Trajectory Head</h4>
+        <p>Autoregressive waypoint prediction via behavioral cloning on 404 real nuScenes expert demonstrations. Lower-triangular causal mask. 666K parameters.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h4>Vectorized BEV Pool Kernel</h4>
+        <p>Replaces Python for-loop over 6 cameras with single batched einsum GPU operation. 2.1× speedup on CPU. Runs on Apple MPS.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔬</div>
+        <h4>Sparse Attention Training</h4>
+        <p>SparseCausalTrajHead with strided (64%), local window (73%), and combined (58%) attention patterns. O(T·k) vs O(T²) dense.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h4>LLM Fine-tuning</h4>
+        <p>GPT-2 (124M params) fine-tuned on tokenized nuScenes trajectories. 404-token vocabulary. Causal LM objective. Loss 16.97→0.0004.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✂️</div>
+        <h4>Neural Network Pruning</h4>
+        <p>L1 unstructured pruning: 30% sparsity → 464K params. Zero latency regression. Compatible with downstream quantization.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎥</div>
+        <h4>BEV Occupancy Forecasting</h4>
+        <p>Predicts T+1, T+2, T+3 future BEV frames from T=4 past observations. Same paradigm as UniAD (NeurIPS 2023). 6.6M params.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST SCORER -->
+  <section class="fade-in">
+    <div class="section-label">Self-Supervised Learning</div>
+    <h2>CameraTrustScorer</h2>
+    <p style="color:var(--muted);margin-bottom:24px;">
+      Detects degraded cameras with zero fault labels — pure contrastive self-supervised learning.
+      The only autonomous driving paper (vs ProtoOcc, GAFusion, PointBeV) with real-time fault tolerance.
+    </p>
+
+    <div class="code"><span class="cm"># Contrastive margin loss — the only supervision signal</span>
+<span class="cm"># No fault labels. No human annotation. Zero supervision.</span>
+<span class="kw">L_trust</span> = <span class="fn">max</span>(<span class="nm">0</span>, <span class="kw">t_faulted</span> − <span class="kw">t_clean</span> + <span class="nm">0.2</span>)
+<span class="cm"># t_clean > t_faulted + 0.2 enforced during training</span>
+<span class="cm"># Training signal comes from data augmentation, not labels</span></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Condition</th>
+          <th>Trust Score</th>
+          <th>Drop vs Clean</th>
+          <th>Visualization</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Clean (baseline)</td>
+          <td class="trust-good">0.795</td>
+          <td>—</td>
+          <td><span class="trust-bar" style="width:120px;background:var(--green)"></span></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Blur</td>
+          <td class="trust-bad">0.340</td>
+          <td class="trust-bad">-57%</td>
+          <td><span class="trust-bar" style="width:51px;background:var(--red)"></span></td>
+          <td><span class="tag tag-cyan">Known</span></td>
+        </tr>
+        <tr>
+          <td>Occlusion</td>
+          <td class="trust-bad">0.310</td>
+          <td class="trust-bad">-61%</td>
+          <td><span class="trust-bar" style="width:47px;background:var(--red)"></span></td>
+          <td><span class="tag tag-cyan">Known</span></td>
+        </tr>
+        <tr>
+          <td>Noise</td>
+          <td class="trust-bad">0.460</td>
+          <td class="trust-bad">-42%</td>
+          <td><span class="trust-bar" style="width:69px;background:var(--orange)"></span></td>
+          <td><span class="tag tag-cyan">Known</span></td>
+        </tr>
+        <tr>
+          <td>Glare</td>
+          <td class="trust-bad">0.420</td>
+          <td class="trust-bad">-47%</td>
+          <td><span class="trust-bar" style="width:63px;background:var(--orange)"></span></td>
+          <td><span class="tag tag-cyan">Known</span></td>
+        </tr>
+        <tr>
+          <td>Rain</td>
+          <td class="trust-bad">0.491</td>
+          <td class="trust-bad">-38%</td>
+          <td><span class="trust-bar" style="width:74px;background:var(--orange)"></span></td>
+          <td><span class="tag tag-cyan">Known</span></td>
+        </tr>
+        <tr>
+          <td>Heavy Snow ⚡</td>
+          <td class="trust-bad">0.355</td>
+          <td class="trust-bad">~-55%</td>
+          <td><span class="trust-bar" style="width:53px;background:var(--purple)"></span></td>
+          <td><span class="tag tag-purple">UNSEEN</span></td>
+        </tr>
+        <tr>
+          <td>Dense Fog ⚡</td>
+          <td class="trust-bad">0.380</td>
+          <td class="trust-bad">~-52%</td>
+          <td><span class="trust-bar" style="width:57px;background:var(--purple)"></span></td>
+          <td><span class="tag tag-purple">UNSEEN</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.82em;color:var(--muted)">⚡ UNSEEN = not in training set. Detected via physics signals (Laplacian + Sobel) that generalize across fault types.</p>
+  </section>
+
+  <!-- ABLATION -->
+  <section class="fade-in">
+    <div class="section-label">Ablation Study</div>
+    <h2>No Trust vs Uniform vs Trust-Aware</h2>
+    <p style="color:var(--muted);margin-bottom:24px;">
+      Comparing fusion strategies to isolate the benefit of the CameraTrustScorer.
+      Trust benefit is <strong>larger under fault conditions</strong> — as designed.
+    </p>
+
+    <div class="ablation-grid">
+      <div class="ablation-card">
+        <h4>No Trust (baseline)</h4>
+        <div class="iou">0.0706</div>
+        <p style="color:var(--muted);font-size:0.82em;margin-top:8px;">Uniform weights, ignores camera quality</p>
+        <div class="ablation-bar"><div class="ablation-bar-fill" style="width:85%;background:var(--red)"></div></div>
+      </div>
+      <div class="ablation-card">
+        <h4>Uniform Average</h4>
+        <div class="iou">0.0752</div>
+        <p style="color:var(--muted);font-size:0.82em;margin-top:8px;">Simple mean across all cameras equally</p>
+        <div class="ablation-bar"><div class="ablation-bar-fill" style="width:90%;background:var(--orange)"></div></div>
+      </div>
+      <div class="ablation-card best">
+        <h4>Trust-Aware (ours) ⭐</h4>
+        <div class="iou">0.0776</div>
+        <p style="color:var(--muted);font-size:0.82em;margin-top:8px;">Weighted by self-supervised trust score</p>
+        <div class="ablation-bar"><div class="ablation-bar-fill" style="width:100%;background:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <h3>Under Fault Conditions (1 camera faulted)</h3>
+      <div class="ablation-grid" style="margin-top:16px;">
+        <div class="ablation-card">
+          <h4>No Trust</h4>
+          <div class="iou" style="color:var(--red)">0.0643</div>
+          <div class="ablation-bar"><div class="ablation-bar-fill" style="width:78%;background:var(--red)"></div></div>
+        </div>
+        <div class="ablation-card">
+          <h4>Uniform Average</h4>
+          <div class="iou" style="color:var(--orange)">0.0717</div>
+          <div class="ablation-bar"><div class="ablation-bar-fill" style="width:87%;background:var(--orange)"></div></div>
+        </div>
+        <div class="ablation-card best">
+          <h4>Trust-Aware ⭐</h4>
+          <div class="iou">0.0814</div>
+          <p style="color:var(--green);font-size:0.82em;margin-top:4px;">+26.6% over No-Trust</p>
+          <div class="ablation-bar"><div class="ablation-bar-fill" style="width:100%;background:var(--green)"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAINING HISTORY -->
+  <section class="fade-in">
+    <div class="section-label">Experimental History</div>
+    <h2>13 Training Experiments</h2>
+    <div class="version-list">
+      <div class="version"><span class="version-tag">v2</span><span class="version-desc">Initial CNN + trust scorer</span><span class="version-metric">First working pipeline</span></div>
+      <div class="version"><span class="version-tag">v5</span><span class="version-desc">AdamW + CosineAnnealingLR</span><span class="version-metric">Loss 26→9.5</span></div>
+      <div class="version"><span class="version-tag">v7</span><span class="version-desc">Scene-level splits</span><span class="version-metric">No data leakage</span></div>
+      <div class="version best"><span class="version-tag">v8 ★</span><span class="version-desc">Geometry BEV lifter</span><span class="version-metric">IoU=0.136</span></div>
+      <div class="version"><span class="version-tag">v9</span><span class="version-desc">LiDAR depth supervision</span><span class="version-metric">ADE 2.740→2.559m</span></div>
+      <div class="version best"><span class="version-tag">v11 ★</span><span class="version-desc">T=4 temporal video fusion + 128×128 BEV</span><span class="version-metric">ADE=2.457m BEST</span></div>
+      <div class="version"><span class="version-tag">v13</span><span class="version-desc">3-class semantic labels</span><span class="version-metric">IoU=0.131 vehicle</span></div>
+      <div class="version"><span class="version-tag">v14</span><span class="version-desc">Full LSS from scratch</span><span class="version-metric">Needs more epochs</span></div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="fade-in">
+    <div class="section-label">vs State of the Art</div>
+    <h2>CVPR Paper Comparison</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>System</th><th>Speed</th><th>Parameters</th>
+          <th>Traj</th><th>Fault Tolerance</th><th>Hardware</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ProtoOcc CVPR25</td><td>9.5 FPS</td><td>46.2M</td>
+          <td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td>
+          <td style="color:var(--muted)">8×A100</td>
+        </tr>
+        <tr>
+          <td>GAFusion CVPR24</td><td>8 FPS</td><td>~80M</td>
+          <td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td>
+          <td style="color:var(--muted)">2×3090</td>
+        </tr>
+        <tr>
+          <td>PointBeV CVPR24</td><td>~10 FPS</td><td>~40M</td>
+          <td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td>
+          <td style="color:var(--muted)">A100</td>
+        </tr>
+        <tr style="background:rgba(0,255,136,0.04);border-left:3px solid var(--green)">
+          <td><strong>OpenDriveFM ★</strong></td>
+          <td class="trust-good"><strong>317 FPS</strong></td>
+          <td class="trust-good"><strong>553K</strong></td>
+          <td class="trust-good">✓ ADE=2.457m</td>
+          <td class="trust-good">✓ 7 fault types</td>
+          <td class="trust-good">MacBook</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section fade-in">
+    <h2>Try It Yourself</h2>
+    <p style="color:var(--muted);margin-bottom:32px;">
+      Run the live demo locally or explore the full codebase
+    </p>
+    <a href="https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm" class="btn btn-primary">
+      📂 View on GitHub
+    </a>
+    <a href="#" class="btn btn-secondary">
+      🎮 Live Demo (Gradio)
+    </a>
+    <div class="code" style="text-align:left;max-width:600px;margin:32px auto 0;">
+<span class="cm"># Quick start</span>
+<span class="kw">git clone</span> https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm.git
+<span class="kw">cd</span> opendrivefm
+<span class="kw">conda env create</span> -f environment.yml
+<span class="kw">python</span> apps/demo/live_demo_webcam.py --nuscenes
+<span class="cm"># OR</span>
+<span class="kw">python</span> scripts/gradio_demo.py --share</div>
+  </div>
+
+  <footer>
+    <p>OpenDriveFM · LIU Image and Vision Computing · April 2026</p>
+    <p style="margin-top:8px;">
+      Akila Lourdes · Akilan Manivannan · Rashmi &nbsp;·&nbsp;
+      <a href="https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm">GitHub</a>
+    </p>
+    <p style="margin-top:16px;font-size:0.8em;">
+      317 FPS · ADE=2.457m · IoU=0.136 · Self-supervised · GPT-2 · ViT · DDP-ready · C++ LibTorch
+    </p>
+  </footer>
+
+</div>
+
+<script>
+// Fade in on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Animate metric values
+function animateValue(el, start, end, duration, suffix='') {
+  let startTime = null;
+  const isFloat = String(end).includes('.');
+  const decimals = isFloat ? String(end).split('.')[1].length : 0;
+  
+  function step(currentTime) {
+    if (!startTime) startTime = currentTime;
+    const progress = Math.min((currentTime - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = start + (end - start) * eased;
+    el.textContent = isFloat ? value.toFixed(decimals) + suffix : Math.floor(value) + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Animate on page load
+const metrics = [
+  { selector: '.metric:nth-child(1) .metric-value', start: 0, end: 317, suffix: '' },
+  { selector: '.metric:nth-child(3) .metric-value', start: 3.0, end: 2.457, suffix: 'm' },
+  { selector: '.metric:nth-child(4) .metric-value', start: 0, end: 18.4, suffix: '%' },
+];
+
+setTimeout(() => {
+  metrics.forEach(m => {
+    const el = document.querySelector(m.selector);
+    if (el) animateValue(el, m.start, m.end, 1500, m.suffix);
+  });
+}, 500);
+</script>
+
+</body>
+</html>
