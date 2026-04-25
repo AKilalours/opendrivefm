@@ -66,21 +66,21 @@ OpenDriveFM is a **production-grade, camera-only autonomous driving perception s
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║  GOAL: Camera-only AV perception that degrades gracefully    ║
-║        under sensor faults. No LiDAR. No fault labels.      ║
+║        under sensor faults. No LiDAR. No fault labels.       ║
 ╠══════════════════════════════════════════════════════════════╣
-║  SLO           │ Target     │ Achieved    │ Status          ║
-║  ─────────────────────────────────────────────────────────  ║
-║  p50 latency   │ < 5 ms     │ 3.15 ms     │ ✅ 1.6× margin ║
-║  p95 latency   │ < 8 ms     │ 3.22 ms     │ ✅ 2.5× margin ║
-║  p99 latency   │ < 15 ms    │ ~4 ms       │ ✅             ║
-║  p95/p50 ratio │ < 2.0      │ 1.02        │ ✅ Near-zero   ║
-║  C++ p50       │ < 10 ms    │ 4.449 ms    │ ✅             ║
-║  C++ p95       │ < 15 ms    │ 5.257 ms    │ ✅             ║
-║  Throughput    │ > 36 FPS   │ 317 FPS     │ ✅ 8.8× target ║
-║  BEV IoU       │ > 0.10     │ 0.136       │ ✅ 36% margin  ║
-║  Traj ADE      │ < 3.012m   │ 2.457m      │ ✅ 18.4% over  ║
-║  Fault detect  │ 100%       │ 100%        │ ✅ 7 types     ║
-║  Cost/request  │ < $0.001   │ $0.000      │ ✅ MacBook     ║
+║  SLO           │ Target     │ Achieved    │ Status           ║
+║  ─────────────────────────────────────────────────────────   ║
+║  p50 latency   │ < 5 ms     │ 3.15 ms     │ ✅ 1.6× margin   ║
+║  p95 latency   │ < 8 ms     │ 3.22 ms     │ ✅ 2.5× margin   ║
+║  p99 latency   │ < 15 ms    │ ~4 ms       │ ✅               ║
+║  p95/p50 ratio │ < 2.0      │ 1.02        │ ✅ Near-zero     ║
+║  C++ p50       │ < 10 ms    │ 4.449 ms    │ ✅               ║
+║  C++ p95       │ < 15 ms    │ 5.257 ms    │ ✅               ║
+║  Throughput    │ > 36 FPS   │ 317 FPS     │ ✅ 8.8× target   ║
+║  BEV IoU       │ > 0.10     │ 0.136       │ ✅ 36% margin    ║
+║  Traj ADE      │ < 3.012m   │ 2.457m      │ ✅ 18.4% over    ║
+║  Fault detect  │ 100%       │ 100%        │ ✅ 7 types       ║
+║  Cost/request  │ < $0.001   │ $0.000      │ ✅ MacBook       ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
@@ -93,48 +93,48 @@ OpenDriveFM is a **production-grade, camera-only autonomous driving perception s
 ```
                     ┌─────────────────────────────────────────┐
                     │         6 Surround Cameras              │
-                    │    FRONT · F-L · F-R · BACK · B-L · B-R│
+                    │    FRONT · F-L · F-R · BACK · B-L · B-R │
                     │         Resolution: 90 × 160 px         │
                     └──────────────┬──────────────────────────┘
                                    │
                     ┌──────────────▼──────────────────────────┐
                     │        BACKBONE (Shared ×6)             │
                     │  ┌─────────────┐  ┌──────────────────┐  │
-                    │  │  CNN Stem   │  │    ViTStem        │  │
-                    │  │Conv→BN→GELU │  │patch_size=16      │  │
-                    │  │(production) │  │50 patches/cam     │  │
-                    │  │             │  │6-head self-attn   │  │
+                    │  │  CNN Stem   │  │    ViTStem       │  │
+                    │  │Conv→BN→GELU │  │patch_size=16     │  │
+                    │  │(production) │  │50 patches/cam    │  │
+                    │  │             │  │6-head self-attn  │  │
                     │  └─────────────┘  └──────────────────┘  │
                     │       → (B·V, 384, H/8, W/8)            │
                     └───────┬──────────────────┬──────────────┘
                             │                  │
                ┌────────────▼────┐    ┌────────▼──────────────┐
                │  BEV LIFTER     │    │  CAMERA TRUST SCORER  │
-               │  (LSS method)   │    │  Self-supervised       │
-               │  K⁻¹×[u,v,1]   │    │  Laplacian sharpness  │
-               │  = camera ray   │    │  + Sobel edge density  │
+               │  (LSS method)   │    │  Self-supervised      │
+               │  K⁻¹×[u,v,1]    │    │  Laplacian sharpness  │
+               │  = camera ray   │    │  + Sobel edge density │
                │  T_cam→ego      │    │  score t ∈ [0,1]      │
                │  → (B,192,64,64)│    │  zero fault labels    │
                └────────┬────────┘    └────────┬──────────────┘
                         │                      │
                ┌────────▼──────────────────────▼──────────────┐
-               │          TRUST-WEIGHTED FUSION                │
-               │          bev_pool_kernel.py                   │
-               │  w = softmax(trust_scores)                    │
+               │          TRUST-WEIGHTED FUSION               │
+               │          bev_pool_kernel.py                  │
+               │  w = softmax(trust_scores)                   │
                │  fused = Σ w[i] × cam_BEV[i]                 │
-               │  Single batched einsum — 2.1× speedup         │
-               └──────────────────┬────────────────────────────┘
+               │  Single batched einsum — 2.1× speedup        │
+               └──────────────────┬───────────────────────────┘
                                   │
-               ┌──────────────────┴────────────────────────────┐
-               │                  │                            │
-    ┌──────────▼──────────┐  ┌────▼────────────────────────┐  │
-    │    BEV DECODER      │  │    CAUSAL TRAJ HEAD          │  │
-    │  4×ConvTranspose2d  │  │    GPT-2 transformer         │  │
-    │  Binary occ map     │  │    3 layers · 4 heads        │  │
-    │  IoU = 0.136        │  │    666K params               │  │
-    │                     │  │    ADE = 2.457m              │  │
-    │                     │  │    Behavioral cloning        │  │
-    └─────────────────────┘  └─────────────────────────────-┘
+               ┌──────────────────┴
+               │                  │                            
+    ┌──────────▼──────────┐  ┌────▼────────────────────────┐   
+    │    BEV DECODER      │  │    CAUSAL TRAJ HEAD         │  
+    │  4×ConvTranspose2d  │  │    GPT-2 transformer        │  
+    │  Binary occ map     │  │    3 layers · 4 heads       │  
+    │  IoU = 0.136        │  │    666K params              │  
+    │                     │  │    ADE = 2.457m             │  
+    │                     │  │    Behavioral cloning       │  
+    └─────────────────────┘  └────────────────────────────-┘
 ```
 
 ### Design Decisions and Trade-offs
@@ -168,43 +168,43 @@ OpenDriveFM is a **production-grade, camera-only autonomous driving perception s
 ┌──────────────────────────────▼──────────────────────────────────────┐
 │  2. CURATE (prepare_nuscenes_mini.py)                               │
 │                                                                     │
-│  ├── Scene-level splits: 8 train / 2 val (prevent data leakage)    │
-│  ├── BEV label generation: LiDAR → 64×64 and 128×128 grids        │
+│  ├── Scene-level splits: 8 train / 2 val (prevent data leakage)     │
+│  ├── BEV label generation: LiDAR → 64×64 and 128×128 grids          │
 │  ├── 3-class semantic labels (vehicle / drivable / background)      │
 │  ├── Caught false positive: drivable surface labels (79.7% pos)     │
-│  │   → Switched to sparse object labels (4.3% pos) → real IoU      │
-│  └── Manifest: nuscenes_mini_manifest.jsonl (404 rows)             │
+│  │   → Switched to sparse object labels (4.3% pos) → real IoU       │
+│  └── Manifest: nuscenes_mini_manifest.jsonl (404 rows)              │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────────────┐
 │  3. TRAIN (train_nuscenes_mini_trust.py + lightning_module.py)      │
 │                                                                     │
-│  ├── Optimizer: AdamW (lr=3e-4, weight_decay=1e-2)                 │
-│  ├── Scheduler: CosineAnnealingLR (T_max=120 epochs)               │
-│  ├── Loss: BCE + Dice (occ) + SmoothL1 ADE + 2×FDE (traj)         │
-│  │         + Contrastive trust: max(0, t_faulted − t_clean + 0.2) │
-│  ├── 13 checkpoints (v2→v14), ModelCheckpoint on val ADE           │
+│  ├── Optimizer: AdamW (lr=3e-4, weight_decay=1e-2)                  │
+│  ├── Scheduler: CosineAnnealingLR (T_max=120 epochs)                │
+│  ├── Loss: BCE + Dice (occ) + SmoothL1 ADE + 2×FDE (traj)           │
+│  │         + Contrastive trust: max(0, t_faulted − t_clean + 0.2)   │
+│  ├── 13 checkpoints (v2→v14), ModelCheckpoint on val ADE            │
 │  ├── Logging: W&B + Lightning CSV                                   │
-│  └── Hardware: Apple M-series MPS (no GPU cluster)                 │
+│  └── Hardware: Apple M-series MPS (no GPU cluster)                  │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────────────┐
 │  4. EVALUATE (eval_*.py suite)                                      │
 │                                                                     │
-│  ├── eval_full_metrics_fixed.py  → IoU, Dice, Prec, Rec, ADE, FDE  │
+│  ├── eval_full_metrics_fixed.py  → IoU, Dice, Prec, Rec, ADE, FDE   │
 │  ├── eval_trust_ablation.py      → No Trust vs Uniform vs Ours      │
 │  ├── eval_worst_camera.py        → Per-camera fault ranking         │
-│  ├── eval_camera_dropout.py      → Trust threshold sweep           │
+│  ├── eval_camera_dropout.py      → Trust threshold sweep            │
 │  └── eval_generalization.py      → UNSEEN snow/fog fault types      │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────────────┐
 │  5. SERVE                                                           │
 │                                                                     │
-│  ├── live_demo_webcam.py   → OpenCV, 317 FPS, keyboard controls    │
-│  ├── gradio_app.py         → Web UI, shareable URL, real model     │
-│  ├── export_torchscript.py → .pt file for C++ deployment           │
-│  └── bench_latency.cpp     → LibTorch C++ profiler                 │
+│  ├── live_demo_webcam.py   → OpenCV, 317 FPS, keyboard controls     │
+│  ├── gradio_app.py         → Web UI, shareable URL, real model      │
+│  ├── export_torchscript.py → .pt file for C++ deployment            │
+│  └── bench_latency.cpp     → LibTorch C++ profiler                  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -492,7 +492,7 @@ Limitation:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  TRAINING                                                       │
-│  PyTorch Lightning + AdamW (lr=3e-4) + CosineAnnealingLR       │
+│  PyTorch Lightning + AdamW (lr=3e-4) + CosineAnnealingLR        │
 │  Batch=2, grad_clip=1.0, weight_decay=1e-2                      │
 │  13 versions tracked (v2→v14)                                   │
 ├─────────────────────────────────────────────────────────────────┤
@@ -502,29 +502,29 @@ Limitation:
 │  Checkpoint naming: best_val_ade.ckpt                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  EVALUATION GATES                                               │
-│  eval_full_metrics_fixed.py  → IoU, Dice, Prec, Rec, ADE, FDE  │
-│  eval_trust_ablation.py      → 3-way fusion comparison         │
-│  eval_worst_camera.py        → per-camera fault ranking        │
-│  eval_camera_dropout.py      → trust threshold τ sweep         │
-│  eval_generalization.py      → UNSEEN fault types              │
-│  eval_bev_visualise.py       → qualitative BEV visualization   │
+│  eval_full_metrics_fixed.py  → IoU, Dice, Prec, Rec, ADE, FDE   │
+│  eval_trust_ablation.py      → 3-way fusion comparison          │
+│  eval_worst_camera.py        → per-camera fault ranking         │
+│  eval_camera_dropout.py      → trust threshold τ sweep          │
+│  eval_generalization.py      → UNSEEN fault types               │
+│  eval_bev_visualise.py       → qualitative BEV visualization    │
 ├─────────────────────────────────────────────────────────────────┤
 │  PROFILING                                                      │
-│  Python MPS: bench_latency.py → p50=3.15ms, 317 FPS           │
-│  C++ CPU:    bench_latency.cpp → p50=4.449ms, 224 FPS          │
-│  200 iterations + 20 warmup + p50/p95/p99/FPS/jitter           │
+│  Python MPS: bench_latency.py → p50=3.15ms, 317 FPS             │
+│  C++ CPU:    bench_latency.cpp → p50=4.449ms, 224 FPS           │
+│  200 iterations + 20 warmup + p50/p95/p99/FPS/jitter            │
 ├─────────────────────────────────────────────────────────────────┤
 │  COMPRESSION                                                    │
-│  prune_traj_head.py: L1 unstructured, 30% → 464K params        │
-│  export_torchscript.py: .pt for C++ deployment                 │
+│  prune_traj_head.py: L1 unstructured, 30% → 464K params         │
+│  export_torchscript.py: .pt for C++ deployment                  │
 ├─────────────────────────────────────────────────────────────────┤
 │  SERVING                                                        │
-│  live_demo_webcam.py: OpenCV, 317 FPS, 7 fault types           │
-│  gradio_app.py: web UI, --share for public URL                 │
-│  portfolio.html: GitHub Pages, static site                     │
+│  live_demo_webcam.py: OpenCV, 317 FPS, 7 fault types            │
+│  gradio_app.py: web UI, --share for public URL                  │
+│  portfolio.html: GitHub Pages, static site                      │
 ├─────────────────────────────────────────────────────────────────┤
 │  SCALING                                                        │
-│  DISTRIBUTED_TRAINING.md: DDP torchrun, batch scaling guide    │
+│  DISTRIBUTED_TRAINING.md: DDP torchrun, batch scaling guide     │
 │  Architecture: DDP-ready, no custom ops blocking gradient sync  │
 └─────────────────────────────────────────────────────────────────┘
 ```
