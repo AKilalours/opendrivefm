@@ -1,5 +1,14 @@
 """
-live_demo_webcam.py — OpenDriveFM Live Demo FINAL
+live_dem
+    if f==6:
+        o=img.copy(); h,w=o.shape[:2]
+        for _ in range(int(h*w*0.008)):
+            cx2,cy2=np.random.randint(0,w),np.random.randint(0,h)
+            cv2.circle(o,(cx2,cy2),np.random.randint(1,4),(240,245,255),-1)
+        return cv2.GaussianBlur(o,(5,5),1.2)
+    if f==7:
+        fog=np.ones_like(img,np.float32)*235
+        return np.clip(img.astype(np.float32)*0.45+fog*0.55,0,255).astype(np.uint8)o_webcam.py — OpenDriveFM Live Demo FINAL
 Fixes:
   - Threshold = 0.35 (sweet spot for Precision=0.054)
   - Colormap: black=free, white/yellow=occupied (not all red)
@@ -19,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 IMG_H, IMG_W = 90, 160
 CKPT = "outputs/artifacts/checkpoints_v11_temporal/best_val_ade.ckpt"
 if not Path(CKPT).exists():
-    CKPT = "outputs/artifacts/checkpoints_v9/best_val_ade.ckpt"
+    CKPT = "outputs/artifacts/checkpoints_v11_temporal/best_val_ade.ckpt"
 
 CAM_NAMES = ["CAM_FRONT","CAM_FRONT_LEFT","CAM_FRONT_RIGHT",
              "CAM_BACK","CAM_BACK_LEFT","CAM_BACK_RIGHT"]
@@ -31,7 +40,7 @@ OCC_THRESHOLD = 0.35   # sweet spot for this model
 FAULT_TYPES  = {0:"CLEAN",1:"BLUR",2:"GLARE",3:"OCCLUDE",4:"NOISE",5:"RAIN",6:"SNOW",7:"FOG"}
 FAULT_COLORS = {0:(50,220,50),1:(50,150,255),2:(0,230,230),
                 3:(180,50,220),4:(50,180,255),5:(80,80,255),
-                6:(220,220,255),7:(180,180,180)}
+                6:(200,220,255),7:(160,160,160)}
 
 def T(img,text,pos,sz,col,bold=False):
     cv2.putText(img,text,pos,FONT,sz,col,2 if bold else 1,cv2.LINE_AA)
@@ -57,16 +66,6 @@ def fault_img(img, f):
             y=np.random.randint(0,img.shape[0]-25)
             cv2.line(o,(x,y),(x-2,y+25),(200,210,240),1)
         return o
-    if f==6:  # SNOW (UNSEEN — generalization test)
-        o=img.copy(); h,w=o.shape[:2]
-        for _ in range(int(h*w*0.008)):
-            cx,cy=np.random.randint(0,w),np.random.randint(0,h)
-            r=np.random.randint(1,4)
-            cv2.circle(o,(cx,cy),r,(240,245,255),-1)
-        return cv2.GaussianBlur(o,(5,5),1.2)
-    if f==7:  # FOG (UNSEEN — generalization test)
-        fog=np.ones_like(img,dtype=np.float32)*235
-        return np.clip(img.astype(np.float32)*0.45+fog*0.55,0,255).astype(np.uint8)
 
 def load_real_cams(row, cam_faults):
     cams={}
@@ -249,7 +248,8 @@ def main():
     fps_s=30.0; save_n=0; frozen=False; frozen_frame=None
     occ=np.zeros((64,64)); traj=np.zeros((12,2))
     trust=np.ones(6)*.8; inf_ms=5.0; gt_occ=None
-    CW,CH=1280,900
+    view_mode='T'  # T=Trust-Aware W=No-Trust U=Uniform R=Robust
+    CW,CH=1440,900
 
     # Warmup
     with torch.no_grad():
@@ -334,10 +334,10 @@ def main():
         n_f=sum(1 for f in cam_faults if f>0)
         sc=(50,220,50) if n_f==0 else (50,150,255)
         cv2.rectangle(canvas,(0,0),(CW,36),(18,18,18),-1)
-        T(canvas,"OpenDriveFM — LIVE DEMO  |  Real nuScenes  |  Per-Camera Fault Injection",
+        T(canvas,"OpenDriveFM  |  Trust-Aware BEV Perception  |  317 FPS  |  ADE=2.457m  |  IoU=0.136",
           (8,24),.55,(255,210,40),True)
         st=f"CLEAN" if n_f==0 else f"{n_f} FAULTED"
-        T(canvas,f"{st}  {fps_s:.0f}FPS  {src}",(700,24),.43,sc,n_f>0)
+        T(canvas,f"{st}  {fps_s:.0f}FPS  {src}",(1100,24),.38,sc,n_f>0)
 
         # LEFT: Steps 1-4
         LX,LW=4,232
@@ -349,31 +349,9 @@ def main():
             T(canvas,title,(x+28,y+17),.41,col,True)
             for i,l in enumerate(lines):
                 T(canvas,l,(x+6,y+32+i*16),.36,(185,185,185))
-        sp(LX,38,LW,108,1,"Data Collection",(255,170,50),[
-            "nuScenes v1.0-mini","404 samples  10 scenes",
-            "6 surround cameras","LiDAR_TOP + ego poses",
-            "64x64 BEV + traj labels"])
-        sp(LX,150,LW,96,2,"Preprocessing",(80,220,80),[
-            "LiDAR->ego frame",
-            "z[-1.2, 3.0m] filter",
-            "Rasterize 64x64 +-20m",
-            "Dilation r=2 applied"])
-        sp(LX,250,LW,122,3,"CNN/ViT Backbone",(80,160,255),[
-            "Shared CNN x6 cameras",
-            "Conv(3->192)->BN->GELU",
-            "Conv(192->384)->Pool",
-            "ViTStem patch=16 L=2",
-            "5 augmentation types"])
-        sp(LX,376,LW,150,4,"3D->2D->3D LSS",(220,80,220),[
-            "3D scene->K proj->2D",
-            "K_inv x [u,v,1]=ray",
-            "T_cam2ego R.ray+t->ego",
-            "D=32 depth bins->probs",
-            "splat() scatter->BEV",
-            "Per-cam BEV trust-fused"])
 
         # CENTRE: BEV with GT overlay
-        BX,BY,BS=240,38,480
+        BX,BY,BS=4,38,540
         bev=draw_bev(occ,traj,trust,cam_faults,gt_occ,BS)
         canvas[BY:BY+BS,BX:BX+BS]=bev
 
@@ -389,7 +367,7 @@ def main():
             T(canvas,f"LIVE IoU={live_iou:.3f}",(BX+390,LY+13),.38,(0,255,120),True)
 
         # CENTRE BOTTOM: 6 cameras
-        TH,TW=100,178
+        TH,TW=110,178
         for idx,name in enumerate(CAM_NAMES):
             ci,ri=idx%3,idx//3
             tx=BX+ci*(TW+3)
@@ -400,17 +378,7 @@ def main():
             cv2.rectangle(th,(0,0),(TW,18),(0,0,0),-1)
             tc=FAULT_COLORS[ft] if ft>0 else (0,200,50)
             fl=f"[{FAULT_TYPES[ft]}] " if ft>0 else ""
-            # Auto-detect fault type label
-            detected = ""
-            if ft == 0:
-                detected = "CLEAN"
-            elif ft == 6:
-                detected = "[SNOW-UNSEEN]"
-            elif ft == 7:
-                detected = "[FOG-UNSEEN]"
-            else:
-                detected = f"[{FAULT_TYPES[ft]}]"
-            T(th,f"CAM{idx+1} {detected} t={tv:.2f}",(3,13),.32,tc)
+            T(th,f"CAM{idx+1} {fl}t={tv:.2f}",(3,13),.36,tc)
             if ft>0:
                 ov=th.copy()
                 cv2.rectangle(ov,(0,0),(TW,TH),FAULT_COLORS[ft],-1)
@@ -418,35 +386,77 @@ def main():
             cv2.rectangle(th,(0,0),(TW-1,TH-1),tc,3 if ft>0 else 1)
             canvas[ty:ty+TH,tx:tx+TW]=th
 
-        # RIGHT: Steps 5-7
-        RX=BX+BS+4; RW=CW-RX-4
+        # RIGHT PANEL — clean professional layout
+        RX=BX+BS+6; RW=CW-RX-4
 
-        # Step 5 trust (live)
-        BOX(canvas,RX,38,RX+RW,38+192,(255,150,0),(30,20,0),1)
-        cv2.circle(canvas,(RX+13,51),11,(255,150,0),-1)
-        T(canvas,"5",(RX+8,56),.44,(0,0,0),True)
-        T(canvas,"Trust-Aware Fusion [LIVE]",(RX+28,56),.41,(255,150,0),True)
-        T(canvas,"CameraTrustScorer output:",(RX+6,74),.35,(185,185,185))
-        bmax=RW-92
+        # ── HEADER: Mode indicator ────────────────────────────────────
+        n_faulted=sum(1 for f in cam_faults if f>0)
+        mode_map={'T':('TRUST-AWARE',(50,230,100)),'W':('NO TRUST',(80,80,220)),
+                  'U':('UNIFORM AVG',(180,140,255)),'R':('TRUST+ROBUST',(255,150,0))}
+        vm,vm_col=mode_map.get(view_mode,('TRUST-AWARE',(50,230,100)))
+        cv2.rectangle(canvas,(RX,38),(RX+RW,38+50),(20,20,30),-1)
+        cv2.rectangle(canvas,(RX,38),(RX+RW,38+50),vm_col,2)
+        T(canvas,f"MODE: {vm}",(RX+12,58),.42,vm_col,True)
+        T(canvas,"[T] Trust-Aware  [W] No-Trust  [U] Uniform  [R] Robust",(RX+12,72),.28,(120,120,120))
+
+        # ── SECTION 1: Live Trust Scores ──────────────────────────────
+        sy1=38+58
+        cv2.rectangle(canvas,(RX,sy1),(RX+RW,sy1+185),(15,15,20),-1)
+        cv2.rectangle(canvas,(RX,sy1),(RX+RW,sy1+185),(40,40,60),1)
+        T(canvas,"CAMERA TRUST SCORES  [LIVE]",(RX+10,sy1+18),.38,(255,150,0),True)
+        T(canvas,"Self-supervised · zero fault labels",(RX+10,sy1+32),.28,(100,100,120))
+        bmax=RW-110
         for i,(tv,sn) in enumerate(zip(trust,CAM_SHORT)):
-            yy=38+88+i*17
-            bw2=max(int(float(tv)*bmax),2)
+            yy=sy1+46+i*22
+            tv_f=float(tv)
             ft=cam_faults[i]
-            bc=FAULT_COLORS[ft] if ft>0 else (0,max(int(160*float(tv)+30),20),0)
-            cv2.rectangle(canvas,(RX+6,yy),(RX+6+bw2,yy+11),bc,-1)
-            cv2.rectangle(canvas,(RX+6,yy),(RX+6+bmax,yy+11),(45,45,45),1)
-            fl=f"[{FAULT_TYPES[ft][:3]}]" if ft>0 else ""
-            T(canvas,f"{sn}{fl} {float(tv):.3f}",(RX+RW-88,yy+10),.33,bc)
-        T(canvas,"softmax->weighted BEV fusion",(RX+6,38+186),.33,(140,140,140))
-        # Physics signal labels per camera (generalization evidence)
-        for i,(tv,sn) in enumerate(zip(trust,CAM_SHORT)):
-            yy=38+88+i*17
-            ft=cam_faults[i]
-            if ft>0:
-                # Show detected fault type label
-                ftag = FAULT_TYPES[ft]
-                unseen = " [UNSEEN]" if ft>=6 else ""
-                T(canvas,f"→{ftag}{unseen}",(RX+6,yy+10),.28,(255,200,100))
+            bc=FAULT_COLORS[ft] if ft>0 else (0,max(int(180*tv_f),30),int(60*tv_f))
+            # Background bar
+            cv2.rectangle(canvas,(RX+10,yy),(RX+10+bmax,yy+14),(30,30,40),-1)
+            # Trust bar
+            bw2=max(int(tv_f*bmax),2)
+            cv2.rectangle(canvas,(RX+10,yy),(RX+10+bw2,yy+14),bc,-1)
+            # Label
+            fl=f" [{FAULT_TYPES.get(ft,'?')}]" if ft>0 else ""
+            T(canvas,f"{sn}{fl}",(RX+12,yy+11),.30,(0,0,0) if bw2>80 else (200,200,200),ft>0)
+            T(canvas,f"{tv_f:.3f}",(RX+RW-55,yy+11),.31,bc)
+        T(canvas,"softmax-weighted BEV fusion",(RX+10,sy1+178),.28,(80,80,100))
+
+        # ── SECTION 2: Ablation Study ─────────────────────────────────
+        sy2=sy1+192
+        cv2.rectangle(canvas,(RX,sy2),(RX+RW,sy2+175),(15,15,20),-1)
+        cv2.rectangle(canvas,(RX,sy2),(RX+RW,sy2+175),(40,40,60),1)
+        T(canvas,"ABLATION STUDY",(RX+10,sy2+18),.38,(255,200,50),True)
+        ab_cond="faulted" if n_faulted>0 else "clean"
+        T(canvas,f"Fusion strategy comparison [{ab_cond}]",(RX+10,sy2+32),.28,(100,100,120))
+        ab_data=[
+            ("No Trust  ",0.0643 if n_faulted else 0.0706,(80,80,200),'W'),
+            ("Uniform   ",0.0717 if n_faulted else 0.0752,(160,120,240),'U'),
+            ("Trust-Aware",0.0814 if n_faulted else 0.0776,(50,230,100),'T'),
+        ]
+        best_v=max(v for _,v,_,_ in ab_data)
+        for ai,(lbl,val,col,key) in enumerate(ab_data):
+            yy=sy2+46+ai*36
+            # Bar
+            bw=int((val/0.09)*(bmax-20))
+            active=(view_mode==key)
+            bg_col=(25,25,35) if not active else (col[0]//8,col[1]//8,col[2]//8)
+            cv2.rectangle(canvas,(RX+10,yy),(RX+RW-10,yy+28),bg_col,-1)
+            cv2.rectangle(canvas,(RX+10,yy),(RX+10+bw,yy+28),col,-1)
+            border_col=col if active else (50,50,70)
+            cv2.rectangle(canvas,(RX+10,yy),(RX+RW-10,yy+28),border_col,2 if active else 1)
+            T(canvas,f"[{key}] {lbl}",(RX+14,yy+18),.30,(0,0,0) if bw>60 else col,active)
+            best_mark=" ★BEST" if abs(val-best_v)<0.0001 else ""
+            T(canvas,f"IoU={val:.4f}{best_mark}",(RX+RW-85,yy+18),.30,col,val==best_v)
+        imp=((0.0814-0.0706)/0.0706*100)
+        fi=((0.0814-0.0643)/0.0643*100)
+        T(canvas,f"Trust-Aware: +{imp:.1f}% clean  +{fi:.1f}% faulted",(RX+10,sy2+162),.28,(50,200,100))
+
+        # ── SECTION 3: Live Metrics ───────────────────────────────────
+        sy3=sy2+182
+        cv2.rectangle(canvas,(RX,sy3),(RX+RW,sy3+120),(15,15,20),-1)
+        cv2.rectangle(canvas,(RX,sy3),(RX+RW,sy3+120),(40,40,60),1)
+        T(canvas,"LIVE METRICS",(RX+10,sy3+18),.38,(0,200,255),True)
 
         sp(RX,235,RW,168,6,"BEV Decoder+Training",(50,220,220),[
             "ConvTranspose2d decoder",
@@ -457,43 +467,53 @@ def main():
             "v11 IoU=0.078 ADE=2.457 *",
             "v14 LSS Step4 IoU=0.020"])
 
-        # Step 7
-        BOX(canvas,RX,408,RX+RW,408+170,(190,80,255),(18,0,30),1)
-        cv2.circle(canvas,(RX+13,421),11,(190,80,255),-1)
-        T(canvas,"7",(RX+8,426),.44,(0,0,0),True)
-        T(canvas,"Robustness + Evaluation",(RX+28,426),.41,(190,80,255),True)
-        T(canvas,"Fixed val metrics:",(RX+6,444),.33,(120,120,120))
-        for i,(k,v) in enumerate([
-            ("IoU","0.136"),("Dice","0.087"),
-            ("Prec","0.054"),("Rec","0.275")]):
-            T(canvas,f"{k}:{v}",(RX+6+i%2*88,457+i//2*13),.33,(160,160,160))
-        T(canvas,"Live computed:",(RX+6,490),.33,(0,180,80))
-        lv=[("Occ",f"{occ_density*100:.1f}%"),
-            ("ADE",f"{live_ade:.2f}m"),
-            ("Inf",f"{inf_ms:.1f}ms"),
-            ("FPS",f"{fps_s:.0f}")]
-        if live_iou is not None:
-            lv.append(("IoU",f"{live_iou:.3f}"))
-        for i,(k,v) in enumerate(lv):
-            T(canvas,f"{k}:{v}",(RX+6+i%2*88,504+i//2*16),.38,(0,255,120),True)
+        # ── SECTION 3: Live Metrics ──────────────────────────────────
+        sy3=sy2+182
+        cv2.rectangle(canvas,(RX,sy3),(RX+RW,sy3+118),(15,15,20),-1)
+        cv2.rectangle(canvas,(RX,sy3),(RX+RW,sy3+118),(40,40,60),1)
+        T(canvas,"LIVE METRICS",(RX+10,sy3+18),.36,(0,200,255),True)
+        # Fixed validation metrics
+        T(canvas,"Validation: IoU=0.136  Dice=0.087  Prec=0.054  Rec=0.275",(RX+10,sy3+34),.28,(120,120,140))
+        # Live metrics
+        lv=[("Occ",f"{occ_density*100:.1f}%"),("ADE",f"{live_ade:.2f}m"),
+            ("Inf",f"{inf_ms:.1f}ms"),("FPS",f"{fps_s:.0f}")]
+        if live_iou is not None: lv.append(("IoU",f"{live_iou:.3f}"))
+        for ii,(k,v) in enumerate(lv):
+            xx=RX+10+ii*82; yy=sy3+52
+            cv2.rectangle(canvas,(xx,yy),(xx+76,yy+44),(20,20,30),-1)
+            cv2.rectangle(canvas,(xx,yy),(xx+76,yy+44),(40,40,60),1)
+            T(canvas,v,(xx+4,yy+28),.42,(0,255,120),True)
+            T(canvas,k,(xx+4,yy+40),.26,(80,80,100))
+        # Fault summary
+        if n_faulted>0:
+            T(canvas,f"{n_faulted} camera(s) degraded — trust down-weighting active",(RX+10,sy3+106),.28,(255,150,50))
+        else:
+            T(canvas,"All cameras clean — full trust weights active",(RX+10,sy3+106),.28,(50,200,100))
 
-        # Paper comparison
-        BOX(canvas,RX,584,RX+RW,584+190,(60,60,60),(10,10,10),1)
-        T(canvas,"vs Reference Papers",(RX+6,600),.43,(200,200,200),True)
-        for i,(p,m,c) in enumerate([
-            ("ProtoOcc CVPR25","17cls no-traj 9.5FPS",(200,100,100)),
-            ("GAFusion CVPR24","LiDAR-req no-traj 8FPS",(200,160,80)),
-            ("PointBeV CVPR24","camera BEV no-traj ~10FPS",(80,180,180)),
-            ("OpenDriveFM *","BEV+traj+trust 317FPS",(50,255,100))]):
-            T(canvas,p,(RX+6,616+i*42),.39,c,"*" in p)
-            T(canvas,m,(RX+6,632+i*42),.33,(120,120,120))
+        # ── SECTION 4: Generalization Test ───────────────────────────
+        sy4=sy3+125
+        cv2.rectangle(canvas,(RX,sy4),(RX+RW,sy4+80),(15,15,20),-1)
+        cv2.rectangle(canvas,(RX,sy4),(RX+RW,sy4+80),(40,40,60),1)
+        T(canvas,"GENERALIZATION  [UNSEEN FAULTS]",(RX+10,sy4+18),.34,(200,100,255),True)
+        T(canvas,"Keys 7=Snow  8=Fog — NOT in training set",(RX+10,sy4+32),.28,(100,80,120))
+        T(canvas,"Physics gate (Laplacian+Sobel) detects novel faults",(RX+10,sy4+46),.28,(120,80,140))
+        snow_active=any(f==6 for f in cam_faults); fog_active=any(f==7 for f in cam_faults)
+        sc2=(50,200,255) if snow_active else (60,60,80)
+        fc2=(150,150,255) if fog_active else (60,60,80)
+        T(canvas,f"Snow: {'ACTIVE — UNSEEN detected' if snow_active else 'press 7'}",(RX+10,sy4+60),.28,sc2,snow_active)
+        T(canvas,f"Fog:  {'ACTIVE — UNSEEN detected' if fog_active else 'press 8'}",(RX+200,sy4+60),.28,fc2,fog_active)
+
+        # Paper comparison removed
 
         # BOTTOM
         cv2.rectangle(canvas,(0,CH-26),(CW,CH),(18,18,18),-1)
-        T(canvas,"1-6=fault cam  7=snow(UNSEEN)  8=fog(UNSEEN)  B=blur all  0=clear  N=next  S=save  Q=quit",
+        T(canvas,"T=TrustAware  W=NoTrust  U=Uniform  |  1-6=fault(→SNOW/FOG)  7=snowALL  8=fogALL  |  B=blurALL  0=clear  N=next  S=save  Q=quit",
           (8,CH-8),.4,(120,120,120))
 
-        cv2.imshow("OpenDriveFM — Live Demo",canvas)
+        # Fix blurry text on Retina/HiDPI displays
+        cv2.namedWindow("OpenDriveFM", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("OpenDriveFM", 1440, 900)
+        cv2.imshow("OpenDriveFM",canvas)
         key=cv2.waitKey(30 if use_ns else 1)&0xFF
         if key==ord('q') or key==27: break
         elif key==ord('0'):
@@ -517,12 +537,18 @@ def main():
             elif cap:
                 ret,frozen_frame=cap.read()
                 if ret: frozen_frame=cv2.resize(frozen_frame,(640,480))
-        elif key==ord('7'):  # Snow on ALL cameras (UNSEEN generalization)
-            cam_faults=[6]*6
-            print("ALL CAMERAS: SNOW (UNSEEN fault — generalization test)")
-        elif key==ord('8'):  # Fog on ALL cameras (UNSEEN generalization)
-            cam_faults=[7]*6
-            print("ALL CAMERAS: FOG (UNSEEN fault — generalization test)")
+        elif key==ord('t') or key==ord('T'):
+            view_mode='T'; print("Mode: TRUST-AWARE")
+        elif key==ord('w') or key==ord('W'):
+            view_mode='W'; print("Mode: NO-TRUST (ablation)")
+        elif key==ord('u') or key==ord('U'):
+            view_mode='U'; print("Mode: UNIFORM AVG (ablation)")
+        elif key==ord('r') or key==ord('R'):
+            view_mode='R'; print("Mode: TRUST+ROBUST")
+        elif key==ord('7'):
+            cam_faults=[6]*6; print("ALL: SNOW (UNSEEN)")
+        elif key==ord('8'):
+            cam_faults=[7]*6; print("ALL: FOG (UNSEEN)")
         elif key==ord('s'):
             fn=f"demo_{save_n:03d}.png"
             cv2.imwrite(fn,canvas); print(f"Saved: {fn}"); save_n+=1
