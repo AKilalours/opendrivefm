@@ -16,7 +16,9 @@
 
 **[🎮 Live Demo](scripts/gradio_app.py)** · **[🌐 Portfolio](https://akilalours.github.io/opendrivefm)** · **[📊 Results](#key-numbers)** · **[🏗️ Architecture](#architecture)**
 
-*Camera-only · 317 FPS · p50=3.15ms · ADE=2.457m · IoU=0.136 · $0/request · Apple Silicon*
+*Camera-only · 317 FPS · p50=3.15ms · ADE=2.457m · IoU=0.136 · $0/request · Apple Silicon
+
+> **Primary Demo:** `python scripts/gradio_app.py --share` → public URL in seconds*
 
 </div>
 
@@ -731,29 +733,46 @@ Download nuScenes v1.0-mini (free): [nuscenes.org/nuscenes#download](https://nus
 mkdir -p data && ln -sf ../dataset/nuscenes data/nuscenes
 ```
 
-### 3. Live Demo (OpenCV — 317 FPS)
+### 3. 🎮 Primary Demo — Gradio Web App
+
+The Gradio app is the **main interactive demo** — runs in browser, no OpenCV window needed, and generates a public shareable URL.
+
+```bash
+# Local — opens at http://localhost:7861
+python scripts/gradio_app.py --port 7861
+
+# Public shareable link (send to professor/recruiter)
+python scripts/gradio_app.py --share
+# → https://xxxxx.gradio.live  (valid 72 hours)
+```
+
+**What you can do in the Gradio app:**
+
+| Feature | How |
+|---------|-----|
+| Browse all 82 nuScenes scenes | Drag the scene index slider |
+| Inject fault per camera | Dropdown: BLUR / GLARE / OCCLUDE / NOISE / RAIN / SNOW / FOG |
+| Switch fusion mode | T = Trust-Aware ★  W = No-Trust  U = Uniform |
+| Snow/Fog all cameras | Click "7 — Snow All" or "8 — Fog All" buttons |
+| LLM trajectory overlay | Check "L — LLM Trajectory" checkbox |
+| BEV forecast | Check "F — BEV Forecast", select t+1/t+2/t+3 |
+| Sparse attention mode | Select from radio (dense/strided/local/combined) |
+| Live per-scene IoU | Computed from real GT labels — changes every scene |
+| Save/share | Download any panel image or use --share for public URL |
+
+### 4. 🖥️ Live OpenCV Demo (Optional — Advanced Controls)
+
+For in-person presentations with keyboard shortcuts:
 
 ```bash
 python apps/demo/live_demo_webcam.py --nuscenes
 
 # Key controls:
-# T = Trust-Aware mode (our system, best IoU)
-# W = No-Trust mode (ablation baseline)
-# U = Uniform Average (ablation baseline)
-# R = Trust + Robustness
-# 1-6 = cycle fault: blur→glare→occlude→noise→rain→SNOW→FOG
-# 7 = SNOW all cameras (UNSEEN generalization test)
-# 8 = FOG all cameras  (UNSEEN generalization test)
-# 0 = clear all faults | N = next scene | S = save | Q = quit
-```
-
-### 4. Web Demo (Gradio — Shareable URL)
-
-```bash
-python scripts/gradio_app.py --port 7860
-# OR with public link:
-python scripts/gradio_app.py --share
-# → https://xxxxx.gradio.live
+# T = Trust-Aware ★  W = No-Trust  U = Uniform  R = Trust+Robust
+# 1-6 = fault cycle per camera: blur→glare→occlude→noise→rain→SNOW→FOG
+# 7 = SNOW all (UNSEEN)   8 = FOG all (UNSEEN)
+# L = LLM overlay   F = Forecast   G = next forecast frame
+# V = sparse mode   N = next scene   S = save   Q = quit
 ```
 
 ### 5. C++ Profiler
@@ -925,6 +944,6 @@ opendrivefm/
 
 Built with PyTorch Lightning on Apple Silicon · LIU Image and Vision Computing · April 2026
 
-[⭐ Star this repo](https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm) · [🌐 Portfolio](https://akilalours.github.io/opendrivefm) · [🎮 Live Demo](scripts/gradio_app.py)
+[⭐ Star this repo](https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm) · [🌐 Portfolio](https://akilalours.github.io/opendrivefm) · [🎮 Gradio Demo](scripts/gradio_app.py)
 
 </div>
