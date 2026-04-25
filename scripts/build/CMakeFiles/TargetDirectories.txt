@@ -1,0 +1,3 @@
+/Users/akilalourdes/opendrivefm/scripts/build/CMakeFiles/bench_latency.dir
+/Users/akilalourdes/opendrivefm/scripts/build/CMakeFiles/edit_cache.dir
+/Users/akilalourdes/opendrivefm/scripts/build/CMakeFiles/rebuild_cache.dir
