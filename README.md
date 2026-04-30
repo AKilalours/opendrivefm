@@ -921,7 +921,7 @@ opendrivefm/
 @misc{opendrivefm2026,
   title     = {OpenDriveFM: Trust-Aware Multi-Camera BEV Perception
                with GPT-2 Causal Trajectory Prediction},
-  author    = {Akila Lourdes and Akilan Manivannan},
+  author    = {Akila Lourdes, Akilan Manivannan, Rashmi},
   year      = {2026},
   school    = {LIU},
   course    = {Image and Vision Computing},
