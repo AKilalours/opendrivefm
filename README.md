@@ -106,7 +106,7 @@ OpenDriveFM is a **production-grade, camera-only autonomous driving perception s
                     ┌──────────────▼──────────────────────────┐
                     │        BACKBONE (Shared x6)             │
                     │  Conv→BN→GELU x3, Pool                  │
-                    │  Shared weights across all 6 cameras     │
+                    │  Shared weights across all 6 cameras    │
                     │       → (B·V, 384, H/8, W/8)            │
                     └───────┬──────────────────┬──────────────┘
                             │                  │
