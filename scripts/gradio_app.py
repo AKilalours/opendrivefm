@@ -43,7 +43,7 @@ CAM_NAMES = ["CAM_FRONT","CAM_FRONT_LEFT","CAM_FRONT_RIGHT",
              "CAM_BACK","CAM_BACK_LEFT","CAM_BACK_RIGHT"]
 CAM_SHORT  = ["FRONT","F-L","F-R","BACK","B-L","B-R"]
 OCC_THRESHOLD = 0.35
-CKPT = str(ROOT / "outputs/artifacts/checkpoints_v11_temporal/best_val_ade.ckpt")
+CKPT = str(ROOT / "outputs/artifacts/best_val_ade.ckpt")
 MANIFEST = str(ROOT / "outputs/artifacts/nuscenes_mini_manifest.jsonl")
 LABEL_ROOTS = [
     str(ROOT / "outputs/artifacts/nuscenes_labels_128"),
@@ -145,8 +145,15 @@ def load_cameras(sample_idx: int, fault_per_cam: list) -> dict:
         # manifest stores path as plain string e.g. "data/nuscenes/samples/..."
         fp = row.get("cams", {}).get(name, "")
         img = None
-        for base in [Path("."), ROOT]:
-            p = base / fp
+        # Try multiple base paths for HuggingFace compatibility
+        search_paths = [
+            Path(IMAGE_ROOT) / fp if IMAGE_ROOT else None,
+            Path("/app") / fp,
+            Path(".") / fp,
+            ROOT / fp,
+        ]
+        search_paths = [p for p in search_paths if p]
+        for p in search_paths:
             if p.exists():
                 img = cv2.imread(str(p))
                 if img is not None:
@@ -816,6 +823,22 @@ def build_app():
 
     return app
 
+
+def find_image_root():
+    """Find where images are on this system."""
+    import glob
+    for base in ["/app", "/home/user/app", ".", str(ROOT)]:
+        hits = glob.glob(f"{base}/**/CAM_FRONT/*.jpg", recursive=True)
+        if hits:
+            print(f"IMAGE ROOT FOUND: {base}, example: {hits[0]}")
+            return base
+    print("IMAGE ROOT NOT FOUND - listing /app:")
+    import os
+    for item in os.listdir("/app"):
+        print(" ", item)
+    return None
+
+IMAGE_ROOT = find_image_root()
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
