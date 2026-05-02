@@ -28,7 +28,7 @@
 ## 📋 Table of Contents
 
 - [What Is OpenDriveFM?](#what-is-opendrivefm)
-- [TL;DR — SLOs and Key Numbers](#tldr--slos-and-key-numbers)
+- [TL;DR — SLOs and Key Numbers](#tldr----slos-and-key-numbers)
 - [System Architecture](#system-architecture)
 - [Data Flow](#data-flow)
 - [New Contributions](#new-contributions-beyond-course-scope)
