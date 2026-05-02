@@ -17,10 +17,10 @@ sdk_version: 6.13.0
 [![nuScenes](https://img.shields.io/badge/Dataset-nuScenes_mini-00A86B)](https://nuscenes.org)
 [![Apple MPS](https://img.shields.io/badge/Hardware-Apple_MPS-555555?logo=apple)](https://developer.apple.com/metal/)
 [![C++](https://img.shields.io/badge/Profiler-C%2B%2B_LibTorch-00599C?logo=cplusplus)](scripts/bench_latency.cpp)
-[![Gradio](https://img.shields.io/badge/Demo-Gradio_Live-FF7C00)](scripts/gradio_app.py)
+[![Gradio](https://img.shields.io/badge/Demo-Gradio_Live-FF7C00)](https://huggingface.co/spaces/Akilalourdes/opendrivefm)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-**[🎮 Live Demo](scripts/gradio_app.py)** · **[🌐 Portfolio](https://akilalours.github.io/opendrivefm)** · **[📊 Results](#key-numbers)** · **[🏗️ Architecture](#architecture)**
+**[🎮 Live Demo](https://huggingface.co/spaces/Akilalourdes/opendrivefm)** · **[🌐 Portfolio](https://akilalours.github.io/opendrivefm)** · **[📊 Results](#key-numbers)** · **[🏗️ Architecture](#architecture)**
 
 *Camera-only · 317 FPS · p50=3.15ms · ADE=2.457m · IoU=0.136 · $0/request · Apple Silicon
 
@@ -950,6 +950,6 @@ opendrivefm/
 
 Built with PyTorch Lightning on Apple Silicon · LIU Image and Vision Computing · April 2026
 
-[⭐ Star this repo](https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm) · [🌐 Portfolio](https://akilalours.github.io/opendrivefm) · [🎮 Gradio Demo](scripts/gradio_app.py)
+[⭐ Star this repo](https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm) · [🌐 Portfolio](https://akilalours.github.io/opendrivefm) · [🎮 Gradio Demo](https://huggingface.co/spaces/Akilalourdes/opendrivefm)
 
 </div>
