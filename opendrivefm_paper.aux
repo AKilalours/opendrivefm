@@ -1,0 +1,47 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{kim2025protoocc}
+\citation{chambon2024pointbev}
+\citation{philion2020lss}
+\citation{philion2020lss}
+\citation{harley2023simplebev}
+\citation{chambon2024pointbev}
+\citation{kim2025protoocc}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Contributions.}{1}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{1}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{1}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Camera-based BEV Perception.}{1}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{3D Occupancy Prediction.}{1}{section*.4}\protected@file@percent }
+\citation{li2024gafusion}
+\citation{hu2023uniad}
+\citation{philion2020lss}
+\citation{radford2019gpt2}
+\@writefile{toc}{\contentsline {paragraph}{Sensor Fault Detection.}{2}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Trajectory Prediction.}{2}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Method}{2}{section.3}\protected@file@percent }
+\newlabel{sec:method}{{3}{2}{Method}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}System Overview}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces OpenDriveFM pipeline: 6 cameras $\to $ shared CNN backbone $\to $ BEV Lifter + CameraTrustScorer in parallel $\to $ trust-weighted fusion $\to $ BEV Decoder + CausalTrajHead.}}{2}{figure.caption.7}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:pipeline}{{1}{2}{OpenDriveFM pipeline: 6 cameras $\to $ shared CNN backbone $\to $ BEV Lifter + CameraTrustScorer in parallel $\to $ trust-weighted fusion $\to $ BEV Decoder + CausalTrajHead}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Shared CNN Backbone}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}BEV Lifter (LSS)}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}CameraTrustScorer}{2}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:trust}{{3.4}{2}{CameraTrustScorer}{subsection.3.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Physics Gate (fixed).}{2}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{CNN Branch (learned).}{2}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Fusion.}{2}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Self-Supervised Training.}{2}{section*.11}\protected@file@percent }
+\newlabel{eq:trust_loss}{{7}{2}{Self-Supervised Training}{equation.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Trust-Weighted BEV Fusion}{2}{subsection.3.5}\protected@file@percent }
+\citation{caesar2020nuscenes}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Per-camera trust scores across 7 fault types. Clean cameras score 0.795; faulted cameras drop 38--61\%. Snow and fog (\textcolor {mypurple}{UNSEEN}) are detected via physics gate generalization.}}{3}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:trust}{{2}{3}{Per-camera trust scores across 7 fault types. Clean cameras score 0.795; faulted cameras drop 38--61\%. Snow and fog (\textcolor {mypurple}{UNSEEN}) are detected via physics gate generalization}{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}CausalTrajHead}{3}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Training Objective.}{3}{section*.13}\protected@file@percent }
+\@writefile{toc}{

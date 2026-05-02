@@ -1,3 +1,9 @@
+---
+title: opendrivefm
+app_file: scripts/gradio_app.py
+sdk: gradio
+sdk_version: 6.13.0
+---
 <div align="center">
 
 # 🚗 OpenDriveFM
