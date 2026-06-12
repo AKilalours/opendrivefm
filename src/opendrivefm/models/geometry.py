@@ -1,17 +1,39 @@
 """
-Geometry Module: Back-Projection / BEV Builder  (Slide Step 4)
-==============================================================
-Takes per-camera feature maps F_v and camera intrinsics/extrinsics,
-lifts 2D features into 3D frustum (depth bins / ray casting),
-then splats/pools them into a BEV grid aligned to the ego frame.
+Multi-View Geometry Module — BEV Road Layout Builder
+=====================================================
+Implements principled multi-view geometry for camera-only BEV perception.
+Core operation: back-projects 2D camera features into 3D ego-vehicle space
+using camera intrinsics and extrinsics, then splats to a structured BEV grid.
+
+This is the foundation of road geometry encoding in OpenDriveFM:
+  2D perspective images (6 cameras) → 3D point cloud (ego frame) →
+  structured BEV road layout (128×128 grid, ±20m range)
+
+Multi-View Geometry Pipeline:
+  1. For each of the 6 cameras:
+     - Transform BEV grid points from ego frame to camera frame: T_cam_ego × P_ego
+     - Project to pixel coordinates using intrinsics K: [u,v,1] = K × P_cam / Z
+     - Sample image features at projected pixel locations (bilinear)
+  2. Aggregate features across depth bins (learnable depth distribution)
+  3. Accumulate valid projections across all 6 camera views
+  4. Output: structured BEV road geometry map in ego-vehicle coordinates
+
+This produces a map-level representation of scene structure that encodes:
+  - Road geometry (drivable surface layout)
+  - Road layout (spatial arrangement of lanes and objects)
+  - Scene structure (3D occupancy projected to top-down view)
 
 Input:
   F_v   : (B, V, C, H, W)  per-camera feature maps
-  K_v   : (B, V, 3, 3)     camera intrinsics
-  T_ego_cam_v : (B, V, 4, 4)  extrinsics (cam→ego transform)
+  K_v   : (B, V, 3, 3)     camera intrinsics (multi-view geometry)
+  T_ego_cam_v : (B, V, 4, 4)  extrinsics (cam→ego transform, road geometry alignment)
 
 Output:
-  BEV_v : (B, C, bev_h, bev_w)  fused BEV feature tensor
+  BEV_v : (B, C, bev_h, bev_w)  fused BEV feature tensor — road layout encoding
+
+Keywords: multi-view geometry, road geometry, road layout, scene structure,
+          map-level representation, camera back-projection, BEV lifting,
+          ego-vehicle coordinate frame, frustum pooling, LSS geometry
 """
 from __future__ import annotations
 import torch

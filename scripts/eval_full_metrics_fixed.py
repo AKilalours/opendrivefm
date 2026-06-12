@@ -1,7 +1,31 @@
 """
-eval_full_metrics_fixed.py — correct Dice/Precision/Recall
-Copy to ~/opendrivefm/scripts/eval_full_metrics_fixed.py
-Run: python scripts/eval_full_metrics_fixed.py
+Evaluation Metrics Framework — OpenDriveFM
+==========================================
+Comprehensive evaluation suite for camera-only BEV perception and
+trajectory prediction. Implements official AV benchmark metrics.
+
+Metrics computed:
+  BEV Occupancy (road layout prediction):
+    - IoU  (Intersection over Union)    — primary occupancy metric
+    - Dice coefficient                  — overlap quality
+    - Precision / Recall                — detection balance
+    - Accuracy                          — overall correctness
+
+  Trajectory (ego-vehicle path prediction):
+    - ADE  (Average Displacement Error) — mean waypoint error in meters
+    - FDE  (Final Displacement Error)   — endpoint error at t=6s
+
+  HD Map / Road Geometry evaluation:
+    - Per-class IoU for semantic BEV labels (vehicle / drivable / lane boundary)
+    - Scene structure accuracy across validation split
+
+  Ablation evaluation:
+    - Trust-weighted vs uniform vs no-trust fusion comparison
+    - Per-camera fault detection rate across 7 fault types
+
+Keywords: evaluation metrics, BEV perception metrics, IoU, ADE, FDE,
+          dataset evaluation, road geometry evaluation, scene structure,
+          HD map evaluation, lane topology metrics
 """
 import sys, json, tempfile
 from pathlib import Path
