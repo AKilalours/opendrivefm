@@ -3,3 +3,4 @@ torch
 opencv-python
 numpy
 einops
+nuscenes-devkit
