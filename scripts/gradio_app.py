@@ -870,16 +870,25 @@ p50=3.15ms | p95=3.22ms | 317 FPS | IoU=0.136 | ADE=2.457m | cost=$0/request
 
 def find_image_root():
     """Find where images are on this system."""
-    import glob
-    for base in ["/app", "/home/user/app", ".", str(ROOT)]:
-        hits = glob.glob(f"{base}/**/CAM_FRONT/*.jpg", recursive=True)
-        if hits:
-            print(f"IMAGE ROOT FOUND: {base}, example: {hits[0]}")
+    import glob, os
+    # Check direct known paths first (no recursive glob needed)
+    candidates = [
+        "/app/data/nuscenes/samples",
+        "/home/user/app/data/nuscenes/samples",
+        "./data/nuscenes/samples",
+        str(ROOT / "data/nuscenes/samples"),
+        str(ROOT / "dataset/nuscenes/samples"),
+    ]
+    for p in candidates:
+        if os.path.isdir(p) and os.listdir(p):
+            print(f"IMAGE ROOT FOUND: {p}")
+            # Return the base so that base/data/nuscenes/samples/CAM_FRONT/x.jpg works
+            # The manifest path is data/nuscenes/samples/CAM_FRONT/x.jpg
+            # So base should be parent of data/
+            base = p.replace("/data/nuscenes/samples", "").replace("/dataset/nuscenes/samples", "")
+            print(f"IMAGE BASE: {base}")
             return base
-    print("IMAGE ROOT NOT FOUND - listing /app:")
-    import os
-    for item in os.listdir("/app"):
-        print(" ", item)
+    print("IMAGE ROOT NOT FOUND")
     return None
 
 IMAGE_ROOT = find_image_root()
