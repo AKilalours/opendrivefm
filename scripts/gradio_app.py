@@ -146,17 +146,14 @@ def load_cameras(sample_idx: int, fault_per_cam: list) -> dict:
         fp = row.get("cams", {}).get(name, "")
         img = None
         # Try multiple base paths for HuggingFace compatibility
-        search_paths = [
-            Path(fp) if Path(fp).exists() else None,
-            Path(IMAGE_ROOT) / fp if IMAGE_ROOT else None,
-            Path("/app") / fp,
-            Path(".") / fp,
-            ROOT / fp,
-        ]
-        search_paths = [p for p in search_paths if p]
+        p1 = Path("/app") / fp
+        p2 = Path(fp)
+        print(f"LOADCAM: fp={fp} p1={p1} p1exists={p1.exists()}")
+        search_paths = [p1, p2]
         for p in search_paths:
             if p.exists():
                 img = cv2.imread(str(p))
+                print(f"LOADCAM: read {p} -> {img is not None}")
                 if img is not None:
                     break
         if img is None:
@@ -520,10 +517,19 @@ def run_demo(sample_idx, fault_cam1, fault_cam2, fault_cam3,
         ["CLEAN","BLUR","GLARE","OCCLUDE","NOISE","RAIN","SNOW (UNSEEN)","FOG (UNSEEN)"].index(fault_cam6),
     ]
 
+    # Load cameras FIRST - always show real images regardless of model
     try:
-        model, device = load_model_once()
         cams, row = load_cameras(int(sample_idx), fault_per_cam)
         gt_occ = load_gt(row)
+    except Exception as e:
+        print(f"Camera load error: {e}")
+        cams  = {n: np.zeros((270,480,3),np.uint8)+40 for n in CAM_NAMES}
+        row   = {}
+        gt_occ = None
+
+    # Run model inference separately - fallback to demo if no checkpoint
+    try:
+        model, device = load_model_once()
         occ, traj, trust_raw, inf_ms = run_inference(model, cams, device)
         trust = apply_trust_scores(trust_raw, fault_per_cam)
     except Exception as e:
@@ -532,8 +538,6 @@ def run_demo(sample_idx, fault_cam1, fault_cam2, fault_cam3,
         traj  = np.zeros((12,2))
         trust = np.ones(6)*0.8
         inf_ms = 0.0
-        cams  = {n: np.zeros((IMG_H,IMG_W,3),np.uint8)+40 for n in CAM_NAMES}
-        gt_occ = None
 
     # Draw panels
     # LLM trajectory - generate synthetic waypoints based on real traj
@@ -870,23 +874,19 @@ p50=3.15ms | p95=3.22ms | 317 FPS | IoU=0.136 | ADE=2.457m | cost=$0/request
 
 def find_image_root():
     """Find where images are on this system."""
-    import glob, os
-    # Check direct known paths first (no recursive glob needed)
-    candidates = [
-        "/app/data/nuscenes/samples",
-        "/home/user/app/data/nuscenes/samples",
-        "./data/nuscenes/samples",
-        str(ROOT / "data/nuscenes/samples"),
-        str(ROOT / "dataset/nuscenes/samples"),
-    ]
-    for p in candidates:
-        if os.path.isdir(p) and os.listdir(p):
-            print(f"IMAGE ROOT FOUND: {p}")
-            # Return the base so that base/data/nuscenes/samples/CAM_FRONT/x.jpg works
-            # The manifest path is data/nuscenes/samples/CAM_FRONT/x.jpg
-            # So base should be parent of data/
-            base = p.replace("/data/nuscenes/samples", "").replace("/dataset/nuscenes/samples", "")
-            print(f"IMAGE BASE: {base}")
+    import os
+    # On HuggingFace, app runs at /app
+    # Images uploaded to data/nuscenes/samples/ so they are at /app/data/nuscenes/samples/
+    # Manifest path: data/nuscenes/samples/CAM_FRONT/xxx.jpg
+    # So IMAGE_ROOT should be /app (or .) so that IMAGE_ROOT/fp resolves correctly
+    test_bases = ["/app", "/home/user/app", ".", str(ROOT)]
+    test_path = "data/nuscenes/samples/CAM_BACK"
+    for base in test_bases:
+        full = os.path.join(base, test_path)
+        print(f"CHECKING: {full} exists={os.path.isdir(full)}")
+        if os.path.isdir(full):
+            files = os.listdir(full)
+            print(f"IMAGE ROOT FOUND: {base}, files in CAM_BACK: {len(files)}")
             return base
     print("IMAGE ROOT NOT FOUND")
     return None
