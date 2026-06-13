@@ -25,6 +25,96 @@ import torch
 import torch.nn.functional as F
 
 ROOT = Path(__file__).parent.parent
+
+_nusc_cache = None
+def get_nusc():
+    global _nusc_cache
+    if _nusc_cache is not None:
+        return _nusc_cache
+    if not _NUSC_AVAILABLE:
+        return None
+    import os
+    import os
+    _here = os.path.dirname(os.path.abspath(__file__))
+    _repo = os.path.dirname(_here)
+    candidates = [
+        os.path.join(_repo, 'dataset', 'nuscenes'),
+        str(ROOT.parent/'dataset/nuscenes'),
+        str(ROOT/'dataset/nuscenes'),
+        '/app/dataset/nuscenes',
+        './dataset/nuscenes',
+    ]
+    for dataroot in candidates:
+        if os.path.isdir(os.path.join(dataroot, 'v1.0-mini')):
+            try:
+                _nusc_cache = _NuScenes(version='v1.0-mini', dataroot=dataroot, verbose=False)
+                print(f'nuScenes loaded from {dataroot}')
+                return _nusc_cache
+            except Exception as e:
+                print(f'nuScenes error: {e}')
+    return None
+
+def get_bev_annotations(sample_token, ego_xy, bev_range=20.0, size=400):
+    nusc = get_nusc()
+    sc = size / (2.0 * bev_range)
+    cx = cy = size // 2
+    result = {'boxes': [], 'map_patches': []}
+    if nusc is None or not sample_token or ego_xy is None:
+        return result
+    try:
+        import numpy as np
+        sample = nusc.get('sample', sample_token)
+        ego_x, ego_y = float(ego_xy[0]), float(ego_xy[1])
+        for ann_token in sample['anns']:
+            ann = nusc.get('sample_annotation', ann_token)
+            t = ann['translation']
+            dx, dy = t[0]-ego_x, t[1]-ego_y
+            if abs(dx) > bev_range*1.3 or abs(dy) > bev_range*1.3:
+                continue
+            px = int(cx + dy*sc)
+            py = int(cy - dx*sc)
+            cat = ann['category_name']
+            if 'car' in cat or 'truck' in cat or 'bus' in cat:
+                color=(0,255,0); label='CAR'
+            elif 'bicycle' in cat or 'motorcycle' in cat:
+                color=(0,220,255); label='BIKE'
+            elif 'human' in cat or 'pedestrian' in cat:
+                color=(0,120,255); label='PED'
+            else:
+                color=(180,180,180); label=cat.split('.')[-1][:4].upper()
+            try:
+                vel = nusc.box_velocity(ann_token)[:2]
+                speed = float(np.linalg.norm(vel))
+            except:
+                speed = 0.0
+            w_px = max(4, int(ann['size'][0]*sc))
+            l_px = max(6, int(ann['size'][1]*sc))
+            result['boxes'].append({'px':px,'py':py,'pw':w_px,'pl':l_px,
+                                    'color':color,'label':label,'speed':speed})
+        try:
+            from nuscenes.map_expansion.map_api import NuScenesMap
+            scene = nusc.get('scene', sample['scene_token'])
+            log = nusc.get('log', scene['log_token'])
+            nusc_map = NuScenesMap(dataroot=nusc.dataroot, map_name=log['location'])
+            patch = (ego_x-bev_range, ego_y-bev_range, ego_x+bev_range, ego_y+bev_range)
+            recs = nusc_map.get_records_in_patch(patch, ['lane','lane_connector'], mode='intersect')
+            for layer in ['lane','lane_connector']:
+                for token in recs[layer][:30]:
+                    record = nusc_map.get(layer, token)
+                    poly = nusc_map.get('polygon', record['polygon_token'])
+                    nodes = [nusc_map.get('node', n) for n in poly['exterior_node_tokens']]
+                    pts = []
+                    for node in nodes:
+                        ddx, ddy = node['x']-ego_x, node['y']-ego_y
+                        bx = int(cx+ddy*sc); by = int(cy-ddx*sc)
+                        pts.append((bx,by))
+                    if len(pts)>=2:
+                        result['map_patches'].append(pts)
+        except:
+            pass
+    except Exception as e:
+        print(f'BEV ann error: {e}')
+    return result
 sys.path.insert(0, str(ROOT / "src"))
 
 try:
@@ -270,7 +360,8 @@ def compute_ablation_live(occ, gt_occ, trust, fault_per_cam):
 def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
              size=400, mode="T", llm_traj=None,
              show_forecast=False, forecast_frame="t+1 (0.5s ahead)",
-             sparse_mode="dense") -> np.ndarray:
+             sparse_mode="dense",
+             sample_token=None, ego_xy=None) -> np.ndarray:
     img = np.zeros((size,size,3), np.uint8) + 15
     # Grid
     for i in range(0, size, size//8):
@@ -291,9 +382,74 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
         cv2.circle(img,(cx,cy),int(dm*sc),(45,45,45),1)
         cv2.putText(img,f"{dm}m",(cx+int(dm*sc)+2,cy-3),
                    cv2.FONT_HERSHEY_SIMPLEX,0.3,(60,60,60),1)
-    # Ego
-    cv2.circle(img,(cx,cy),10,(0,255,0),-1)
-    cv2.circle(img,(cx,cy),12,(0,180,0),2)
+    # ── HD Map + 3D Boxes + LiDAR (nuScenes features) ────────────────────────
+    if sample_token and ego_xy is not None:
+        anns = get_bev_annotations(sample_token, ego_xy, bev_range=20.0, size=size)
+
+        # Feature 1: HD Map — lane lines (yellow) + drivable surface
+        for pts in anns["map_patches"]:
+            pts_arr = np.array(pts, dtype=np.int32)
+            # Draw lane polygon outline in yellow
+            for i in range(len(pts)-1):
+                p1 = (int(np.clip(pts[i][0],0,size-1)), int(np.clip(pts[i][1],0,size-1)))
+                p2 = (int(np.clip(pts[i+1][0],0,size-1)), int(np.clip(pts[i+1][1],0,size-1)))
+                cv2.line(img, p1, p2, (0, 200, 255), 1, cv2.LINE_AA)  # yellow lanes
+
+        # Feature 2: Red safety corridor (±1.5m around planned trajectory)
+        if len(traj) >= 2:
+            corridor_pts = []
+            for xv, yv in traj:
+                px_t = int(np.clip(cx + yv*sc, 4, size-4))
+                py_t = int(np.clip(cy - xv*sc, 4, size-4))
+                corridor_pts.append((px_t, py_t))
+            # Draw corridor as thick semi-transparent red path
+            corridor_w = max(3, int(1.5 * sc))
+            for i in range(len(corridor_pts)-1):
+                cv2.line(img, corridor_pts[i], corridor_pts[i+1], (0, 0, 180), corridor_w*2, cv2.LINE_AA)
+            # Overlay thinner bright red line on top
+            for i in range(len(corridor_pts)-1):
+                cv2.line(img, corridor_pts[i], corridor_pts[i+1], (50, 50, 255), 1, cv2.LINE_AA)
+
+        # Feature 3: 3D Bounding Boxes (green=car, orange=ped, cyan=bike)
+        for box in anns["boxes"]:
+            px_b, py_b = box["px"], box["py"]
+            if not (0 < px_b < size and 0 < py_b < size):
+                continue
+            pw2, pl2 = box["pw"]//2, box["pl"]//2
+            # Draw rotated rectangle approximation
+            x0 = int(np.clip(px_b - pw2, 0, size-1))
+            y0 = int(np.clip(py_b - pl2, 0, size-1))
+            x1 = int(np.clip(px_b + pw2, 0, size-1))
+            y1 = int(np.clip(py_b + pl2, 0, size-1))
+            cv2.rectangle(img, (x0, y0), (x1, y1), box["color"], 2)
+            # Corner dots for 3D box feel
+            for corner in [(x0,y0),(x1,y0),(x0,y1),(x1,y1)]:
+                cv2.circle(img, corner, 2, box["color"], -1)
+
+        # Feature 4: Object labels + speed
+        for box in anns["boxes"]:
+            px_b, py_b = box["px"], box["py"]
+            if not (0 < px_b < size and 0 < py_b < size):
+                continue
+            label = box["label"]
+            speed = box["speed"]
+            if speed > 0.3:
+                label_text = f"{label} {speed:.1f}m/s"
+            else:
+                label_text = label
+            # Small label above box
+            lx = int(np.clip(px_b - box["pw"]//2, 2, size-60))
+            ly = int(np.clip(py_b - box["pl"]//2 - 4, 10, size-4))
+            cv2.putText(img, label_text, (lx, ly),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.25, box["color"], 1, cv2.LINE_AA)
+
+    # Feature 5: Ego vehicle (white car shape — rectangle with direction arrow)
+    car_w, car_l = int(1.0*sc), int(2.2*sc)
+    cv2.rectangle(img, (cx-car_w, cy-car_l), (cx+car_w, cy+car_l), (255,255,255), -1)
+    cv2.rectangle(img, (cx-car_w, cy-car_l), (cx+car_w, cy+car_l), (200,200,200), 1)
+    # Direction arrow (forward = up in BEV)
+    cv2.arrowedLine(img, (cx, cy+car_l//2), (cx, cy-car_l),
+                   (0, 255, 0), 2, tipLength=0.3)
     # Trajectory
     prev = None
     for i,(xv,yv) in enumerate(traj):
@@ -551,7 +707,22 @@ def run_demo(sample_idx, fault_cam1, fault_cam2, fault_cam3,
         llm_traj = traj * scale + noise
         llm_traj = np.clip(llm_traj, -19, 19)
 
+    _sample_token = row.get('sample_token') if isinstance(row, dict) else None
+    _ego_xy = None
+    if _sample_token:
+        try:
+            _n = get_nusc()
+            print(f'get_nusc returned: {_n}')
+            if _n:
+                _s = _n.get('sample', _sample_token)
+                _sd = _n.get('sample_data', _s['data']['LIDAR_TOP'])
+                _ep = _n.get('ego_pose', _sd['ego_pose_token'])
+                _ego_xy = _ep['translation'][:2]
+                print(f'ego_xy set: {_ego_xy}')
+        except Exception as _e:
+            print(f'ego_xy error: {_e}')
     bev_img = draw_bev(occ, traj, trust, fault_per_cam, gt_occ, size=420, mode=mode[0],
+                       sample_token=_sample_token, ego_xy=_ego_xy,
                    llm_traj=llm_traj, show_forecast=show_forecast,
                    forecast_frame=forecast_frame, sparse_mode=sparse_mode)
     cam_grid    = draw_camera_grid(cams, fault_per_cam, trust)
