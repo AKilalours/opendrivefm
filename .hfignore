@@ -16,3 +16,8 @@ __pycache__/
 .Rhistory
 .gradio/
 *.egg-info/
+dataset/
+outputs/artifacts/nuscenes_labels/
+outputs/artifacts/nuscenes_labels_128/
+scripts/build/
+*.ckpt
