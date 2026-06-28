@@ -63,66 +63,58 @@ def get_nusc():
                 print(f'nuScenes error: {e}')
     return None
 
+_bev_precomputed_cache = None
+def _load_bev_precomputed():
+    global _bev_precomputed_cache
+    if _bev_precomputed_cache is not None:
+        return _bev_precomputed_cache
+    import json, os
+    for path in [
+        str(ROOT.parent/'outputs/artifacts/bev_annotations_precomputed.json'),
+        '/app/outputs/artifacts/bev_annotations_precomputed.json',
+        'outputs/artifacts/bev_annotations_precomputed.json',
+    ]:
+        if os.path.exists(path):
+            with open(path) as f:
+                _bev_precomputed_cache = json.load(f)
+            print(f'[BEV] Loaded precomputed annotations from {path}: {len(_bev_precomputed_cache)} samples')
+            return _bev_precomputed_cache
+    print('[BEV] No precomputed annotations file found')
+    _bev_precomputed_cache = {}
+    return _bev_precomputed_cache
+
 def get_bev_annotations(sample_token, ego_xy, bev_range=20.0, size=400):
-    nusc = get_nusc()
+    import numpy as np
     sc = size / (2.0 * bev_range)
     cx = cy = size // 2
     result = {'boxes': [], 'map_patches': []}
-    if nusc is None or not sample_token or ego_xy is None:
+    if not sample_token or ego_xy is None:
         return result
-    try:
-        import numpy as np
-        sample = nusc.get('sample', sample_token)
-        ego_x, ego_y = float(ego_xy[0]), float(ego_xy[1])
-        for ann_token in sample['anns']:
-            ann = nusc.get('sample_annotation', ann_token)
-            t = ann['translation']
-            dx, dy = t[0]-ego_x, t[1]-ego_y
-            if abs(dx) > bev_range*1.3 or abs(dy) > bev_range*1.3:
-                continue
-            px = int(cx + dy*sc)
-            py = int(cy - dx*sc)
-            cat = ann['category_name']
-            if 'car' in cat or 'truck' in cat or 'bus' in cat:
-                color=(0,255,0); label='CAR'
-            elif 'bicycle' in cat or 'motorcycle' in cat:
-                color=(0,220,255); label='BIKE'
-            elif 'human' in cat or 'pedestrian' in cat:
-                color=(0,120,255); label='PED'
-            else:
-                color=(180,180,180); label=cat.split('.')[-1][:4].upper()
-            try:
-                vel = nusc.box_velocity(ann_token)[:2]
-                speed = float(np.linalg.norm(vel))
-            except:
-                speed = 0.0
-            w_px = max(4, int(ann['size'][0]*sc))
-            l_px = max(6, int(ann['size'][1]*sc))
-            result['boxes'].append({'px':px,'py':py,'pw':w_px,'pl':l_px,
-                                    'color':color,'label':label,'speed':speed})
-        try:
-            from nuscenes.map_expansion.map_api import NuScenesMap
-            scene = nusc.get('scene', sample['scene_token'])
-            log = nusc.get('log', scene['log_token'])
-            nusc_map = NuScenesMap(dataroot=nusc.dataroot, map_name=log['location'])
-            patch = (ego_x-bev_range, ego_y-bev_range, ego_x+bev_range, ego_y+bev_range)
-            recs = nusc_map.get_records_in_patch(patch, ['lane','lane_connector'], mode='intersect')
-            for layer in ['lane','lane_connector']:
-                for token in recs[layer][:30]:
-                    record = nusc_map.get(layer, token)
-                    poly = nusc_map.get('polygon', record['polygon_token'])
-                    nodes = [nusc_map.get('node', n) for n in poly['exterior_node_tokens']]
-                    pts = []
-                    for node in nodes:
-                        ddx, ddy = node['x']-ego_x, node['y']-ego_y
-                        bx = int(cx+ddy*sc); by = int(cy-ddx*sc)
-                        pts.append((bx,by))
-                    if len(pts)>=2:
-                        result['map_patches'].append(pts)
-        except:
-            pass
-    except Exception as e:
-        print(f'BEV ann error: {e}')
+    data = _load_bev_precomputed()
+    entry = data.get(sample_token)
+    if entry is None:
+        return result
+    ego_x, ego_y = float(ego_xy[0]), float(ego_xy[1])
+    for box in entry.get('boxes', []):
+        t = box['translation']
+        dx, dy = t[0]-ego_x, t[1]-ego_y
+        if abs(dx) > bev_range*1.3 or abs(dy) > bev_range*1.3:
+            continue
+        px = int(cx + dy*sc)
+        py = int(cy - dx*sc)
+        cat = box['category']
+        if 'car' in cat or 'truck' in cat or 'bus' in cat:
+            color=(0,255,0); label='CAR'
+        elif 'bicycle' in cat or 'motorcycle' in cat:
+            color=(0,220,255); label='BIKE'
+        elif 'human' in cat or 'pedestrian' in cat:
+            color=(0,120,255); label='PED'
+        else:
+            color=(180,180,180); label=cat.split('.')[-1][:4].upper()
+        w_px = max(4, int(box['size'][0]*sc))
+        l_px = max(6, int(box['size'][1]*sc))
+        result['boxes'].append({'px':px,'py':py,'pw':w_px,'pl':l_px,
+                                'color':color,'label':label,'speed':box.get('speed',0.0)})
     return result
 sys.path.insert(0, str(ROOT / "src"))
 
