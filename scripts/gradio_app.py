@@ -386,6 +386,7 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
                    cv2.FONT_HERSHEY_SIMPLEX,0.3,(60,60,60),1)
     # ── HD Map + 3D Boxes + LiDAR (nuScenes features) ────────────────────────
     if sample_token and ego_xy is not None:
+      try:
         anns = get_bev_annotations(sample_token, ego_xy, bev_range=20.0, size=size)
 
         # Feature 1: HD Map — lane lines (yellow) + drivable surface
@@ -444,6 +445,8 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
             ly = int(np.clip(py_b - box["pl"]//2 - 4, 10, size-4))
             cv2.putText(img, label_text, (lx, ly),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.25, box["color"], 1, cv2.LINE_AA)
+      except Exception as _bev_e:
+          print(f'[BEV] annotation drawing error (non-fatal): {_bev_e}')
 
     # Feature 5: Ego vehicle (white car shape — rectangle with direction arrow)
     car_w, car_l = int(1.0*sc), int(2.2*sc)
