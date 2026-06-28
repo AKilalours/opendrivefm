@@ -369,6 +369,7 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
     for i in range(0, size, size//8):
         cv2.line(img,(i,0),(i,size),(28,28,28),1)
         cv2.line(img,(0,i),(size,i),(28,28,28),1)
+    print(f'[BEV TRACE] draw_bev started, occ shape={occ.shape if hasattr(occ,"shape") else type(occ)}')
     # Prediction heatmap
     pred = np.where(occ > OCC_THRESHOLD, occ, 0.0)
     pred_up = cv2.resize(pred, (size,size), interpolation=cv2.INTER_NEAREST)
@@ -384,6 +385,7 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
         cv2.circle(img,(cx,cy),int(dm*sc),(45,45,45),1)
         cv2.putText(img,f"{dm}m",(cx+int(dm*sc)+2,cy-3),
                    cv2.FONT_HERSHEY_SIMPLEX,0.3,(60,60,60),1)
+    print(f'[BEV TRACE] heatmap+rings drawn ok, about to do annotations sample_token={sample_token}')
     # ── HD Map + 3D Boxes + LiDAR (nuScenes features) ────────────────────────
     if sample_token and ego_xy is not None:
       try:
@@ -558,6 +560,7 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
         cv2.putText(img, label, (8, size-banner_h+38),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255,255,255), 1, cv2.LINE_AA)
 
+    print("[BEV TRACE] draw_bev finished successfully")
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 
