@@ -370,7 +370,8 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
              size=400, mode="T", llm_traj=None,
              show_forecast=False, forecast_frame="t+1 (0.5s ahead)",
              sparse_mode="dense",
-             sample_token=None, ego_xy=None) -> np.ndarray:
+             sample_token=None, ego_xy=None,
+             vlm_caption=None) -> np.ndarray:
     img = np.zeros((size,size,3), np.uint8) + 15
     # Grid
     for i in range(0, size, size//8):
@@ -547,6 +548,21 @@ def draw_bev(occ, traj, trust, fault_per_cam, gt_occ,
             cv2.rectangle(img,(bx,size-10),(bx+bw,size-2),(40,40,40),1)
         cv2.putText(img,"TRUST WEIGHTS: green=high  red=de-weighted",
                    (3,size-12),cv2.FONT_HERSHEY_SIMPLEX,0.28,(200,200,200),1)
+    # VLM Advisory Banner -- purely cosmetic overlay, NEVER feeds into detection
+    # Production AV pattern: VLM caption is advisory-only, parallel to perception,
+    # displayed but never used to alter occupancy/box/trust computation above.
+    if vlm_caption:
+        banner_h = 50
+        cv2.rectangle(img, (0, size-banner_h), (size, size), (15,15,15), -1)
+        cv2.rectangle(img, (0, size-banner_h), (size, size), (0,200,255), 2)
+        cv2.putText(img, "VLM ADVISORY (BLIP):", (8, size-banner_h+18),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0,220,255), 1, cv2.LINE_AA)
+        label = str(vlm_caption)
+        if len(label) > 50:
+            label = label[:47] + "..."
+        cv2.putText(img, label, (8, size-banner_h+38),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255,255,255), 1, cv2.LINE_AA)
+
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 
@@ -673,6 +689,7 @@ def run_demo(sample_idx, fault_cam1, fault_cam2, fault_cam3,
              fault_cam4, fault_cam5, fault_cam6, mode,
              show_forecast, llm_active, sparse_mode="dense", forecast_frame="t+1"):
     """Main Gradio inference — returns all panels."""
+    print('[RUN_DEMO] ENTERED run_demo function')
     fault_per_cam = [
         ["CLEAN","BLUR","GLARE","OCCLUDE","NOISE","RAIN","SNOW (UNSEEN)","FOG (UNSEEN)"].index(fault_cam1),
         ["CLEAN","BLUR","GLARE","OCCLUDE","NOISE","RAIN","SNOW (UNSEEN)","FOG (UNSEEN)"].index(fault_cam2),
@@ -730,10 +747,26 @@ def run_demo(sample_idx, fault_cam1, fault_cam2, fault_cam3,
                 print(f'ego_xy set: {_ego_xy}')
         except Exception as _e:
             print(f'ego_xy error: {_e}')
+    # Generate VLM advisory caption BEFORE drawing BEV (purely cosmetic overlay)
+    _vlm_caption_for_bev = None
+    print(f'[VLM DEBUG] module_available={_VLM_MODULE_AVAILABLE}')
+    if _VLM_MODULE_AVAILABLE:
+        try:
+            _front_img = cams.get("CAM_FRONT")
+            print(f'[VLM DEBUG] front_img is None: {_front_img is None}')
+            if _front_img is not None:
+                _vlm_caption_for_bev = caption_scene(_front_img)
+                print(f'[VLM DEBUG] caption set: {_vlm_caption_for_bev}')
+        except Exception as _e:
+            print(f'[VLM] BEV overlay caption error: {_e}')
+
     bev_img = draw_bev(occ, traj, trust, fault_per_cam, gt_occ, size=420, mode=mode[0],
                        sample_token=_sample_token, ego_xy=_ego_xy,
                    llm_traj=llm_traj, show_forecast=show_forecast,
-                   forecast_frame=forecast_frame, sparse_mode=sparse_mode)
+                   forecast_frame=forecast_frame, sparse_mode=sparse_mode,
+                   vlm_caption=_vlm_caption_for_bev)
+    cv2.imwrite('/tmp/bev_debug.png', cv2.cvtColor(bev_img, cv2.COLOR_RGB2BGR))
+    print('[DEBUG] Saved BEV to /tmp/bev_debug.png')
     cam_grid    = draw_camera_grid(cams, fault_per_cam, trust)
     trust_panel = draw_trust_panel(trust, fault_per_cam, mode[0])
 
@@ -838,25 +871,23 @@ The CameraTrustScorer still detects them because:
     vlm_md = "*(VLM tab not yet run — click Run Inference again or wait for model load)*"
     if _VLM_MODULE_AVAILABLE:
         try:
-            front_img = cams.get("CAM_FRONT")
-            if front_img is not None:
-                t_vlm0 = time.time()
-                caption = caption_scene(front_img)
-                vlm_ms = (time.time() - t_vlm0) * 1000
-                n_obj = sum(1 for f in fault_per_cam if f == 0)  # rough proxy
-                narrative = fuse_vlm_with_trust(caption, trust, n_objects=n_obj)
-                vlm_md = (
-                    f"### 🤖 VLM Scene Caption (BLIP — real vision-language generation)\n\n"
-                    f"> \"{caption}\"\n\n"
-                    f"**Inference time:** {vlm_ms:.0f} ms\n\n"
-                    f"---\n\n"
-                    f"### 🔗 Fused Safety Narrative (VLM + Trust + Occupancy)\n\n"
-                    f"{narrative}\n\n"
-                    f"---\n\n"
-                    f"*Real BLIP vision-language model (Salesforce/blip-image-captioning-base). "
-                    f"Image pixels → ViT encoder → cross-attention → autoregressive language decoder. "
-                    f"Not a template — genuine joint vision-language inference.*"
-                )
+            t_vlm0 = time.time()
+            caption = _vlm_caption_for_bev if _vlm_caption_for_bev else caption_scene(cams.get("CAM_FRONT"))
+            vlm_ms = (time.time() - t_vlm0) * 1000
+            n_obj = sum(1 for f in fault_per_cam if f == 0)  # rough proxy
+            narrative = fuse_vlm_with_trust(caption, trust, n_objects=n_obj)
+            vlm_md = (
+                f"### 🤖 VLM Scene Caption (BLIP — real vision-language generation)\n\n"
+                f"> \"{caption}\"\n\n"
+                f"**Inference time:** {vlm_ms:.0f} ms\n\n"
+                f"---\n\n"
+                f"### 🔗 Fused Safety Narrative (VLM + Trust + Occupancy)\n\n"
+                f"{narrative}\n\n"
+                f"---\n\n"
+                f"*Real BLIP vision-language model (Salesforce/blip-image-captioning-base). "
+                f"Image pixels → ViT encoder → cross-attention → autoregressive language decoder. "
+                f"Not a template — genuine joint vision-language inference.*"
+            )
         except Exception as e:
             vlm_md = f"*(VLM error: {e})*"
 
