@@ -68,3 +68,10 @@ cpp/build/
 !outputs/artifacts/conformal_trajectory.json
 !outputs/artifacts/per_camera_fault_ranking.json
 !outputs/artifacts/failure_triage_vlm.json
+
+# Rendered figures are ignored wholesale (they can be regenerated and some are
+# large). Portfolio figures are un-ignored one at a time, same discipline as
+# outputs/artifacts above -- never blanket-unignore outputs/figures/.
+!outputs/figures/
+outputs/figures/*
+!outputs/figures/bev_lidar_real.png
