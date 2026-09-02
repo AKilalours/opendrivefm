@@ -1,0 +1,57 @@
+{
+  "frames": 40,
+  "min_speed_mps": 0.5,
+  "min_committed_points": 5,
+  "boxes_with_returns": 3354,
+  "boxes_scored": 763,
+  "coverage": 0.2275,
+  "moving_boxes_in_scored_set": 91,
+  "sweeps": [
+    {
+      "threshold": 0.2,
+      "tp": 61,
+      "fp": 48,
+      "fn": 30,
+      "tn": 624,
+      "precision": 0.5596,
+      "recall": 0.6703,
+      "f1": 0.61
+    },
+    {
+      "threshold": 0.35,
+      "tp": 50,
+      "fp": 29,
+      "fn": 41,
+      "tn": 643,
+      "precision": 0.6329,
+      "recall": 0.5495,
+      "f1": 0.5882
+    },
+    {
+      "threshold": 0.5,
+      "tp": 36,
+      "fp": 19,
+      "fn": 55,
+      "tn": 653,
+      "precision": 0.6545,
+      "recall": 0.3956,
+      "f1": 0.4932
+    }
+  ],
+  "best": {
+    "threshold": 0.2,
+    "tp": 61,
+    "fp": 48,
+    "fn": 30,
+    "tn": 624,
+    "precision": 0.5596,
+    "recall": 0.6703,
+    "f1": 0.61
+  },
+  "caveats": [
+    "Box-level, not point-level: nuScenes has no per-point motion label.",
+    "Speed is differenced between adjacent keyframes at 2 Hz, so slow objects near the 0.5 m/s threshold are noisy ground truth.",
+    "The classifier abstains outside the previous scan's observed free space; only 23% of boxes with returns reach 5 committed points and enter the score.",
+    "Ground truth is annotation-derived, so any nuScenes annotation error propagates directly into these numbers."
+  ]
+}

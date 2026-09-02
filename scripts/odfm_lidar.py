@@ -29,10 +29,20 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "outputs/artifacts/lidar_manifest.json"
 
-# Points closer than this are the ego vehicle's own roof rack and mounting
-# hardware. nuScenes does not remove them; they show up as a dense blob at the
-# origin that dominates any density-based colouring if left in.
-EGO_SELF_RETURN_RADIUS = 1.0
+# The ego vehicle's own bodywork returns. nuScenes does not remove them.
+#
+# These must be excluded by FOOTPRINT, in the capture-time ego frame, not by
+# radius in the sensor frame. Two reasons, both of which bit this file:
+#   * the sensor sits at (0.94, 0.00, 1.84) in the ego frame, so a radius
+#     around the sensor is not a radius around the car -- self-returns were
+#     measured out to 3.0 m along +x while a 1.0 m sensor-frame cut kept them.
+#   * left in, they read as an obstacle at ~0.6 m on nearly every bearing, so
+#     the occupancy ray-cast shadowed the ego vehicle behind itself and the
+#     grid came out 94% unknown.
+# Extents are the nuScenes Renault Zoe footprint about the rear-axle ego
+# origin, with a small margin.
+EGO_BOX_X = (-1.4, 3.3)
+EGO_BOX_Y = (-1.0, 1.0)
 
 
 def quat_to_rot(q) -> np.ndarray:
@@ -108,12 +118,20 @@ def load_sweep_stack(sample_token: str, manifest: dict, n_sweeps: int = 10,
     for age, rec in enumerate(recs):
         raw = load_bin(rec["path"])
         xyz = raw[:, :3].astype(np.float64)
+
+        # sensor -> the ego frame AT CAPTURE TIME. Self-returns are fixed
+        # relative to the vehicle, so this is the only frame in which a fixed
+        # footprint removes them; in the reference ego frame an older sweep's
+        # self-returns land wherever the car used to be and smear into a trail.
+        cap = xyz @ quat_to_rot(rec["cal_rot"]).T + np.asarray(
+            rec["cal_trans"], dtype=np.float64)
         if drop_self_returns:
-            keep = np.linalg.norm(xyz[:, :2], axis=1) > EGO_SELF_RETURN_RADIUS
-            raw, xyz = raw[keep], xyz[keep]
+            keep = ~((cap[:, 0] > EGO_BOX_X[0]) & (cap[:, 0] < EGO_BOX_X[1]) &
+                     (cap[:, 1] > EGO_BOX_Y[0]) & (cap[:, 1] < EGO_BOX_Y[1]))
+            raw, xyz, cap = raw[keep], xyz[keep], cap[keep]
+
         if age == 0:
-            ego = xyz @ quat_to_rot(rec["cal_rot"]).T + np.asarray(
-                rec["cal_trans"], dtype=np.float64)
+            ego = cap
         else:
             ego = _global_to_ego(_sensor_to_global(xyz, rec), ref)
         block = np.empty((ego.shape[0], 6), dtype=np.float32)

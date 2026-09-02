@@ -1,0 +1,78 @@
+{
+  "sample_token": "5fda58ee3ae44ab9b4bbac7a2de66c27",
+  "scene": "scene-0061",
+  "index": 30,
+  "n_sweeps": 10,
+  "points": 266180,
+  "points_current_sweep": 26676,
+  "ground_plane": {
+    "normal": [
+      0.00237,
+      -0.03528,
+      0.99937
+    ],
+    "d": -0.1819,
+    "tilt_deg": 2.026,
+    "ground_return_frac": 0.5501
+  },
+  "occupancy": {
+    "cells": 46656,
+    "free_frac": 0.08715,
+    "occupied_frac": 0.00962,
+    "unknown_frac": 0.90323,
+    "observed_frac": 0.09677,
+    "res": 0.5,
+    "rng_m": 54.0,
+    "n": 216
+  },
+  "motion": {
+    "old_from": 5,
+    "res": 0.25,
+    "max_range": 40.0,
+    "n_current_obstacle": 10566,
+    "dynamic_frac": 0.016,
+    "undecided_frac": 0.7798,
+    "n_dynamic": 169
+  },
+  "boxes": {
+    "total": 116,
+    "with_lidar_returns": 79
+  },
+  "cameras": {
+    "CAM_FRONT_LEFT": {
+      "trust": 0.795,
+      "mean_coverage_weight": 0.0338
+    },
+    "CAM_FRONT": {
+      "trust": 0.795,
+      "mean_coverage_weight": 0.0329
+    },
+    "CAM_FRONT_RIGHT": {
+      "trust": 0.795,
+      "mean_coverage_weight": 0.0336
+    },
+    "CAM_BACK_LEFT": {
+      "trust": 0.795,
+      "mean_coverage_weight": 0.0347
+    },
+    "CAM_BACK": {
+      "trust": 0.31,
+      "mean_coverage_weight": 0.0318
+    },
+    "CAM_BACK_RIGHT": {
+      "trust": 0.795,
+      "mean_coverage_weight": 0.0343
+    }
+  },
+  "integrity": {
+    "mean": 0.13672,
+    "median": 0.04396,
+    "frac_below_0.3": 0.86098,
+    "frac_above_0.7": 0.06848,
+    "mean_over_free_space": 0.3525,
+    "free_cells_below_0.3": 0.50836
+  },
+  "fault_camera": "CAM_BACK",
+  "figure": "outputs/figures/scene_view_CAM_BACK.png",
+  "seconds": 1.91
+}

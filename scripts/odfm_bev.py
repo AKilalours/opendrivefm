@@ -77,7 +77,8 @@ def _class_colour(name):
 
 def render_bev(points, boxes=None, rng_m=54.0, size=1100, ss=3,
                z_lo=-0.5, z_hi=4.5, title=None, subtitle=None,
-               show_rings=True, max_age=10):
+               show_rings=True, max_age=10, motion=None, dynamic_label=1,
+               canopy_above=None, canopy_fade=0.30):
     """points: (N, 6) x, y, z, intensity, ring, age -- ego frame, x forward.
 
     Returns an RGB uint8 array of shape (size, size, 3).
@@ -102,9 +103,28 @@ def render_bev(points, boxes=None, rng_m=54.0, size=1100, ss=3,
         t = np.clip((z - z_lo) / max(1e-6, z_hi - z_lo), 0.0, 1.0)
         rgb = cm.get_cmap("turbo")(t)[:, :3].astype(np.float32) * 255.0
 
+        # Motion overrides height. A moving object's height tells you nothing
+        # a planner needs; that it is moving tells you everything, so dynamic
+        # returns are pulled out of the height ramp entirely rather than tinted
+        # within it, where they would be indistinguishable from a kerb.
+        if motion is not None:
+            mv = np.asarray(motion)[ok] == dynamic_label
+            if mv.any():
+                rgb[mv] = np.array([255.0, 74.0, 122.0], np.float32)
+
         # intensity lifts a return without ever letting it vanish: a 0-intensity
         # point is still a real return and must still be drawn.
         b = 0.50 + 0.50 * np.clip(inten / 48.0, 0.0, 1.0)
+
+        # Push tree canopy, awnings and building upper storeys into the
+        # background. They are real returns and they are not driving-relevant,
+        # and in a scene with heavy foliage they otherwise pin the top of the
+        # height ramp and repaint half the picture red -- which reads as
+        # dramatic and hides the kerbs and vehicles that actually matter.
+        # Dimmed rather than dropped: the canopy still marks where the trees
+        # are, it just stops competing for attention.
+        if canopy_above is not None:
+            b = b * np.where(z > canopy_above, canopy_fade, 1.0)
         # history fades but never to zero, so accumulated structure still reads
         a = (1.0 - 0.62 * np.clip(age / max(1, max_age), 0.0, 1.0)).astype(np.float32)
         w = (a * b).astype(np.float32)
@@ -216,3 +236,55 @@ def _draw_ego(d, cx, cy, mpp):
               fill=(255, 255, 255, 40), outline=(255, 255, 255, 210))
     d.polygon([(cx, cy - hx - 9), (cx - 6, cy - hx + 1), (cx + 6, cy - hx + 1)],
               fill=(255, 255, 255, 230))
+
+
+# ---------------------------------------------------------------------------
+# semantic layers: occupancy and integrity
+# ---------------------------------------------------------------------------
+
+def _grid_to_screen(a):
+    """A BEV array indexed [x_forward, y_left] -> an image with forward up and
+    left on the left. Done in one place because getting it wrong produces a
+    mirrored map that still looks entirely reasonable."""
+    return np.flipud(np.fliplr(np.asarray(a).T)).T[::-1, ::-1].T
+
+
+def render_occupancy(grid, size=560, title=None, subtitle=None, ego=True):
+    """Ray-cast occupancy: UNKNOWN / FREE / OCCUPIED."""
+    pal = np.array([[14, 16, 21], [30, 96, 82], [242, 126, 96]], np.uint8)
+    img = pal[np.asarray(grid)]
+    img = np.flipud(np.fliplr(img))
+    out = Image.fromarray(img).resize((size, size), Image.NEAREST)
+    d = ImageDraw.Draw(out, "RGBA")
+    if ego:
+        c = size / 2
+        d.polygon([(c, c - 7), (c - 5, c + 6), (c + 5, c + 6)],
+                  fill=(255, 255, 255, 235))
+    if title:
+        d.rectangle([0, 0, size, 28], fill=(8, 10, 15, 224))
+        d.text((10, 6), title, fill=TEXT, font=_font(14))
+    if subtitle:
+        d.rectangle([0, size - 22, size, size], fill=(8, 10, 15, 224))
+        d.text((10, size - 17), subtitle, fill=DIM, font=_font(11))
+    return np.array(out)
+
+
+def render_integrity(integ, size=560, title=None, subtitle=None, ego=True):
+    """Perception Integrity Map, 0 (no trustworthy camera evidence) to 1."""
+    from matplotlib import cm as _cm
+    a = np.clip(np.asarray(integ, np.float64), 0, 1)
+    img = (_cm.get_cmap("magma")(a)[:, :, :3] * 255).astype(np.uint8)
+    img = np.flipud(np.fliplr(img))
+    out = Image.fromarray(img).resize((size, size), Image.BILINEAR)
+    d = ImageDraw.Draw(out, "RGBA")
+    if ego:
+        c = size / 2
+        d.polygon([(c, c - 7), (c - 5, c + 6), (c + 5, c + 6)],
+                  fill=(120, 255, 220, 240))
+    if title:
+        d.rectangle([0, 0, size, 28], fill=(8, 10, 15, 224))
+        d.text((10, 6), title, fill=TEXT, font=_font(14))
+    if subtitle:
+        d.rectangle([0, size - 22, size, size], fill=(8, 10, 15, 224))
+        d.text((10, size - 17), subtitle, fill=DIM, font=_font(11))
+    return np.array(out)

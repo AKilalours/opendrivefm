@@ -75,3 +75,7 @@ cpp/build/
 !outputs/figures/
 outputs/figures/*
 !outputs/figures/bev_lidar_real.png
+!outputs/figures/scene_view.png
+!outputs/figures/scene_view_CAM_BACK.png
+!outputs/artifacts/scene_view*.json
+!outputs/artifacts/motion_separation_report.json
