@@ -222,6 +222,30 @@ BODY = r"""
       </div>
     </section>
 
+    <!-- ============ MODELS ============ -->
+    <section class="page" data-p="models">
+      <div class="sec"><h2>Learned trajectory model vs geometric baselines</h2>
+        <span class="note" id="mdNote"></span></div>
+      <div class="grid2">
+        <div class="card pad"><table id="mdAde"></table>
+          <div id="mdBars" style="margin-top:12px"></div></div>
+        <div class="card pad">
+          <div class="sec"><h2>BEV occupancy head</h2></div>
+          <table id="mdOcc"></table>
+          <div class="warnbox" style="margin-top:10px" id="mdLoad"></div></div>
+      </div>
+      <div class="hr"></div>
+      <div class="grid2">
+        <div class="card pad"><div class="sec"><h2>VLA &mdash; vision to action through a language model</h2></div>
+          <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
+               id="vlaArch"></div>
+          <table id="vlaTable"></table>
+          <div id="vlaNotes" style="margin-top:10px"></div></div>
+        <div class="card pad"><div class="sec"><h2>VLM &mdash; scene captioning</h2></div>
+          <div id="vlmBox"></div></div>
+      </div>
+    </section>
+
     <!-- ============ INTEGRITY ============ -->
     <section class="page" data-p="integrity">
       <div class="grid2">
@@ -300,7 +324,7 @@ SCRIPT = r"""
 const D = window.__ODFM__;
 const F = D.frames, R = D.reports;
 const CAMS = ["CAM_FRONT_LEFT","CAM_FRONT","CAM_FRONT_RIGHT","CAM_BACK_LEFT","CAM_BACK","CAM_BACK_RIGHT"];
-const PAGES = ["overview","perception","forecast","integrity","validation","failures","performance","system"];
+const PAGES = ["overview","perception","forecast","models","integrity","validation","failures","performance","system"];
 let fi = 0, ov = "boxes", sel = null, timer = null;
 
 const scenes = [...new Set(F.map(f => f.scene))];
@@ -464,7 +488,7 @@ function draw() {
   const K = [
     ["Occupancy IoU T+1", fx(fc1?.persistence?.iou), ""],
     ["Forecast F1 T+1", fx(fc1?.persistence?.f1), ""],
-    ["Ego ADE T+1", fx(ade?.constant_velocity?.ade_m, 2), "m"],
+    ["Ego ADE T+1", fx(R.learned_model_report?.trajectory_ade?.["T+1 (0.5s)"]?.learned_v11_temporal?.ade_m, 3), "m"],
     ["Motion F1", fx(mo?.f1), ""],
     ["Integrity AUROC", fx(iv?.auroc), ""],
     ["Integrity (frame)", fx(s.integrity_mean_drivable), ""],
@@ -572,6 +596,57 @@ function fillStatic() {
       tm.optimisation, tm.caveat].map(t => "<div style='margin-bottom:7px'>" + t + "</div>").join("");
   }
 
+  /* ---------- models page ---------- */
+  const lm = R.learned_model_report;
+  if (lm) {
+    $("#mdNote").textContent = `${lm.samples} keyframes · ${lm.checkpoint} · ${lm.inference_ms_per_sample} ms/sample on ${lm.hardware.split(",")[0]}`;
+    const hs = Object.keys(lm.trajectory_ade);
+    $("#mdAde").innerHTML = `<tr><th>horizon</th><th>static</th><th>const-vel</th><th>learned</th><th>vs CV</th></tr>` +
+      hs.map(h => { const r = lm.trajectory_ade[h];
+        return `<tr><td>${h}</td><td class="d">${r.static.ade_m.toFixed(2)}</td>
+          <td>${r.constant_velocity.ade_m.toFixed(3)}</td>
+          <td class="a">${r.learned_v11_temporal.ade_m.toFixed(3)}</td>
+          <td class="g">${r.delta_vs_cv_pct.toFixed(1)}%</td></tr>`; }).join("");
+    const mx = Math.max(...hs.map(h => lm.trajectory_ade[h].constant_velocity.ade_m));
+    $("#mdBars").innerHTML = hs.slice(0, 3).map(h => { const r = lm.trajectory_ade[h];
+      return bar(h + " const-vel", r.constant_velocity.ade_m, mx, "var(--warn)") +
+             bar(h + " learned", r.learned_v11_temporal.ade_m, mx, "var(--acc)"); }).join("");
+    const o = lm.occupancy.best;
+    $("#mdOcc").innerHTML = `<tr><th>metric</th><th>value</th></tr>` +
+      [["IoU", o.iou], ["precision", o.precision], ["recall", o.recall], ["F1", o.f1],
+       ["threshold", o.threshold]].map(([k, v]) =>
+      `<tr><td>${k}</td><td class="${k === "IoU" ? "a" : ""}">${v.toFixed ? v.toFixed(4) : v}</td></tr>`).join("");
+    $("#mdLoad").textContent = lm.weights_loaded;
+  }
+  const vla = R.vla_report;
+  if (vla) {
+    $("#vlaArch").textContent = vla.architecture;
+    const hs = Object.keys(vla.val_ade_m);
+    $("#vlaTable").innerHTML = `<tr><th>horizon</th><th>const-vel</th><th>VLA</th></tr>` +
+      hs.map(h => { const r = vla.val_ade_m[h];
+        const better = r.vla_gpt2_projector < r.constant_velocity;
+        return `<tr><td>${h}</td><td>${r.constant_velocity.toFixed(3)}</td>
+          <td class="${better ? "g" : "b"}">${r.vla_gpt2_projector.toFixed(3)}</td></tr>`; }).join("");
+    $("#vlaNotes").innerHTML =
+      `<div class="warnbox"><b>${vla.trainable_params_m}M trainable</b> projector,
+       ${vla.frozen_params_m}M frozen · ${vla.train_samples} train / ${vla.val_samples} val ·
+       ${vla.steps} steps. Runs end to end and beats the prior only at 6 s. With 64 training
+       samples and a frozen LM this repo previously damaged by an all-zero fine-tune, that is
+       what it should do &mdash; this demonstrates the mechanism, not a model result.</div>`;
+  }
+  const vlm = R.vlm_report;
+  if (vlm) {
+    $("#vlmBox").innerHTML =
+      `<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+         <span class="pill" style="border-color:var(--bad);color:var(--bad)">${vlm.status}</span>
+         <span class="mono" style="font-size:11.5px">${vlm.model}</span></div>
+       <div class="badbox">${vlm.reason}</div>
+       <div class="warnbox" style="margin-top:8px">${vlm.not_the_reason}</div>
+       <div style="margin-top:10px;font-size:11.5px;color:var(--dim)">
+         <b>Unblocks with:</b> ${vlm.unblocks_with}</div>
+       <div style="margin-top:8px;font-size:11.5px;color:var(--dim2)">${vlm.would_not_substitute}</div>`;
+  }
+
   /* hard-case mining across every loaded frame */
   const hard = [];
   F.forEach((f, i) => f.objects.forEach(o => hard.push({ ...o, fi: i, scene: f.scene })));
@@ -606,11 +681,13 @@ function fillStatic() {
     ["Camera projection + integrity map", "runs", "6-camera noisy-OR with occlusion ray-cast"],
     ["Occupancy forecast", "runs", "persistence + constant-velocity, geometric"],
     ["Ego trajectory baselines", "runs", "static / const-velocity / const-turn oracle"],
-    ["GPT-2 trajectory head", "blocked", "checkpoint trained on all-zero waypoints — needs retraining from label npz"],
-    ["BLIP vision-language captioning", "not run here", "needs torch + transformers; unreachable package index"],
-    ["VLA projector (LLaVA pattern)", "not run here", "training script present, needs torch"],
-    ["Sparse causal trajectory head", "not run here", "needs torch"],
-    ["Trust-weighted BEV pooling kernel", "not run here", "needs torch/MPS"],
+    ["v11_temporal checkpoint (occ + traj)", "runs", "151/169 tensors loaded; ADE beats const-velocity at every horizon"],
+    ["Trust head weights", "blocked", "checkpoint stores trust_scorer.cnn.*, model defines trust_scorer.trunk.* — name drift, 18 tensors"],
+    ["GPT-2 trajectory LM (as trained)", "blocked", "fine-tuned on all-zero waypoints — needs retraining from the label npz"],
+    ["VLA projector (LLaVA pattern)", "runs", "1.77M trainable on frozen backbone + frozen GPT-2; mechanism verified, 80 samples"],
+    ["BLIP vision-language captioning", "blocked", "huggingface.co 403 at the egress proxy — policy denial, not a missing dependency"],
+    ["Sparse causal trajectory head", "not run", "torch present now; no evaluation written yet"],
+    ["Trust-weighted BEV pooling kernel", "not run", "claims 4.5x on MPS; unverified on this CPU"],
     ["C++ runner (SPSC ring, latency stats)", "partial", "ring + latency stats present; integrity monitor not ported"],
   ];
   $("#sysTable").innerHTML = `<tr><th>component</th><th>state</th><th>detail</th></tr>` +

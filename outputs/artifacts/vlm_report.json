@@ -1,0 +1,9 @@
+{
+  "status": "BLOCKED",
+  "model": "Salesforce/blip-image-captioning-base",
+  "code": "scripts/vlm_scene_understanding.py",
+  "reason": "huggingface.co returns 403 at this environment's egress proxy \u2014 an organisation policy denial, not a missing dependency. torch and transformers are both installed and the captioning code imports cleanly; only the pretrained weights cannot be fetched.",
+  "not_the_reason": "Earlier notes in this project said the VLM was blocked because PyTorch was unavailable. That was true of the local machine and false of the cloud container, where torch 2.13 and transformers 5.16 install fine. The real and remaining blocker is the model-hub egress policy.",
+  "unblocks_with": "Any environment that can reach huggingface.co, or the BLIP weights copied in by hand the way the GPT-2 checkpoint was.",
+  "would_not_substitute": "A rule-based scene description generated from object counts and occupancy would be a template. The repo's own docstring is explicit that this component is a real VLM and not a template, so no stand-in caption is produced."
+}
