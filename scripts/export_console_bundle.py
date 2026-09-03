@@ -264,7 +264,10 @@ def main():
     reports = {}
     for name in ("occupancy_forecast_report", "integrity_visibility_report",
                  "motion_separation_report", "timing_report",
-                 "trajectory_ade_report"):
+                 "trajectory_ade_report", "learned_model_report",
+                 "vla_report", "vlm_report", "robustness_report",
+                 "trajlm_retrained_report", "kernel_bench_report",
+                 "cpp_report"):
         p = ROOT / f"outputs/artifacts/{name}.json"
         if p.exists():
             d = json.loads(p.read_text())

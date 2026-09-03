@@ -160,10 +160,14 @@ BODY = r"""
     <span class="pill mono" id="frameLbl">--</span>
     <button class="step" id="fn">&#9654;</button>
     <button class="pill" id="play">&#9654; Play</button></div>
-  <div class="grp"><span class="lab">Overlay</span>
+  <div class="grp"><span class="lab">Camera</span>
     <button class="pill ov" data-ov="plain">Raw</button>
     <button class="pill ov" data-ov="lidar">LiDAR</button>
     <button class="pill ov on" data-ov="boxes">3D Boxes</button></div>
+  <div class="grp"><span class="lab">World</span>
+    <button class="pill wl on" data-wl="bev">BEV</button>
+    <button class="pill wl" data-wl="bev_nodyn">Static only</button>
+    <button class="pill wl" data-wl="occupancy">Occupancy</button></div>
   <div class="live"><span class="dot"></span><span class="mono" id="ts">--</span></div>
 </div>
 
@@ -235,6 +239,12 @@ BODY = r"""
           <div class="warnbox" style="margin-top:10px" id="mdLoad"></div></div>
       </div>
       <div class="hr"></div>
+      <div class="hr"></div>
+      <div class="card pad"><div class="sec"><h2>Trajectory language model &mdash; three defects, three fixes</h2>
+        <span class="note" id="tlNote"></span></div>
+        <div class="grid3" id="tlFixes" style="margin-bottom:12px"></div>
+        <table id="tlTable"></table></div>
+      <div class="hr"></div>
       <div class="grid2">
         <div class="card pad"><div class="sec"><h2>VLA &mdash; vision to action through a language model</h2></div>
           <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
@@ -265,6 +275,20 @@ BODY = r"""
       <div class="card pad"><div id="inLevels"></div></div>
     </section>
 
+    <!-- ============ ROBUSTNESS ============ -->
+    <section class="page" data-p="robustness">
+      <div class="sec"><h2>Fault injection &mdash; one camera degraded at a time</h2>
+        <span class="note" id="rbNote"></span></div>
+      <div class="grid2">
+        <div class="card pad"><table id="rbTable"></table>
+          <div id="rbVerdict" style="margin-top:10px"></div></div>
+        <div class="card pad"><div class="sec"><h2>Trust separation</h2>
+          <span class="note">faulted camera vs the five untouched</span></div>
+          <div id="rbBars"></div>
+          <div class="badbox" style="margin-top:10px" id="rbGap"></div></div>
+      </div>
+    </section>
+
     <!-- ============ VALIDATION ============ -->
     <section class="page" data-p="validation">
       <div class="grid2">
@@ -279,24 +303,38 @@ BODY = r"""
     </section>
 
     <!-- ============ FAILURES ============ -->
-    <section class="page" data-p="failures">
-      <div class="sec"><h2>Hard cases &mdash; ranked by integrity at the object footprint</h2>
-        <span class="note">click to jump to the frame</span></div>
+    <section class="page" data-p="hardcases">
+      <div class="sec"><h2>Hard-case mining &mdash; every object ranked by camera observability</h2>
+        <span class="note">the data engine: which frames are worth labelling next. click any row to open it</span></div>
       <div class="card"><div class="objlist" id="hardList" style="max-height:none"></div></div>
       <div class="hr"></div>
       <div class="grid3" id="failStats"></div>
     </section>
 
-    <!-- ============ PERFORMANCE ============ -->
-    <section class="page" data-p="performance">
-      <div class="sec"><h2>Per-keyframe latency</h2><span class="note" id="perfNote"></span></div>
-      <div class="card pad"><div id="perfBars"></div></div>
+    <!-- ============ RUNTIME ============ -->
+    <section class="page" data-p="runtime">
+      <div class="sec"><h2>C++ deployment primitives</h2><span class="note" id="cppNote"></span></div>
+      <div class="grid2">
+        <div class="card pad"><div class="sec"><h2>SPSC ring handoff latency</h2></div>
+          <table id="cppTable"></table>
+          <div class="warnbox" style="margin-top:10px" id="cppFlaky"></div></div>
+        <div class="card pad"><div class="sec"><h2>Build</h2></div>
+          <div id="cppBuild" style="font-size:11.5px;color:var(--dim);line-height:1.65"></div></div>
+      </div>
       <div class="hr"></div>
       <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>Optimisation</h2></div><table id="perfTable"></table></div>
-        <div class="card pad"><div class="sec"><h2>Conditions</h2></div>
-          <div id="perfCond" style="font-size:11.5px;color:var(--dim);line-height:1.65"></div></div>
+        <div class="card pad"><div class="sec"><h2>Sparse attention &mdash; ms/forward</h2>
+          <span class="note">does sparsity pay?</span></div>
+          <table id="spTable"></table>
+          <div id="spNote" style="margin-top:8px;font-size:11.5px;color:var(--dim)"></div></div>
+        <div class="card pad"><div class="sec"><h2>Trust-weighted BEV pooling</h2></div>
+          <div id="bpBars"></div>
+          <div class="warnbox" style="margin-top:10px" id="bpNote"></div></div>
       </div>
+      <div class="hr"></div>
+      <div class="sec"><h2>Python pipeline latency</h2><span class="note" id="perfNote"></span></div>
+      <div class="card pad"><div id="perfBars"></div></div>
+      <div class="card pad" style="margin-top:10px"><table id="perfTable"></table></div>
     </section>
 
     <!-- ============ SYSTEM ============ -->
@@ -324,8 +362,8 @@ SCRIPT = r"""
 const D = window.__ODFM__;
 const F = D.frames, R = D.reports;
 const CAMS = ["CAM_FRONT_LEFT","CAM_FRONT","CAM_FRONT_RIGHT","CAM_BACK_LEFT","CAM_BACK","CAM_BACK_RIGHT"];
-const PAGES = ["overview","perception","forecast","models","integrity","validation","failures","performance","system"];
-let fi = 0, ov = "boxes", sel = null, timer = null;
+const PAGES = ["overview","perception","forecast","models","integrity","robustness","validation","hard cases","runtime","system"];
+let fi = 0, ov = "boxes", wl = "bev", sel = null, timer = null;
 
 const scenes = [...new Set(F.map(f => f.scene))];
 const $ = s => document.querySelector(s);
@@ -339,7 +377,7 @@ PAGES.forEach((p, i) => {
   const b = el("button", "rb" + (i === 0 ? " on" : ""), p);
   b.onclick = () => { document.querySelectorAll(".rb").forEach(x => x.classList.remove("on"));
     b.classList.add("on");
-    document.querySelectorAll(".page").forEach(x => x.classList.toggle("on", x.dataset.p === p)); };
+    document.querySelectorAll(".page").forEach(x => x.classList.toggle("on", x.dataset.p === p.replace(" ",""))); };
   $("#rail").appendChild(b);
 });
 
@@ -378,6 +416,11 @@ $("#play").onclick = e => {
 document.querySelectorAll(".ov").forEach(b => b.onclick = () => {
   ov = b.dataset.ov;
   document.querySelectorAll(".ov").forEach(x => x.classList.toggle("on", x === b));
+  draw();
+});
+document.querySelectorAll(".wl").forEach(b => b.onclick = () => {
+  wl = b.dataset.wl;
+  document.querySelectorAll(".wl").forEach(x => x.classList.toggle("on", x === b));
   draw();
 });
 $("#inspClose").onclick = () => { sel = null; draw(); };
@@ -425,7 +468,14 @@ function draw() {
     } else hit.classList.remove("on");
   });
 
-  $("#ovBev").src = f.maps.bev; $("#ovInt").src = f.maps.integrity;
+  // The World control swaps the LEFT panel between three renders of the same
+  // frame. The Camera control only re-skins the camera tiles; it cannot change
+  // the world state, because BEV, occupancy and integrity are computed from
+  // LiDAR and calibration, not from the camera overlay.
+  $("#ovBev").src = f.maps[wl]; $("#ovInt").src = f.maps.integrity;
+  document.querySelector("#maps .mapwrap .cap b").textContent =
+    {bev:"Multi-sweep BEV", bev_nodyn:"BEV — static returns only",
+     occupancy:"Ray-cast occupancy"}[wl];
   $("#pcBev").src = f.maps.bev; $("#pcOcc").src = f.maps.occupancy;
   $("#inMap").src = f.maps.integrity;
   const s = f.stats;
@@ -617,6 +667,15 @@ function fillStatic() {
        ["threshold", o.threshold]].map(([k, v]) =>
       `<tr><td>${k}</td><td class="${k === "IoU" ? "a" : ""}">${v.toFixed ? v.toFixed(4) : v}</td></tr>`).join("");
     $("#mdLoad").textContent = lm.weights_loaded;
+    if (lm.trust) {
+      const t = lm.trust.per_camera_mean;
+      $("#mdOcc").insertAdjacentHTML("afterend",
+        `<div class="hr" style="margin:10px 0"></div>
+         <div class="lab" style="margin-bottom:6px">Live per-camera trust (clean frames)</div>
+         <div class="mono" style="font-size:11.5px;color:var(--dim);line-height:1.7">` +
+        Object.keys(t).map(k => `${k.replace("CAM_","")} ${t[k].toFixed(4)}`).join(" &nbsp;·&nbsp; ") +
+        `</div><div style="margin-top:8px;font-size:11px;color:var(--dim2)">${lm.trust.note}</div>`);
+    }
   }
   const vla = R.vla_report;
   if (vla) {
@@ -650,30 +709,134 @@ function fillStatic() {
   /* hard-case mining across every loaded frame */
   const hard = [];
   F.forEach((f, i) => f.objects.forEach(o => hard.push({ ...o, fi: i, scene: f.scene })));
+  // Why is integrity low here? Without this the ranking is dominated by two
+  // effects that are not the same problem at all: the near-field blind zone
+  // under the vehicle, where no camera can see the ground at any range, and
+  // genuine far-field or occluded cases. Labelling the cause is what makes the
+  // list a work queue instead of a list.
+  const cause = o => o.range < 6 ? "near-field blind zone"
+                  : o.range > 40 ? "beyond camera resolution"
+                  : o.vis <= 2 ? "occluded (annotator agrees)"
+                  : "camera occlusion";
+  hard.forEach(o => o.cause = cause(o));
   hard.sort((a, b) => a.integrity - b.integrity);
   const hl = $("#hardList"); hl.innerHTML =
-    `<div class="objrow" style="color:var(--dim2);cursor:default">
-      <span>OBJECT</span><span>INTEG</span><span>VIS</span><span>RANGE</span></div>`;
-  hard.slice(0, 24).forEach(o => {
+    `<div class="objrow hdr" style="grid-template-columns:1fr 52px 52px 46px 168px;color:var(--dim2);cursor:default">
+      <span>OBJECT</span><span>INTEG</span><span>VIS</span><span>RANGE</span><span>LIKELY CAUSE</span></div>`;
+  hard.slice(0, 26).forEach(o => {
     const r = el("div", "objrow");
+    r.style.gridTemplateColumns = "1fr 52px 52px 46px 168px";
     const visLbl = { 1: "0-40", 2: "40-60", 3: "60-80", 4: "80-100" }[o.vis] || "--";
     r.innerHTML = `<span>${o.scene.replace("scene-", "")} · ${o.cat}</span>
       <span class="${o.integrity < 0.2 ? "b" : "w"}">${fx(o.integrity, 2)}</span>
-      <span class="d">${visLbl}</span><span>${o.range}m</span>`;
+      <span class="d">${visLbl}</span><span>${o.range}m</span>
+      <span class="d" style="font-family:'IBM Plex Sans'">${o.cause}</span>`;
     r.onclick = () => { setFrame(o.fi); sel = o.id; draw();
       document.querySelectorAll(".rb").forEach((x, i) => x.classList.toggle("on", i === 0));
       document.querySelectorAll(".page").forEach(x => x.classList.toggle("on", x.dataset.p === "overview")); };
     hl.appendChild(r);
   });
-  const lo = hard.filter(o => o.integrity < 0.2).length;
-  const occl = hard.filter(o => o.vis <= 2).length;
-  $("#failStats").innerHTML = [
-    ["objects indexed", hard.length], ["integrity below 0.20", lo],
-    ["annotator visibility ≤ 60%", occl]
-  ].map(([k, v]) => `<div class="card pad"><div class="k lab">${k}</div>
-    <div class="mono" style="font-size:24px;font-weight:600;margin-top:4px">${v}</div></div>`).join("");
+  const byCause = {};
+  hard.forEach(o => { byCause[o.cause] = (byCause[o.cause] || 0) + 1; });
+  $("#failStats").innerHTML = [["objects indexed", hard.length],
+    ["integrity below 0.20", hard.filter(o => o.integrity < 0.2).length],
+    ["near-field blind zone", byCause["near-field blind zone"] || 0]]
+    .map(([k, v]) => `<div class="card pad"><div class="k lab">${k}</div>
+      <div class="mono" style="font-size:24px;font-weight:600;margin-top:4px">${v}</div></div>`).join("");
 
-  /* system inventory */
+  /* ---------- retrained trajectory LM ---------- */
+  const tl = R.trajlm_retrained_report;
+  if (tl) {
+    $("#tlNote").textContent = `${tl.train_samples} train / ${tl.val_samples} val · ${tl.steps} steps · ${tl.model.split(".")[0]}`;
+    $("#tlFixes").innerHTML = [
+      ["Data", "trained on 404 all-zero trajectories", "retrained from the label npz — 388 distinct paths"],
+      ["Tokenisation", "±20 m clipped 30.6% of waypoints", "split axes: x [-10,70] m, y [-25,25] m"],
+      ["Conditioning", "unconditional — could only emit the dataset average", "velocity-conditioned prefix"],
+    ].map(([k, was, now]) => `<div style="border-left:2px solid var(--acc);padding:8px 12px;background:rgba(91,210,232,.05)">
+        <div class="lab" style="color:var(--acc)">${k}</div>
+        <div style="font-size:11px;color:var(--bad);margin-top:4px">was: ${was}</div>
+        <div style="font-size:11px;color:var(--good);margin-top:3px">now: ${now}</div></div>`).join("");
+    const hs = Object.keys(tl.val_ade_m);
+    $("#tlTable").innerHTML = `<tr><th>horizon</th><th>const-vel</th><th>trajectory LM</th><th>vs CV</th></tr>` +
+      hs.map(h => { const r = tl.val_ade_m[h];
+        const g = r.delta_vs_cv_pct < 0;
+        return `<tr><td>${h}</td><td>${r.constant_velocity.ade_m.toFixed(3)}</td>
+          <td class="${g ? "g" : ""}">${r.gpt2_retrained_conditioned.ade_m.toFixed(3)}</td>
+          <td class="${g ? "g" : "w"}">${r.delta_vs_cv_pct.toFixed(1)}%</td></tr>`; }).join("") +
+      `<tr><td class="d">T+1, unconditional</td><td class="d">0.324</td><td class="b">2.796</td><td class="b">+763%</td></tr>`;
+  }
+
+  /* ---------- robustness ---------- */
+  const rb = R.robustness_report;
+  if (rb) {
+    $("#rbNote").textContent = `${rb.frames} keyframes · ${rb.faulted_camera} degraded · ${rb.checkpoint}`;
+    const keys = Object.keys(rb.results).filter(k => k !== "clean");
+    const c = rb.results.clean;
+    $("#rbTable").innerHTML =
+      `<tr><th>fault</th><th>trust (faulted)</th><th>trust (others)</th><th>&Delta;trust</th><th>ADE T+3</th></tr>` +
+      `<tr><td class="d">clean</td><td>${fx(c.trust_faulted)}</td><td>${fx(c.trust_others)}</td>
+        <td class="d">&mdash;</td><td>${c.ade_T3_m} m</td></tr>` +
+      keys.map(k => { const r = rb.results[k];
+        const good = r.delta_trust_faulted < -0.05;
+        return `<tr><td>${k}</td><td class="${good ? "g" : "b"}">${fx(r.trust_faulted)}</td>
+          <td class="d">${fx(r.trust_others)}</td>
+          <td class="${good ? "g" : "b"}">${r.delta_trust_faulted.toFixed(4)}</td>
+          <td>${r.ade_T3_m} m</td></tr>`; }).join("");
+    $("#rbBars").innerHTML = keys.map(k => bar(k, Math.abs(rb.results[k].delta_trust_faulted), 0.32,
+      rb.results[k].delta_trust_faulted < -0.05 ? "var(--good)" : "var(--bad)")).join("");
+    $("#rbVerdict").innerHTML = `<div class="warnbox">${rb.verdict}</div>`;
+    const occ = rb.results.occlusion;
+    $("#rbGap").innerHTML = `<b>The gap:</b> occlusion moves trust the WRONG way
+      (${occ.delta_trust_faulted > 0 ? "+" : ""}${occ.delta_trust_faulted}). Blur, rain and noise all
+      register; a black patch over the lens does not. A masked region has low local variance, which
+      looks to this head like a clean flat surface. That is a real hole in a fault detector meant to
+      catch a blocked camera.`;
+  }
+
+  /* ---------- runtime ---------- */
+  const cp = R.cpp_report;
+  if (cp) {
+    const b = cp.benchmark;
+    $("#cppNote").textContent = cp.hardware;
+    $("#cppTable").innerHTML = `<tr><th>metric</th><th>value</th></tr>` +
+      [["frames offered", b.frames_offered.toLocaleString()],
+       ["frames dropped", b.frames_dropped],
+       ["throughput", b.throughput_fps.toLocaleString() + " fps"],
+       ["queueing p50", b.queueing_p50_ms.toFixed(4) + " ms"],
+       ["queueing p95", b.queueing_p95_ms.toFixed(4) + " ms"],
+       ["queueing p99", b.queueing_p99_ms.toFixed(4) + " ms"],
+       ["queueing max", b.queueing_max_ms.toFixed(4) + " ms"]]
+      .map(([k, v]) => `<tr><td>${k}</td><td class="${k.includes("p99") ? "a" : ""}">${v}</td></tr>`).join("");
+    $("#cppFlaky").innerHTML = `<b>Test flakiness:</b> ${cp.tests.flakiness}`;
+    $("#cppBuild").innerHTML =
+      `<div style="margin-bottom:8px"><span class="pill" style="border-color:var(--good);color:var(--good)">test_spsc_ring PASS</span>
+        <span class="pill" style="border-color:var(--good);color:var(--good);margin-left:6px">test_latency_stats PASS</span></div>
+       <div style="margin-bottom:8px">${cp.build}</div><div>${cp.configure_note}</div>
+       <div style="margin-top:8px;color:var(--dim2)">${b.note}</div>`;
+  }
+  const kb = R.kernel_bench_report;
+  if (kb) {
+    const sa = kb.sparse_attention.ms_per_forward;
+    $("#spTable").innerHTML = `<tr><th>horizon</th><th>dense</th><th>strided</th><th>window</th><th>combined</th></tr>` +
+      Object.keys(sa).map(h => { const r = sa[h];
+        const best = Math.min(r.dense, r.strided, r.window, r.combined);
+        const c = v => v === best && v < r.dense ? "g" : (v === r.dense ? "d" : "");
+        return `<tr><td>${h}</td><td class="d">${r.dense}</td>
+          <td class="${c(r.strided)}">${r.strided}</td><td class="${c(r.window)}">${r.window}</td>
+          <td class="${c(r.combined)}">${r.combined}</td></tr>`; }).join("");
+    $("#spNote").innerHTML = `At horizon 12 sparsity costs slightly more than it saves
+      (${sa["12"].dense} &rarr; ${sa["12"].strided} ms). At 128 it pays:
+      ${sa["128"].dense} &rarr; ${sa["128"].combined} ms, ${(100*(1-sa["128"].combined/sa["128"].dense)).toFixed(0)}% faster.
+      The repo's own docstring predicted exactly that; this measures it.`;
+    const bp = kb.bev_pooling;
+    $("#bpBars").innerHTML = bar("python loop", bp.python_loop_ms, bp.python_loop_ms * 1.15, "var(--warn)") +
+      bar("fused kernel", bp.kernel_ms, bp.python_loop_ms * 1.15, "var(--acc)");
+    $("#bpNote").innerHTML = `<b>${bp.speedup_x}&times;</b> on CPU, outputs shape-identical.
+      The docstring claims ${bp.claimed_in_docstring} &mdash; a different device, so the two are not
+      the same measurement and the CPU figure is the one taken here.`;
+  }
+
+  /* system inventory */  /* system inventory */
   const SYS = [
     ["LiDAR pose chain + multi-sweep", "runs", "sensor→ego→global→ego_ref, verified to 1.3e-13 m"],
     ["Ground plane + ray-cast occupancy", "runs", "log-odds inverse sensor model, 540² @ 0.20 m"],
@@ -681,13 +844,16 @@ function fillStatic() {
     ["Camera projection + integrity map", "runs", "6-camera noisy-OR with occlusion ray-cast"],
     ["Occupancy forecast", "runs", "persistence + constant-velocity, geometric"],
     ["Ego trajectory baselines", "runs", "static / const-velocity / const-turn oracle"],
-    ["v11_temporal checkpoint (occ + traj)", "runs", "151/169 tensors loaded; ADE beats const-velocity at every horizon"],
-    ["Trust head weights", "blocked", "checkpoint stores trust_scorer.cnn.*, model defines trust_scorer.trunk.* — name drift, 18 tensors"],
-    ["GPT-2 trajectory LM (as trained)", "blocked", "fine-tuned on all-zero waypoints — needs retraining from the label npz"],
+    ["v11_temporal checkpoint (occ + traj)", "runs", "167/169 after key remap; ADE beats const-velocity at every horizon"],
+    ["Trust head weights", "runs", "key drift remapped (cnn.* -> trunk./cnn_head.); trust_fixed_v2_cal loads 171/171 and is calibrated"],
+    ["Trajectory language model", "runs", "retrained on real waypoints + velocity conditioning; beats const-velocity from T+3 out"],
     ["VLA projector (LLaVA pattern)", "runs", "1.77M trainable on frozen backbone + frozen GPT-2; mechanism verified, 80 samples"],
-    ["BLIP vision-language captioning", "blocked", "huggingface.co 403 at the egress proxy — policy denial, not a missing dependency"],
-    ["Sparse causal trajectory head", "not run", "torch present now; no evaluation written yet"],
-    ["Trust-weighted BEV pooling kernel", "not run", "claims 4.5x on MPS; unverified on this CPU"],
+    ["Fault injection / robustness", "runs", "5 perturbations; trust separates faulted from untouched by 0.165 — except occlusion"],
+    ["Sparse causal trajectory head", "runs", "no gain at horizon 12, 14% faster at 128 — matches its own docstring"],
+    ["Trust-weighted BEV pooling kernel", "runs", "3.09x over the Python loop on CPU, outputs shape-identical"],
+    ["C++ SPSC ring + latency stats", "runs", "builds, both tests pass, queueing p99 7.8 us over 20k frames"],
+    ["C++ LibTorch runner", "blocked", "CUDA-built torch wheel refuses to cmake-configure without a GPU; needs a CPU LibTorch"],
+    ["BLIP vision-language captioning", "blocked", "huggingface.co 403 at the egress proxy in BOTH environments — policy denial, not a dependency"],
     ["C++ runner (SPSC ring, latency stats)", "partial", "ring + latency stats present; integrity monitor not ported"],
   ];
   $("#sysTable").innerHTML = `<tr><th>component</th><th>state</th><th>detail</th></tr>` +

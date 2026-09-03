@@ -1,0 +1,66 @@
+{
+  "frames": 24,
+  "faulted_camera": "CAM_FRONT",
+  "results": {
+    "clean": {
+      "trust_faulted": 0.7524783611297607,
+      "trust_others": 0.7381188273429871,
+      "ade_T3_m": 0.521,
+      "occ_iou": 0.2817
+    },
+    "blur": {
+      "trust_faulted": 0.5446218848228455,
+      "trust_others": 0.7381188273429871,
+      "ade_T3_m": 0.541,
+      "occ_iou": 0.2103,
+      "delta_trust_faulted": -0.2079,
+      "delta_trust_others": 0.0,
+      "delta_ade_pct": 3.8
+    },
+    "glare": {
+      "trust_faulted": 0.6966419219970703,
+      "trust_others": 0.7381188273429871,
+      "ade_T3_m": 0.525,
+      "occ_iou": 0.2666,
+      "delta_trust_faulted": -0.0558,
+      "delta_trust_others": 0.0,
+      "delta_ade_pct": 0.8
+    },
+    "occlusion": {
+      "trust_faulted": 0.7648430466651917,
+      "trust_others": 0.7381188273429871,
+      "ade_T3_m": 0.525,
+      "occ_iou": 0.2711,
+      "delta_trust_faulted": 0.0124,
+      "delta_trust_others": 0.0,
+      "delta_ade_pct": 0.8
+    },
+    "rain": {
+      "trust_faulted": 0.4825713336467743,
+      "trust_others": 0.7381188273429871,
+      "ade_T3_m": 0.53,
+      "occ_iou": 0.2764,
+      "delta_trust_faulted": -0.2699,
+      "delta_trust_others": 0.0,
+      "delta_ade_pct": 1.7
+    },
+    "noise": {
+      "trust_faulted": 0.47264203429222107,
+      "trust_others": 0.7381188273429871,
+      "ade_T3_m": 0.563,
+      "occ_iou": 0.2124,
+      "delta_trust_faulted": -0.2798,
+      "delta_trust_others": 0.0,
+      "delta_ade_pct": 8.1
+    }
+  },
+  "mean_separation": 0.1652,
+  "verdict": "The trust head DOES respond to degradation: perturbing one camera moves its own score while the untouched five stay put, separating by 0.1652 on average. On clean frames it sits at 0.584 +/- 0.0002 across all cameras, which is the correct behaviour for a head trained to detect injected faults -- it is a fault detector, not a scene-quality score, and should be read that way.",
+  "caveats": [
+    "stat_calibrated is False in this checkpoint, so the head's statistics branch runs on default buffers and the fused score leans on its CNN branch. calibrate_trust_stats.py exists to fill those in and has not been run against this checkpoint.",
+    "Perturbations are applied to the model's 90x160 input tensor, not to full-resolution images.",
+    "24 keyframes, one camera faulted at a time.",
+    "gradio_app.py hard-codes clean trust at 0.795; the live head returns 0.584 on clean nuScenes frames. That constant is stale and should be read from the model."
+  ],
+  "checkpoint": "checkpoints_v11_trustfix2/trust_fixed_v2_cal.ckpt"
+}

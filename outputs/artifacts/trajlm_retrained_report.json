@@ -1,0 +1,71 @@
+{
+  "status": "RETRAINED",
+  "why": "The shipped GPT-2 was fine-tuned on 404 copies of an all-zero trajectory: traj_lm.py reads manifest keys ('ego_future', then 'ego_pose') that the manifest does not contain, so every waypoint fell back to (0,0). This retrains from the label npz files, which hold 404 real trajectories, 388 of them distinct.",
+  "tokenisation_fix": "traj_lm.py bins absolute x and y over \u00b120 m, which clips 30.6% of real waypoints before training starts -- forward displacement averages 27.5 m. Split axes: x over [-10.0,70.0] m, y over [-25.0,25.0] m, 200 bins each. Quantisation error 0.159 m, clipped 1.86%.",
+  "model": "GPT-2 4.9M, 6 layers, 256 embd, vocab 531, trained from scratch. VELOCITY-CONDITIONED: two velocity tokens are prepended so the model has an input; the unconditional form scored ADE 2.796 m at T+1 against 0.324 m for constant velocity, because with no conditioning it can only emit the dataset average.",
+  "train_samples": 324,
+  "val_samples": 80,
+  "steps": 900,
+  "val_ade_m": {
+    "T+1 (0.5s)": {
+      "constant_velocity": {
+        "ade_m": 0.324,
+        "fde_m": 0.324
+      },
+      "gpt2_retrained_conditioned": {
+        "ade_m": 0.404,
+        "fde_m": 0.404
+      },
+      "delta_vs_cv_pct": 24.8
+    },
+    "T+2 (1.0s)": {
+      "constant_velocity": {
+        "ade_m": 0.612,
+        "fde_m": 0.901
+      },
+      "gpt2_retrained_conditioned": {
+        "ade_m": 0.648,
+        "fde_m": 0.892
+      },
+      "delta_vs_cv_pct": 5.9
+    },
+    "T+3 (1.5s)": {
+      "constant_velocity": {
+        "ade_m": 0.976,
+        "fde_m": 1.703
+      },
+      "gpt2_retrained_conditioned": {
+        "ade_m": 0.965,
+        "fde_m": 1.6
+      },
+      "delta_vs_cv_pct": -1.1
+    },
+    "3.0s": {
+      "constant_velocity": {
+        "ade_m": 2.395,
+        "fde_m": 4.987
+      },
+      "gpt2_retrained_conditioned": {
+        "ade_m": 2.326,
+        "fde_m": 4.91
+      },
+      "delta_vs_cv_pct": -2.9
+    },
+    "6.0s": {
+      "constant_velocity": {
+        "ade_m": 6.355,
+        "fde_m": 14.738
+      },
+      "gpt2_retrained_conditioned": {
+        "ade_m": 5.966,
+        "fde_m": 12.716
+      },
+      "delta_vs_cv_pct": -6.1
+    }
+  },
+  "caveats": [
+    "404 keyframes from 10 scenes is a very small corpus for a language model; the val numbers should be read as a sanity check that the data path is now correct, not as a competitive result.",
+    "Trained from scratch rather than from pretrained GPT-2 weights: huggingface.co is blocked by egress policy in both available environments, and the repo's local GPT-2 is the degenerate checkpoint this replaces.",
+    "Absolute waypoints, not residuals on a prior -- so it is compared against constant velocity, which is the prior it does not get."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "sparse_attention": {
+    "ms_per_forward": {
+      "12": {
+        "dense": 2.333,
+        "strided": 2.383,
+        "window": 2.334,
+        "combined": 2.687
+      },
+      "48": {
+        "dense": 3.582,
+        "strided": 3.571,
+        "window": 3.391,
+        "combined": 3.331
+      },
+      "128": {
+        "dense": 7.711,
+        "strided": 6.773,
+        "window": 7.297,
+        "combined": 6.646
+      }
+    },
+    "note": "The repo's own docstring says the horizon-12 difference should be minimal and that sparsity only pays at long horizons. Measured across three horizons to test that.",
+    "hardware": "cloud container CPU, 2 torch threads, batch 4"
+  },
+  "bev_pooling": {
+    "kernel_ms": 5.156,
+    "python_loop_ms": 15.948,
+    "speedup_x": 3.09,
+    "claimed_in_docstring": "4.5x on Apple MPS",
+    "shapes_match": true,
+    "note": "The docstring's 4.5x is claimed for Apple MPS; this is CPU, so the numbers are not directly comparable. The reference loop here is a faithful re-implementation of the scatter it replaces, not the original code.",
+    "hardware": "cloud container CPU, 2 torch threads, B=1 V=6 d=192 64x64"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "samples": 80,
   "checkpoint": "checkpoints_v11_temporal/best_val_ade.ckpt",
-  "weights_loaded": "151 of 169 tensors. The 18 that did not load are all backbone.trust_scorer.*: the checkpoint stores trust_scorer.cnn.* while the current model defines trust_scorer.trunk.*. The occupancy and trajectory heads loaded cleanly, so ADE and occupancy IoU below are valid; any TRUST output from this run is randomly initialised and is not reported.",
+  "weights_loaded": "167 of 169 tensors after remapping the trust-scorer keys. The checkpoint stores CameraTrustScorer as one flat Sequential named cnn; the current class splits the same stack into trunk / pool / cnn_head. Every renamed tensor was shape-checked before being accepted, and 0 were rejected. The 2 still missing are stat_running_mean and stat_calibrated, buffers added after this checkpoint was written -- they stay at defaults, which reads as 'statistics not calibrated'.",
   "trajectory_ade": {
     "T+1 (0.5s)": {
       "static": {
@@ -31,7 +31,7 @@
         "ade_m": 0.396,
         "fde_m": 0.548
       },
-      "delta_vs_cv_pct": -21.12
+      "delta_vs_cv_pct": -21.13
     },
     "T+3 (1.5s)": {
       "static": {
@@ -82,19 +82,39 @@
   "occupancy": {
     "best": {
       "threshold": 0.5,
-      "iou": 0.28434702068539675,
-      "precision": 0.34601760412194077,
+      "iou": 0.28434284034107615,
+      "precision": 0.34601141385047496,
       "recall": 0.6147025171624714,
-      "f1": 0.4427884615384616
+      "f1": 0.44278339304724074
     },
     "grid": "128x128 label grid, nuscenes_labels_128 key 'occ'"
   },
-  "inference_ms_per_sample": 207,
+  "trust": {
+    "per_camera_mean": {
+      "CAM_FRONT": 0.5842,
+      "CAM_FRONT_LEFT": 0.5842,
+      "CAM_FRONT_RIGHT": 0.5842,
+      "CAM_BACK": 0.5842,
+      "CAM_BACK_LEFT": 0.5843,
+      "CAM_BACK_RIGHT": 0.5841
+    },
+    "per_camera_sd": {
+      "CAM_FRONT": 0.0001,
+      "CAM_FRONT_LEFT": 0.0002,
+      "CAM_FRONT_RIGHT": 0.0001,
+      "CAM_BACK": 0.0001,
+      "CAM_BACK_LEFT": 0.0001,
+      "CAM_BACK_RIGHT": 0.0003
+    },
+    "within_frame_spread_mean": 0.0004,
+    "note": "Live per-frame, per-camera scores from the trained head, now that its weights load. Previously the integrity map used a single hard-coded 0.795 for all six cameras."
+  },
+  "inference_ms_per_sample": 173,
   "hardware": "cloud container CPU, 2 torch threads, batch 1, 6 cameras x 4 frames at 90x160",
   "caveats": [
     "80 keyframes, nuScenes mini.",
-    "The model predicts a RESIDUAL on a constant-velocity prior; cv_traj + residual is the absolute trajectory, exactly as lightning_module does it.",
-    "Trust head weights did not load (name drift), so no trust or integrity number from this checkpoint is quoted.",
-    "This is the v11_temporal checkpoint, not the GPT-2 trajectory LM, which remains unusable for the separate reason that it was trained on all-zero waypoints."
+    "The model predicts a RESIDUAL on a constant-velocity prior; cv + residual is the absolute trajectory, as lightning_module composes it.",
+    "Trust statistics are uncalibrated (stat_calibrated=False): the head's stats branch is running on default buffers, so the fused score leans on its CNN branch.",
+    "Separate from the GPT-2 trajectory LM, which had its own defect."
   ]
 }

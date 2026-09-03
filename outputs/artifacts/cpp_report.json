@@ -1,0 +1,24 @@
+{
+  "build": "cmake + g++ 14, C++17, Release, header-only targets",
+  "configure_note": "LibTorch targets (odfm_runner, odfm_parity_check) did NOT build. The installed torch wheel is a CUDA build (2.13.0+cu130) and its Caffe2Config.cmake refuses to configure without CUDA present. The header-only runtime primitives and their tests have no such dependency and build anywhere, which is the point of that split in CMakeLists.txt.",
+  "tests": {
+    "test_spsc_ring": "pass",
+    "test_latency_stats": "pass",
+    "flakiness": "test_spsc_ring failed once during a -j4 parallel build, then passed 40/40 when run alone. That points at CPU contention in a timing-sensitive concurrency test rather than a logic defect, but a test that fails only under load is exactly the kind CI hides."
+  },
+  "benchmark": {
+    "what": "Producer/consumer handoff through the SPSC ring with the latency accumulator, no model in the loop -- the floor the runtime imposes.",
+    "frames_offered": 20000,
+    "frames_consumed": 20000,
+    "frames_dropped": 0,
+    "wall_s": 2.52,
+    "throughput_fps": 7947,
+    "queueing_p50_ms": 0.0003,
+    "queueing_p95_ms": 0.0007,
+    "queueing_p99_ms": 0.0078,
+    "queueing_max_ms": 0.4911,
+    "interarrival_p50_ms": 0.1229,
+    "note": "Throughput is bounded by the producer's deliberate 50 us pacing, not by the ring. Queueing latency is the number that matters: 300 ns at the median, 7.8 us at p99."
+  },
+  "hardware": "cloud container CPU, 4 cores, g++ -O2, no -march=native (CMakeLists deliberately leaves it off so numbers stay reproducible)"
+}
