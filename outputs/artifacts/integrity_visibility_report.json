@@ -1,0 +1,100 @@
+{
+  "frames": 45,
+  "boxes_scored": 2913,
+  "positive_rate_vis_ge_60pct": 0.7164435290078957,
+  "grid": {
+    "res": 0.5,
+    "rng_m": 54.0,
+    "max_box_range_m": 45.0
+  },
+  "per_visibility_level": {
+    "v0-40": {
+      "n": 560,
+      "mean_integrity": 0.3106,
+      "mean_integrity_no_occlusion": 0.3657,
+      "mean_range_m": 25.2
+    },
+    "v40-60": {
+      "n": 266,
+      "mean_integrity": 0.3147,
+      "mean_integrity_no_occlusion": 0.3591,
+      "mean_range_m": 24.75
+    },
+    "v60-80": {
+      "n": 314,
+      "mean_integrity": 0.3254,
+      "mean_integrity_no_occlusion": 0.3636,
+      "mean_range_m": 25.84
+    },
+    "v80-100": {
+      "n": 1773,
+      "mean_integrity": 0.4143,
+      "mean_integrity_no_occlusion": 0.4333,
+      "mean_range_m": 22.03
+    }
+  },
+  "auroc": {
+    "integrity_occlusion_aware": {
+      "auroc": 0.5693,
+      "ci95": [
+        0.5473,
+        0.5906
+      ]
+    },
+    "integrity_no_occlusion": {
+      "auroc": 0.5277,
+      "ci95": [
+        0.5055,
+        0.5497
+      ]
+    },
+    "range_only_baseline": {
+      "auroc": 0.5708,
+      "ci95": [
+        0.5483,
+        0.5932
+      ]
+    }
+  },
+  "occlusion_term_delta_auroc": 0.0416,
+  "occlusion_term_delta_ci95": [
+    0.0355,
+    0.0477
+  ],
+  "by_object_height": {
+    "under_1m": {
+      "n": 582,
+      "integrity_auroc": 0.6085,
+      "range_only_auroc": 0.6511,
+      "delta": -0.0427
+    },
+    "1_to_1.8m": {
+      "n": 1700,
+      "integrity_auroc": 0.5168,
+      "range_only_auroc": 0.5181,
+      "delta": -0.0012
+    },
+    "1.8_to_2.6m": {
+      "n": 527,
+      "integrity_auroc": 0.6147,
+      "range_only_auroc": 0.5986,
+      "delta": 0.016
+    },
+    "over_2.6m": {
+      "n": 104,
+      "integrity_auroc": 0.814,
+      "range_only_auroc": 0.8504,
+      "delta": -0.0363
+    }
+  },
+  "beats_range_baseline_by": -0.0015,
+  "verdict": "NEGATIVE RESULT. Integrity scores annotator-labelled camera visibility at AUROC 0.569 against 0.571 for object range alone -- a difference of -0.001, which is not a difference. The map does not predict object visibility better than one number already available for free. The pre-stated hypothesis that it would work for low objects and fail for tall ones is also unsupported: no height band beats its own range baseline. What DOES hold up is the occlusion term, worth +0.0416 AUROC within the integrity score itself, so ray-casting camera visibility adds real signal even though the construct it feeds does not clear the baseline. The reading: this map measures GROUND-PLANE observability, and ground-plane observability is not object visibility -- a car behind a car has an occluded footprint and a perfectly visible roof. It should be presented as an observability prior for planning, not as a predictor of whether an object will be seen.",
+  "caveats": [
+    "Visibility labels describe the OBJECT; the integrity score describes its GROUND FOOTPRINT. A tall van visible over a low wall is a genuine disagreement, not an error, so perfect agreement is not expected.",
+    "Labels are annotator judgement in 4 coarse buckets, not a measurement.",
+    "Per-camera trust is held at the constant 0.795 for every camera: no faults are injected here, so this tests the geometry and occlusion terms, NOT the learned trust head.",
+    "Boxes beyond 45.0 m are excluded -- coverage weight there is near zero for every camera, so the score has no dynamic range left.",
+    "nuScenes mini is 10 scenes from 2 cities; this is not a broad generalisation claim.",
+    "Four scoring variants were tried (footprint mean, max, p90, and front-edge cell). All landed between 0.495 and 0.551, i.e. all null. Reported so the mean is not mistaken for a tuned choice."
+  ]
+}

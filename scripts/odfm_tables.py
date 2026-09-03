@@ -75,6 +75,10 @@ class NuScenesTables:
             self.calib[c["token"]] = c
 
         cats = {c["token"]: c["name"] for c in _load("category")}
+        # Annotator-assessed CAMERA visibility, 4 buckets. Independent of
+        # anything this repo computes, which is what makes it usable as ground
+        # truth for the integrity map rather than as another of its inputs.
+        self.visibility = {v["token"]: v for v in _load("visibility")}
         inst = {i["token"]: i for i in _load("instance")}
         self.ann_by_sample = {}
         for a in _load("sample_annotation"):
@@ -163,6 +167,8 @@ class NuScenesTables:
                 "category": a["category"],
                 "num_lidar_pts": int(a.get("num_lidar_pts", 0)),
                 "num_radar_pts": int(a.get("num_radar_pts", 0)),
+                "visibility_level": int(a["visibility_token"])
+                if a.get("visibility_token") else None,
                 "instance_token": a["instance_token"],
             })
         return out

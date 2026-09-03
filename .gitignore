@@ -79,3 +79,7 @@ outputs/figures/*
 !outputs/figures/scene_view_CAM_BACK.png
 !outputs/artifacts/scene_view*.json
 !outputs/artifacts/motion_separation_report.json
+!outputs/figures/opendrivefm_summary.png
+!outputs/artifacts/integrity_visibility_report.json
+!outputs/artifacts/occupancy_forecast_report.json
+!outputs/artifacts/timing_report.json

@@ -1,0 +1,31 @@
+{
+  "hardware": "Linux VM (aarch64, 4 vCPU) on Apple Silicon Mac. CPU only, single process.",
+  "implementation": "Pure NumPy + PIL. No GPU, no PyTorch, no compiled extensions.",
+  "measured": "Wall clock per keyframe, mean of 10 consecutive keyframes, 10 LiDAR sweeps each (~266k returns).",
+  "grids": "Occupancy 540x540 @ 0.20 m; integrity 216x216 @ 0.50 m, 6 cameras.",
+  "per_stage_ms": {
+    "load_10_sweeps_from_disk": 51.1,
+    "ground_plane_ransac": 103.2,
+    "ground_labelling": 2.1,
+    "occupancy_logodds_0.20m": 411.2,
+    "motion_separation": 26.3,
+    "integrity_6cam_0.50m": 69.6
+  },
+  "per_stage_ms_before_optimisation": {
+    "load_10_sweeps_from_disk": 45.5,
+    "ground_plane_ransac": 103.5,
+    "ground_labelling": 2.1,
+    "occupancy_logodds_0.20m": 1183.2,
+    "motion_separation": 24.3,
+    "integrity_6cam_0.50m": 66.4
+  },
+  "optimisation": "Scatter-add for ray carving moved from np.add.at to np.bincount on flattened indices. np.add.at is the documented slow unbuffered path. Not bit-identical: float32 accumulation order moves a few cells by at most one free unit (0.45 log-odds) across the gap-fill threshold, but the tri-state classification is unchanged (0 of 291,600 cells differ), so no downstream decision moves.",
+  "occupancy_speedup_x": 2.88,
+  "total_ms_per_keyframe": 663.5,
+  "hz": 1.51,
+  "total_ms_before": 1425.0,
+  "end_to_end_speedup_x": 2.15,
+  "total_ms_excluding_disk_load": 612.4,
+  "hz_excluding_disk_load": 1.63,
+  "caveat": "Unoptimised reference implementation on a virtualised CPU. Not a real-time claim; no GPU or C++ path was benchmarked."
+}
