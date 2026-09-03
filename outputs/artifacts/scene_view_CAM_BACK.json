@@ -17,13 +17,22 @@
   },
   "occupancy": {
     "cells": 46656,
-    "free_frac": 0.08715,
-    "occupied_frac": 0.00962,
-    "unknown_frac": 0.90323,
-    "observed_frac": 0.09677,
+    "free_frac": 0.26078,
+    "occupied_frac": 0.012,
+    "unknown_frac": 0.72722,
+    "observed_frac": 0.27278,
     "res": 0.5,
     "rng_m": 54.0,
-    "n": 216
+    "n": 216,
+    "z_band": [
+      -0.4,
+      2.5
+    ],
+    "l_free": 0.45,
+    "l_occ": 2.4,
+    "clamp": 6.0,
+    "rays_free": 217309,
+    "rays_hit": 21196
   },
   "motion": {
     "old_from": 5,
@@ -41,38 +50,52 @@
   "cameras": {
     "CAM_FRONT_LEFT": {
       "trust": 0.795,
-      "mean_coverage_weight": 0.0338
+      "mean_coverage_weight": 0.0245,
+      "visible_frac_of_frustum": 0.727
     },
     "CAM_FRONT": {
       "trust": 0.795,
-      "mean_coverage_weight": 0.0329
+      "mean_coverage_weight": 0.0266,
+      "visible_frac_of_frustum": 0.8076
     },
     "CAM_FRONT_RIGHT": {
       "trust": 0.795,
-      "mean_coverage_weight": 0.0336
+      "mean_coverage_weight": 0.0262,
+      "visible_frac_of_frustum": 0.7812
     },
     "CAM_BACK_LEFT": {
       "trust": 0.795,
-      "mean_coverage_weight": 0.0347
+      "mean_coverage_weight": 0.0265,
+      "visible_frac_of_frustum": 0.7647
     },
     "CAM_BACK": {
       "trust": 0.31,
-      "mean_coverage_weight": 0.0318
+      "mean_coverage_weight": 0.0272,
+      "visible_frac_of_frustum": 0.855
     },
     "CAM_BACK_RIGHT": {
       "trust": 0.795,
-      "mean_coverage_weight": 0.0343
+      "mean_coverage_weight": 0.0247,
+      "visible_frac_of_frustum": 0.7209
     }
   },
-  "integrity": {
+  "integrity_without_occlusion": {
     "mean": 0.13672,
     "median": 0.04396,
     "frac_below_0.3": 0.86098,
     "frac_above_0.7": 0.06848,
-    "mean_over_free_space": 0.3525,
-    "free_cells_below_0.3": 0.50836
+    "mean_over_free_space": 0.30412,
+    "free_cells_below_0.3": 0.61075
+  },
+  "integrity": {
+    "mean": 0.10479,
+    "median": 0.01147,
+    "frac_below_0.3": 0.88132,
+    "frac_above_0.7": 0.06314,
+    "mean_over_free_space": 0.28229,
+    "free_cells_below_0.3": 0.63426
   },
   "fault_camera": "CAM_BACK",
   "figure": "outputs/figures/scene_view_CAM_BACK.png",
-  "seconds": 1.91
+  "seconds": 2.32
 }

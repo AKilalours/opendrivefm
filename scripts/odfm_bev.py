@@ -269,22 +269,170 @@ def render_occupancy(grid, size=560, title=None, subtitle=None, ego=True):
     return np.array(out)
 
 
-def render_integrity(integ, size=560, title=None, subtitle=None, ego=True):
-    """Perception Integrity Map, 0 (no trustworthy camera evidence) to 1."""
-    from matplotlib import cm as _cm
-    a = np.clip(np.asarray(integ, np.float64), 0, 1)
-    img = (_cm.get_cmap("magma")(a)[:, :, :3] * 255).astype(np.uint8)
-    img = np.flipud(np.fliplr(img))
-    out = Image.fromarray(img).resize((size, size), Image.BILINEAR)
-    d = ImageDraw.Draw(out, "RGBA")
+
+def _bev_chrome(d, size, rng_m, rings=(10, 20, 30, 40, 50), ego=True,
+                ring_col=(64, 74, 92), label=True):
+    """Range rings, axes and the ego marker, in final-image pixels."""
+    c = size / 2.0
+    mpp = size / (2.0 * rng_m)
+    for r in rings:
+        if r > rng_m:
+            continue
+        rp = r * mpp
+        d.ellipse([c - rp, c - rp, c + rp, c + rp], outline=ring_col + (130,), width=1)
+        if label:
+            d.text((c + 4, c - rp - 12), f"{r}", fill=(120, 132, 150), font=_font(10))
+    d.line([c, 0, c, size], fill=ring_col + (70,), width=1)
+    d.line([0, c, size, c], fill=ring_col + (70,), width=1)
     if ego:
-        c = size / 2
-        d.polygon([(c, c - 7), (c - 5, c + 6), (c + 5, c + 6)],
-                  fill=(120, 255, 220, 240))
+        d.polygon([(c, c - 8), (c - 6, c + 7), (c + 6, c + 7)],
+                  fill=(255, 255, 255, 240))
+
+
+def _to_screen(a):
+    """BEV array indexed [x_forward, y_left] -> image rows/cols with forward
+    up and left on the left."""
+    return np.flipud(np.fliplr(np.asarray(a)))
+
+
+def _box_screen(b, size, rng_m):
+    c = size / 2.0
+    mpp = size / (2.0 * rng_m)
+    w, l, _ = b["wlh"]
+    yaw = b["yaw"]
+    hx, hy = l / 2.0, w / 2.0
+    crn = np.array([[hx, hy], [hx, -hy], [-hx, -hy], [-hx, hy]])
+    R = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
+    q = crn @ R.T + np.array([b["centre"][0], b["centre"][1]])
+    return [(c - v[1] * mpp, c - v[0] * mpp) for v in q]
+
+
+def render_occupancy_prob(prob, size=620, rng_m=54.0, boxes=None,
+                          title=None, subtitle=None, legend=True):
+    """Probabilistic occupancy: free -> unknown -> occupied.
+
+    Free is the BRIGHT state and unknown the dark one, which is the opposite of
+    the obvious mapping and the right way round: the drivable surface is what
+    the viewer is looking for, and making the map's most common value (unknown)
+    a large pale field would swamp it. Dark-for-unknown also makes occlusion
+    shadows read as shadows.
+
+    Colour is anchored on p = 0.5 rather than stretched over the observed
+    range, because unknown is genuinely the midpoint of the log-odds scale and
+    has to look like the neutral state -- telling "observed empty" from "never
+    observed" apart at a glance is the most important thing this panel says.
+    """
+    p = np.clip(np.asarray(prob, np.float64), 0.0, 1.0)
+    free_c = np.array([132, 196, 210], np.float64)
+    unk_c = np.array([20, 23, 30], np.float64)
+    occ_c = np.array([255, 92, 74], np.float64)
+
+    t = np.clip(p / 0.5, 0, 1)[..., None] ** 0.75
+    img = free_c + (unk_c - free_c) * t
+    t2 = np.clip((p - 0.5) / 0.5, 0, 1)[..., None]
+    img = img + (occ_c - img) * (t2 ** 0.55)
+
+    # Widen occupied cells by one cell before downsampling. An obstacle rim is
+    # often a single 20 cm cell; at panel scale that is a third of a pixel and
+    # LANCZOS averages it into the free space around it, so the one class the
+    # viewer most needs to see disappears. Applied to the RENDER only -- the
+    # returned grid and every statistic are untouched.
+    occ_m = p > 0.65
+    if occ_m.any():
+        grown = occ_m.copy()
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                grown |= np.roll(np.roll(occ_m, dx, 0), dy, 1)
+        img[grown] = occ_c
+
+    out = Image.fromarray(_to_screen(np.clip(img, 0, 255).astype(np.uint8)))
+    out = out.resize((size, size), Image.LANCZOS)
+    d = ImageDraw.Draw(out, "RGBA")
+    _bev_chrome(d, size, rng_m)
+
+    if boxes:
+        for b in boxes:
+            if b.get("num_lidar_pts", 0) <= 0:
+                continue
+            scr = _box_screen(b, size, rng_m)
+            d.line(scr + [scr[0]], fill=(14, 32, 46, 215), width=2)
+
+    if legend:
+        x0, y0 = 12, size - 62
+        for i, (lab, col) in enumerate((("free", (132, 196, 210)),
+                                        ("unknown", (20, 23, 30)),
+                                        ("occupied", (255, 92, 74)))):
+            yy = y0 + i * 14
+            d.rectangle([x0, yy, x0 + 10, yy + 10], fill=col + (255,),
+                        outline=(90, 100, 118, 255))
+            d.text((x0 + 15, yy - 1), lab, fill=DIM, font=_font(11))
+
     if title:
-        d.rectangle([0, 0, size, 28], fill=(8, 10, 15, 224))
+        d.rectangle([0, 0, size, 28], fill=(8, 10, 15, 226))
         d.text((10, 6), title, fill=TEXT, font=_font(14))
     if subtitle:
-        d.rectangle([0, size - 22, size, size], fill=(8, 10, 15, 224))
+        d.rectangle([0, size - 22, size, size], fill=(8, 10, 15, 226))
+        d.text((10, size - 17), subtitle, fill=DIM, font=_font(11))
+    return np.array(out)
+
+
+def render_integrity(integ, size=620, rng_m=54.0, occ_mask=None, boxes=None,
+                     title=None, subtitle=None, ego=True, legend=True):
+    """Perception Integrity Map: 0 = no trustworthy camera evidence, 1 = full.
+
+    Obstacles are overprinted in a hard colour rather than left implicit. The
+    map's most important feature is the wedge of low integrity stretching away
+    behind every vehicle, and a viewer can only read that as an occlusion
+    shadow if the thing casting it is visible in the same picture. Without the
+    obstacle layer it is just a dark patch of unexplained shape.
+    """
+    from matplotlib import cm as _cm
+    a = np.clip(np.asarray(integ, np.float64), 0, 1)
+    img = (_cm.get_cmap("magma")(a)[:, :, :3] * 255.0)
+
+    if occ_mask is not None:
+        m = np.asarray(occ_mask, bool)
+        grown = m.copy()
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                grown |= np.roll(np.roll(m, dx, 0), dy, 1)
+        img[grown] = np.array([90, 226, 236], np.float64)
+
+    out = Image.fromarray(_to_screen(np.clip(img, 0, 255).astype(np.uint8)))
+    out = out.resize((size, size), Image.LANCZOS)
+    d = ImageDraw.Draw(out, "RGBA")
+    _bev_chrome(d, size, rng_m, ring_col=(96, 88, 112), ego=False)
+
+    if boxes:
+        for b in boxes:
+            if b.get("num_lidar_pts", 0) <= 0:
+                continue
+            scr = _box_screen(b, size, rng_m)
+            d.line(scr + [scr[0]], fill=(140, 240, 250, 140), width=1)
+
+    if ego:
+        c = size / 2.0
+        d.polygon([(c, c - 8), (c - 6, c + 7), (c + 6, c + 7)],
+                  fill=(140, 255, 225, 245))
+
+    if legend:
+        from matplotlib import cm as _cm2
+        bx, by, bw, bh = 12, size - 52, 130, 9
+        for i in range(bw):
+            col = _cm2.get_cmap("magma")(i / (bw - 1))[:3]
+            d.line([bx + i, by, bx + i, by + bh],
+                   fill=tuple(int(255 * v) for v in col) + (255,))
+        d.rectangle([bx, by, bx + bw, by + bh], outline=(120, 128, 145, 220))
+        d.text((bx, by + bh + 2), "0", fill=DIM, font=_font(10))
+        d.text((bx + bw - 6, by + bh + 2), "1", fill=DIM, font=_font(10))
+        d.text((bx + 34, by + bh + 2), "integrity", fill=DIM, font=_font(10))
+        d.rectangle([bx, by - 16, bx + 10, by - 6], fill=(90, 226, 236, 255))
+        d.text((bx + 15, by - 18), "occupied", fill=DIM, font=_font(10))
+
+    if title:
+        d.rectangle([0, 0, size, 28], fill=(8, 10, 15, 226))
+        d.text((10, 6), title, fill=TEXT, font=_font(14))
+    if subtitle:
+        d.rectangle([0, size - 22, size, size], fill=(8, 10, 15, 226))
         d.text((10, size - 17), subtitle, fill=DIM, font=_font(11))
     return np.array(out)

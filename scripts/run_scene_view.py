@@ -57,18 +57,28 @@ def build(index=30, n_sweeps=10, rng_m=54.0, res=0.5, out_dir=None,
     ground = G.label_ground(pts[:, :3], plane)
     current = pts[:, 5] == 0
 
-    occ, occ_meta = G.occupancy_grid(pts[:, :3], ground, rng_m=rng_m, res=res,
-                                     plane=plane, visible=current)
+    prob, logodds, occ_meta = G.occupancy_logodds(pts, ground, plane,
+                                                  rng_m=rng_m, res=res)
+    occ = G.prob_to_tristate(prob)
+    occ_mask = prob > 0.65
     motion, motion_meta = M.classify_motion(pts, ground, plane, rng_m=rng_m)
     boxes = tab.boxes_ego(tok)
 
-    trusts, covs = [], []
+    trusts, covs, raw_covs, vis_fracs = [], [], [], []
     for cam in T.CAMERAS:
         rec = tab.sensor_record(tok, cam)
         cov, _ = GE.camera_ground_coverage(rec, rng_m=rng_m, res=res, soft=True)
-        covs.append(cov)
+        # Occlusion is ray-cast from each camera's own mounting position, so a
+        # cell inside the frustum but behind a van contributes nothing.
+        vis = G.visibility_from(occ_mask, rec["cal_trans"][:2],
+                                rng_m=rng_m, res=res)
+        raw_covs.append(cov)
+        eff = cov * vis
+        covs.append(eff)
+        vis_fracs.append(float(eff.sum() / max(1e-9, cov.sum())))
         trusts.append(fault_trust if cam == fault_camera else DEFAULT_TRUST)
     integ = GE.integrity_map(covs, trusts)
+    integ_no_occl = GE.integrity_map(raw_covs, trusts)
 
     # ---- panels ----
     cam_imgs = []
@@ -101,13 +111,15 @@ def build(index=30, n_sweeps=10, rng_m=54.0, res=0.5, out_dir=None,
         title="Multi-sweep BEV",
         subtitle=f"{len(pts):,} returns · {n_dyn:,} dynamic")
     st = G.grid_stats(occ)
-    occ_img = B.render_occupancy(
-        occ, size=560, title="Ray-cast occupancy",
+    occ_img = B.render_occupancy_prob(
+        prob, size=560, rng_m=rng_m, boxes=boxes,
+        title="Ray-cast occupancy · log-odds",
         subtitle=f"free {100*st['free_frac']:.1f}%  occupied "
                  f"{100*st['occupied_frac']:.1f}%  unknown {100*st['unknown_frac']:.1f}%")
     ist = GE.integrity_stats(integ, occ, free_value=G.FREE)
     int_img = B.render_integrity(
-        integ, size=560, title="Perception Integrity Map",
+        integ, size=560, rng_m=rng_m, occ_mask=occ_mask, boxes=boxes,
+        title="Perception Integrity Map · occlusion-aware",
         subtitle=f"mean over free space {ist['mean_over_free_space']:.3f} · "
                  f"{100*ist['free_cells_below_0.3']:.1f}% of drivable below 0.3")
 
@@ -139,8 +151,13 @@ def build(index=30, n_sweeps=10, rng_m=54.0, res=0.5, out_dir=None,
                    for k, v in motion_meta.items()} | {"n_dynamic": n_dyn},
         "boxes": {"total": len(boxes),
                   "with_lidar_returns": sum(1 for b in boxes if b["num_lidar_pts"] > 0)},
-        "cameras": {c: {"trust": tr, "mean_coverage_weight": round(float(cv.mean()), 4)}
-                    for c, tr, cv in zip(T.CAMERAS, trusts, covs)},
+        "cameras": {c: {"trust": tr,
+                        "mean_coverage_weight": round(float(cv.mean()), 4),
+                        "visible_frac_of_frustum": round(vf, 4)}
+                    for c, tr, cv, vf in zip(T.CAMERAS, trusts, covs, vis_fracs)},
+        "integrity_without_occlusion": {
+            k: round(v, 5) for k, v in
+            GE.integrity_stats(integ_no_occl, occ, free_value=G.FREE).items()},
         "integrity": {k: round(v, 5) for k, v in ist.items()},
         "fault_camera": fault_camera,
         "figure": str(fig.relative_to(ROOT)),
