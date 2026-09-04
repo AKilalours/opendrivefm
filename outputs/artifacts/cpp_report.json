@@ -1,24 +1,78 @@
 {
-  "build": "cmake + g++ 14, C++17, Release, header-only targets",
-  "configure_note": "LibTorch targets (odfm_runner, odfm_parity_check) did NOT build. The installed torch wheel is a CUDA build (2.13.0+cu130) and its Caffe2Config.cmake refuses to configure without CUDA present. The header-only runtime primitives and their tests have no such dependency and build anywhere, which is the point of that split in CMakeLists.txt.",
-  "tests": {
+  "status": "RUNS \u2014 LibTorch path unblocked",
+  "how_it_was_unblocked": "cmake's find_package(Torch) pulls in Caffe2Config.cmake, which refuses to configure when CUDA is absent \u2014 the installed wheel is a CUDA build (2.13.0+cu130) and there is no GPU here. But that wheel still ships libtorch_cpu.so and c10, so the fix is to skip cmake's Torch package entirely and link the CPU libraries directly: g++ -I<torch>/include -I<torch>/include/torch/csrc/api/include -L<torch>/lib -ltorch_cpu -lc10, with _GLIBCXX_USE_CXX11_ABI=1 to match the wheel. The blocker was cmake's CUDA insistence, not a missing library.",
+  "model_export": "OpenDriveFM traced to TorchScript from a real keyframe through a thin (x, velocity) wrapper with ego_deltas baked in as a buffer, then frozen. 60 MB module, plus a 4 MB reference bundle carrying the input tensors and the Python reference outputs.",
+  "parity": {
+    "verdict": "PASS",
+    "occupancy": {
+      "max_abs": 5.245e-06,
+      "max_rel": 0.0003641,
+      "elements": 16384
+    },
+    "trajectory": {
+      "max_abs": 5.96e-07,
+      "max_rel": 4.091e-05,
+      "elements": 24
+    },
+    "trust": {
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "elements": 6
+    },
+    "determinism": "PASS \u2014 identical outputs on a repeated forward",
+    "note": "C++ graph matches the validated Python model. Trust is bit-identical; occupancy differs at float32 rounding."
+  },
+  "inference_latency": {
+    "iterations": 200,
+    "warmup": 20,
+    "p50_ms": 296.759,
+    "p95_ms": 315.794,
+    "p99_ms": 332.67,
+    "max_ms": 351.345,
+    "jitter_p99_over_p50": 1.121,
+    "throughput_fps": 3.349,
+    "deadline_budget_ms": 33.3,
+    "deadline_miss_rate": 1.0
+  },
+  "runner": {
+    "what": "Two threads: a producer at a fixed sensor rate, a consumer running inference. Measures queue wait, inference, and END-TO-END staleness \u2014 how old the frame behind the current occupancy grid is.",
+    "at_10hz_6s": {
+      "latest_frame_seqlock": {
+        "queue_wait_p50_ms": 54.46,
+        "inference_p50_ms": 177.8,
+        "end_to_end_p50_ms": 234.53,
+        "end_to_end_p99_ms": 480.01,
+        "processed": 32,
+        "skipped_stale": 28,
+        "dropped_full": 0,
+        "effective_hz": 5.33
+      },
+      "fifo_queue": {
+        "queue_wait_p50_ms": 2108.76,
+        "inference_p50_ms": 183.17,
+        "end_to_end_p50_ms": 2318.66,
+        "end_to_end_p99_ms": 3429.88,
+        "processed": 43,
+        "skipped_stale": 0,
+        "dropped_full": 34,
+        "effective_hz": 7.17
+      }
+    },
+    "finding": "This is the whole argument for the seqlock. Inference latency is the SAME under both policies (178 vs 183 ms p50) \u2014 but end-to-end staleness is 235 ms with latest-frame and 2,319 ms with FIFO, a 10x difference the model latency number cannot show. A system honestly reporting '180 ms inference' was handing the planner 2.3-second-old perception."
+  },
+  "primitives": {
     "test_spsc_ring": "pass",
     "test_latency_stats": "pass",
-    "flakiness": "test_spsc_ring failed once during a -j4 parallel build, then passed 40/40 when run alone. That points at CPU contention in a timing-sensitive concurrency test rather than a logic defect, but a test that fails only under load is exactly the kind CI hides."
+    "bench_frames": 20000,
+    "bench_dropped": 0,
+    "bench_queueing_p50_ms": 0.0003,
+    "bench_queueing_p99_ms": 0.0078,
+    "flakiness": "test_spsc_ring failed once during a -j4 parallel build, then passed 40/40 alone \u2014 CPU contention in a timing-sensitive test, the kind CI hides."
   },
-  "benchmark": {
-    "what": "Producer/consumer handoff through the SPSC ring with the latency accumulator, no model in the loop -- the floor the runtime imposes.",
-    "frames_offered": 20000,
-    "frames_consumed": 20000,
-    "frames_dropped": 0,
-    "wall_s": 2.52,
-    "throughput_fps": 7947,
-    "queueing_p50_ms": 0.0003,
-    "queueing_p95_ms": 0.0007,
-    "queueing_p99_ms": 0.0078,
-    "queueing_max_ms": 0.4911,
-    "interarrival_p50_ms": 0.1229,
-    "note": "Throughput is bounded by the producer's deliberate 50 us pacing, not by the ring. Queueing latency is the number that matters: 300 ns at the median, 7.8 us at p99."
-  },
-  "hardware": "cloud container CPU, 4 cores, g++ -O2, no -march=native (CMakeLists deliberately leaves it off so numbers stay reproducible)"
+  "hardware": "cloud container CPU, 4 cores, g++ -O2, no -march=native, 2 torch threads. No GPU.",
+  "caveats": [
+    "Every latency figure is CPU. No CUDA, no TensorRT, no GPU was benchmarked; the deadline-miss rates are what a CPU-only build gives and are not a claim about deployable hardware.",
+    "ego_deltas is baked into the traced module from one keyframe. The runner measures latency and staleness, where that does not matter, and the parity check compares against Python run with the same baked value.",
+    "The 33.3 ms budget in the parity output is a 30 Hz reference, not a target this build meets."
+  ]
 }

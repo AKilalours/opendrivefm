@@ -351,9 +351,14 @@ BODY = r"""
         <div class="card pad"><div class="sec"><h2>SPSC ring handoff latency</h2></div>
           <table id="cppTable"></table>
           <div class="warnbox" style="margin-top:10px" id="cppFlaky"></div></div>
-        <div class="card pad"><div class="sec"><h2>Build</h2></div>
-          <div id="cppBuild" style="font-size:11.5px;color:var(--dim);line-height:1.65"></div></div>
+        <div class="card pad"><div class="sec"><h2>Python &harr; C++ parity</h2></div>
+          <table id="cppParity"></table>
+          <div id="cppBuild"></div></div>
       </div>
+      <div class="hr"></div>
+      <div class="sec"><h2>Backpressure policy &mdash; the number model latency cannot show</h2>
+        <span class="note" id="rnNote"></span></div>
+      <div class="card pad"><table id="rnTable"></table><div id="rnNoteBox"></div></div>
       <div class="hr"></div>
       <div class="grid2">
         <div class="card pad"><div class="sec"><h2>Sparse attention &mdash; ms/forward</h2>
@@ -951,23 +956,37 @@ function fillStatic() {
   /* ---------- runtime ---------- */
   const cp = R.cpp_report;
   if (cp) {
-    const b = cp.benchmark;
+    const pr0 = cp.primitives;
     $("#cppNote").textContent = cp.hardware;
-    $("#cppTable").innerHTML = `<tr><th>metric</th><th>value</th></tr>` +
-      [["frames offered", b.frames_offered.toLocaleString()],
-       ["frames dropped", b.frames_dropped],
-       ["throughput", b.throughput_fps.toLocaleString() + " fps"],
-       ["queueing p50", b.queueing_p50_ms.toFixed(4) + " ms"],
-       ["queueing p95", b.queueing_p95_ms.toFixed(4) + " ms"],
-       ["queueing p99", b.queueing_p99_ms.toFixed(4) + " ms"],
-       ["queueing max", b.queueing_max_ms.toFixed(4) + " ms"]]
-      .map(([k, v]) => `<tr><td>${k}</td><td class="${k.includes("p99") ? "a" : ""}">${v}</td></tr>`).join("");
-    $("#cppFlaky").outerHTML = note("Test flakiness", cp.tests.flakiness);
-    $("#cppBuild").innerHTML =
-      `<div style="margin-bottom:8px"><span class="pill" style="border-color:var(--good);color:var(--good)">test_spsc_ring PASS</span>
-        <span class="pill" style="border-color:var(--good);color:var(--good);margin-left:6px">test_latency_stats PASS</span></div>
-       <div style="margin-bottom:8px">${cp.build}</div><div>${cp.configure_note}</div>
-       <div style="margin-top:8px;color:var(--dim2)">${b.note}</div>`;
+    $("#cppTable").innerHTML = `<tr><th>SPSC ring handoff</th><th>value</th></tr>` +
+      [["frames", pr0.bench_frames.toLocaleString()],
+       ["dropped", pr0.bench_dropped],
+       ["queueing p50", pr0.bench_queueing_p50_ms + " ms"],
+       ["queueing p99", pr0.bench_queueing_p99_ms + " ms"],
+       ["test_spsc_ring", pr0.test_spsc_ring],
+       ["test_latency_stats", pr0.test_latency_stats]]
+      .map(([k, v]) => `<tr><td>${k}</td><td class="${String(v) === "pass" ? "g" : ""}">${v}</td></tr>`).join("");
+    const pv = cp.parity, pr = cp.primitives, il = cp.inference_latency;
+    $("#cppParity").innerHTML = `<tr><th>output</th><th>max abs</th><th>max rel</th><th></th></tr>` +
+      ["occupancy", "trajectory", "trust"].map(k =>
+        `<tr><td>${k}</td><td>${pv[k].max_abs.toExponential(3)}</td>
+         <td>${pv[k].max_rel.toExponential(3)}</td><td class="g">PASS</td></tr>`).join("") +
+      `<tr><td>determinism</td><td colspan="2" class="d">repeated forward</td><td class="g">PASS</td></tr>`;
+    $("#cppBuild").innerHTML = hero([
+      ["inference p50", il.p50_ms.toFixed(0) + " ms", il.iterations + " iters"],
+      ["p99", il.p99_ms.toFixed(0) + " ms", "jitter " + il.jitter_p99_over_p50.toFixed(2) + "x"],
+      ["ring p99", pr.bench_queueing_p99_ms + " ms", pr.bench_frames.toLocaleString() + " frames, 0 dropped"],
+    ]) + note("How the LibTorch path was unblocked", cp.how_it_was_unblocked) +
+        note("Test flakiness", pr.flakiness);
+    const rn = cp.runner, A = rn.at_10hz_6s.latest_frame_seqlock, B2 = rn.at_10hz_6s.fifo_queue;
+    $("#rnNote").textContent = rn.what;
+    $("#rnTable").innerHTML =
+      `<tr><th>policy</th><th>inference p50</th><th>queue wait p50</th><th>end-to-end p50</th><th>processed</th><th>dropped</th></tr>` +
+      `<tr><td>latest frame (seqlock)</td><td>${A.inference_p50_ms} ms</td><td>${A.queue_wait_p50_ms} ms</td>
+        <td class="g">${A.end_to_end_p50_ms} ms</td><td>${A.processed}</td><td>${A.skipped_stale} stale</td></tr>` +
+      `<tr><td>FIFO queue</td><td>${B2.inference_p50_ms} ms</td><td class="b">${B2.queue_wait_p50_ms} ms</td>
+        <td class="b">${B2.end_to_end_p50_ms} ms</td><td>${B2.processed}</td><td>${B2.dropped_full} full</td></tr>`;
+    $("#rnNoteBox").innerHTML = note("Why this is the headline", rn.finding);
   }
   const kb = R.kernel_bench_report;
   if (kb) {
@@ -1009,7 +1028,7 @@ function fillStatic() {
     ["VLM", "blocked", "BLIP weights unreachable (egress 403)", "models"],
     ["Trust / robustness", "runs", rbq ? `separation ${rbq.mean_separation}` : "--", "robustness"],
     ["Integrity", "runs", iv ? `AUROC ${iv.auroc.integrity_occlusion_aware.auroc}` : "--", "integrity"],
-    ["C++ runtime", "runs", cpq ? `p99 ${cpq.benchmark.queueing_p99_ms} ms · 0 drops` : "--", "runtime"],
+    ["C++ runtime", "runs", cpq ? `parity PASS · e2e ${cpq.runner.at_10hz_6s.latest_frame_seqlock.end_to_end_p50_ms} ms` : "--", "runtime"],
     ["Hard cases", "runs", `${F.reduce((a, f) => a + f.objects.length, 0)} objects indexed`, "hard cases"],
   ];
   $("#statusStrip").innerHTML = STATUS.map(([n, st, v, pg]) =>
@@ -1034,7 +1053,8 @@ function fillStatic() {
     ["Sparse causal trajectory head", "runs", "no gain at horizon 12, 14% faster at 128 — matches its own docstring"],
     ["Trust-weighted BEV pooling kernel", "runs", "3.09x over the Python loop on CPU, outputs shape-identical"],
     ["C++ SPSC ring + latency stats", "runs", "builds, both tests pass, queueing p99 7.8 us over 20k frames"],
-    ["C++ LibTorch runner", "blocked", "CUDA-built torch wheel refuses to cmake-configure without a GPU; needs a CPU LibTorch"],
+    ["TorchScript export", "runs", "traced + frozen from a real keyframe, 60 MB module driving the C++ runner"],
+    ["C++ LibTorch runner", "runs", "parity PASS (5.2e-06 occupancy, 0.0 trust); end-to-end 235 ms seqlock vs 2319 ms FIFO"],
     ["VLM scene understanding", "runs", "live Claude call on the real frames via the artifact runtime — not BLIP, and labelled as such"],
     ["BLIP (the repo's own VLM path)", "blocked", "huggingface.co 403 at the egress proxy in BOTH environments — policy denial, not a dependency"],
     ["CUDA / GPU inference", "not available", "no GPU in either environment; every latency figure here is CPU and says so"],
