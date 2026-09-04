@@ -34,10 +34,10 @@ target_link_libraries(odfm_core INTERFACE Threads::Threads)
 
 # ── Tests: no LibTorch required ───────────────────────────────────────────────
 enable_testing()
-foreach(t test_spsc_ring test_latency_stats)
+foreach(t test_spsc_ring test_latency_stats test_integrity_monitor)
   add_executable(${t} tests/${t}.cpp)
   target_link_libraries(${t} PRIVATE odfm_core)
-  add_test(NAME ${t} COMMAND ${t})
+  add_test(NAME ${t} COMMAND ${t} ${CMAKE_CURRENT_SOURCE_DIR}/integrity_case.bin)
 endforeach()
 
 # ThreadSanitizer build of the concurrency test. A lock-free queue that passes

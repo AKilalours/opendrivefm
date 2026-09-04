@@ -176,7 +176,55 @@ details.notes .body{font-size:11.5px;color:var(--dim);line-height:1.6;margin-top
 .hero .s{font-size:10px;color:var(--dim2);margin-top:1px}
 .badbox{border-left:2px solid var(--bad);padding:8px 12px;background:rgba(255,106,122,.05);
   font-size:11.5px;color:var(--dim);border-radius:0 4px 4px 0}
-@media(max-width:1100px){.maps{grid-template-columns:1fr}.cams{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- hint bar ----------
+   This used to be a 11px dim span crushed against the heading in a flex row,
+   where it read as decoration and wrapped into the map grid. It is now its own
+   full-width bar with a live left border, and it reports the current selection
+   rather than repeating a static instruction. */
+.hint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;margin:0 0 9px;
+  background:var(--surf);border:1px solid var(--line);border-left:2px solid var(--acc);
+  border-radius:0 4px 4px 0;font-size:12px;color:var(--dim);line-height:1.5}
+.hint b{color:var(--ink);font-weight:600}
+.hint .kbd{font-family:"IBM Plex Mono",monospace;font-size:10px;padding:1px 5px;border-radius:3px;
+  border:1px solid var(--line2);background:var(--bg);color:var(--dim2)}
+.hint .clear{margin-left:auto;font-size:11px;color:var(--acc);border-bottom:1px solid transparent}
+.hint .clear:hover{border-bottom-color:var(--acc)}
+
+/* ---------- live controls ---------- */
+.ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 11px;background:var(--surf2);
+  border:1px solid var(--line);border-radius:5px;margin-bottom:9px}
+.ctrl .lab{flex:0 0 auto}
+.tog{padding:3px 8px;border:1px solid var(--line2);border-radius:3px;font-size:11px;
+  font-family:"IBM Plex Mono",monospace;color:var(--dim2);background:var(--bg)}
+.tog.on{border-color:var(--acc);color:var(--acc);background:rgba(91,210,232,.10)}
+.ctrl input[type=range]{accent-color:var(--acc);width:120px}
+.rdout{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--acc);margin-left:auto;
+  min-height:1.4em}
+canvas.grid{width:100%;display:block;image-rendering:pixelated;background:#0B0E14;cursor:crosshair;
+  aspect-ratio:1/1;object-fit:contain}
+.mapcap{max-width:600px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--dim2);padding:6px 10px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;
+  vertical-align:-1px}
+.swatch{height:8px;border-radius:2px;flex:1;min-width:80px}
+
+/* ---------- filmstrip / scene tabs ---------- */
+.strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.strip figure{margin:0;flex:0 0 176px;cursor:pointer;padding:3px;border-radius:5px}
+.strip figure:hover{background:var(--surf2)}
+.strip img{width:100%;display:block;border:1px solid var(--line);border-radius:4px}
+.strip figure.on img{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.strip figcaption{font-size:10px;color:var(--dim2);padding:4px 2px 0;
+  font-family:"IBM Plex Mono",monospace;display:flex;justify-content:space-between;gap:8px;
+  letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.strip figure.on figcaption{color:var(--acc)}
+.plot{width:100%;display:block}
+.plot .ax{stroke:var(--line2);stroke-width:.6}
+.plot .gl{stroke:var(--line);stroke-width:.5;stroke-dasharray:2 3}
+.plot text{fill:var(--dim2);font-size:8px;font-family:"IBM Plex Mono",monospace}
+@media(max-width:1100px){.maps{grid-template-columns:1fr}.cams{grid-template-columns:repeat(2,1fr)}
+  .grid2,.grid3{grid-template-columns:1fr}}
 </style>"""
 
 BODY = r"""
@@ -212,12 +260,13 @@ BODY = r"""
       <div class="sec"><h2>Sensor input</h2><span class="note" id="ovNote"></span></div>
       <div class="cams" id="cams"></div>
 
-      <div class="sec" style="margin-top:16px"><h2>World state</h2>
-        <span class="note">click any object to trace it across every view</span></div>
+      <div class="sec" style="margin-top:16px"><h2>World state</h2></div>
+      <div class="hint" id="wsHint"></div>
       <div class="maps" id="maps"></div>
 
-      <div class="sec" style="margin-top:16px"><h2>Temporal &mdash; persistence forecast vs realised future</h2>
-        <span class="note">green correct &middot; orange false occupied &middot; red missed</span></div>
+      <div class="sec" style="margin-top:16px">
+        <h2>Occupancy forecast &mdash; predicted vs observed</h2>
+        <span class="note">the LiDAR that actually arrived is the ground truth</span></div>
       <div class="tl" id="tl"></div>
 
       <div style="margin-top:16px" class="kpi" id="kpi"></div>
@@ -228,16 +277,40 @@ BODY = r"""
 
     <!-- ============ PERCEPTION ============ -->
     <section class="page" data-p="perception">
-      <div class="sec"><h2>Multi-sweep BEV</h2><span class="note" id="pcNote"></span></div>
+      <div class="sec"><h2>Point cloud accumulation</h2><span class="note" id="pcNote"></span></div>
       <div class="grid2">
-        <div class="mapwrap"><img id="pcBev" alt="BEV"><div class="cap">
-          <b>Points + dynamic</b><span class="mono d" id="pcBevN"></span></div></div>
-        <div class="mapwrap"><img id="pcOcc" alt="Occupancy"><div class="cap">
-          <b>Ray-cast occupancy</b><span class="mono d" id="pcOccN"></span></div></div>
+        <div class="mapwrap"><img id="pcBev" alt="Accumulated LiDAR"><div class="cap">
+          <b>Accumulated returns &middot; motion-segmented</b><span class="mono d" id="pcBevN"></span></div></div>
+        <div>
+          <div class="ctrl">
+            <span class="lab">Occupancy threshold</span>
+            <input type="range" id="occThr" min="50" max="95" value="65">
+            <span class="tog on" id="occThrV">0.65</span>
+            <span class="rdout" id="occRd">hover the grid</span>
+          </div>
+          <div class="mapwrap"><canvas class="grid" id="occCv" width="135" height="135"></canvas>
+            <div class="legend">
+              <span><i style="background:linear-gradient(90deg,#2C6E8F,#171C27)"></i>free &rarr; unobserved</span>
+              <span><i style="background:linear-gradient(90deg,#171C27,#FF6A7A)"></i>unobserved &rarr; occupied</span>
+              <span class="mono" id="occFrac" style="margin-left:auto"></span></div>
+            <div class="cap"><b>Occupancy grid &middot; log-odds</b>
+              <span class="mono d" id="pcOccN"></span></div></div>
+        </div>
       </div>
       <div class="hr"></div>
-      <div class="sec"><h2>Objects in frame</h2></div>
-      <div class="objlist" id="objTable" style="max-height:none"></div>
+      <div class="grid2">
+        <div class="card pad"><div class="sec"><h2>Inverse sensor model</h2>
+          <span class="note">what the slider is actually thresholding</span></div>
+          <table id="pcIsm"></table></div>
+        <div class="card pad"><div class="sec"><h2>Static / dynamic separation</h2>
+          <span class="note" id="pcMoNote"></span></div>
+          <table id="pcMotion"></table>
+          <div id="pcMoBox" style="margin-top:10px"></div></div>
+      </div>
+      <div class="hr"></div>
+      <div class="sec"><h2>Objects in frame</h2>
+        <span class="note">click a row to trace it into every camera and both maps</span></div>
+      <div class="objlist" id="objTable" style="max-height:420px"></div>
     </section>
 
     <!-- ============ FORECAST ============ -->
@@ -254,6 +327,12 @@ BODY = r"""
           <table id="adeTable"></table>
           <div id="adeNote"></div></div>
       </div>
+      <div class="grid2" style="margin-top:10px">
+        <div class="card pad"><div class="sec"><h2>Occupancy forecast &mdash; full metrics</h2></div>
+          <table id="vaFc"></table></div>
+        <div class="card pad"><div class="sec"><h2>Ego trajectory &mdash; every horizon</h2></div>
+          <table id="vaAde"></table></div>
+      </div>
     </section>
 
     <!-- ============ MODELS ============ -->
@@ -269,37 +348,80 @@ BODY = r"""
           <div class="warnbox" style="margin-top:10px" id="mdLoad"></div></div>
       </div>
       <div class="hr"></div>
-      <div class="hr"></div>
-      <div class="card pad"><div class="sec"><h2>Trajectory language model &mdash; three defects, three fixes</h2>
+      <div class="sec"><h2>Trajectory language model &mdash; training run</h2>
         <span class="note" id="tlNote"></span></div>
-        <div class="grid3" id="tlFixes" style="margin-bottom:12px"></div>
-        <table id="tlTable"></table></div>
-      <div class="hr"></div>
       <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>VLA &mdash; vision to action through a language model</h2></div>
-          <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
-               id="vlaArch"></div>
-          <table id="vlaTable"></table>
+        <div class="card pad"><div class="sec"><h2>Loss</h2>
+          <span class="note">cross-entropy over waypoint tokens, logged every 10 steps</span></div>
+          <div id="tlCurve"></div></div>
+        <div class="card pad"><div class="sec"><h2>Validation ADE vs constant velocity</h2></div>
+          <table id="tlTable"></table>
+          <div id="tlWhy" style="margin-top:10px"></div></div>
+      </div>
+      <div class="card pad" style="margin-top:10px">
+        <div class="sec"><h2>Decoded paths on held-out keyframes</h2>
+          <span class="note" id="tlPathNote"></span></div>
+        <div class="grid3" id="tlPaths"></div></div>
+
+      <div class="hr"></div>
+      <div class="sec"><h2>VLA &mdash; vision to action through a frozen language model</h2>
+        <span class="note" id="vlaNote"></span></div>
+      <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
+           id="vlaArch"></div>
+      <div class="grid2">
+        <div class="card pad"><div class="sec"><h2>Projector training loss</h2>
+          <span class="note">only the projector has gradients &mdash; 1.77M of 102.7M</span></div>
+          <div id="vlaCurve"></div></div>
+        <div class="card pad"><table id="vlaTable"></table>
           <div id="vlaNotes" style="margin-top:10px"></div></div>
-        <div class="card pad"><div class="sec"><h2>VLM &mdash; scene understanding</h2>
-          <span class="note" id="vlmModel"></span></div>
+      </div>
+      <div class="card pad" style="margin-top:10px">
+        <div class="sec"><h2>Decoded paths &mdash; VLA vs its own prior</h2>
+          <span class="note" id="vlaPathNote"></span></div>
+        <div class="grid3" id="vlaPaths"></div></div>
+
+      <div class="hr"></div>
+      <div class="sec"><h2>VLM &mdash; scene understanding on the frame you are looking at</h2>
+        <span class="note" id="vlmModel"></span></div>
+      <div class="grid2">
+        <div><div class="strip" id="vlmStrip"></div>
+          <div class="mono" style="font-size:10.5px;color:var(--dim2);margin-top:6px" id="vlmFrame"></div></div>
+        <div class="card pad">
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
             <button class="pill" id="vlmRun">Describe this frame</button>
             <button class="pill" id="vlmStop" hidden>Stop</button>
             <span class="mono" id="vlmState" style="font-size:11px;color:var(--dim2)"></span></div>
           <div id="vlmOut" style="font-size:12px;line-height:1.6;color:var(--ink);
-            white-space:pre-wrap;min-height:60px"></div>
+            white-space:pre-wrap;min-height:88px"></div>
           <div id="vlmBox"></div></div>
       </div>
     </section>
 
-    <!-- ============ INTEGRITY ============ -->
-    <section class="page" data-p="integrity">
+    <!-- ============ OBSERVABILITY ============ -->
+    <section class="page" data-p="observability">
+      <div class="sec"><h2>Camera observability of the ground plane</h2>
+        <span class="note">integrity(cell) = 1 &minus; &prod;<sub>i</sub>(1 &minus; trust<sub>i</sub> &middot; coverage<sub>i</sub> &middot; visible<sub>i</sub>)</span></div>
+      <div class="hint" id="inHint"></div>
+      <div class="ctrl" id="inCtrl">
+        <span class="lab">Cameras</span><span id="inTogs"></span>
+        <span class="lab" style="margin-left:10px">Trust</span>
+        <input type="range" id="inTrust" min="0" max="100" value="80">
+        <span class="tog on" id="inTrustV">0.795</span>
+        <button class="pill" id="inReset">Reset</button>
+        <span class="rdout" id="inRd">hover the map</span>
+      </div>
       <div class="grid2">
-        <div class="mapwrap"><img id="inMap" alt="Integrity"><div class="cap">
-          <b>Perception integrity</b><span class="mono d" id="inMean"></span></div></div>
+        <div class="mapwrap mapcap"><canvas class="grid" id="inCv" width="108" height="108"></canvas>
+          <svg class="ovl" id="ovlIn" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+          <div class="legend"><span class="mono d">0.0</span>
+            <span class="swatch" id="inRamp"></span><span class="mono d">1.0</span></div>
+          <div class="cap"><b>Observability</b><span class="mono d" id="inMean"></span></div></div>
         <div>
-          <div class="card pad"><div class="sec"><h2>Per-camera visible fraction of frustum</h2></div>
+          <div class="card pad"><div class="sec"><h2>Per-camera contribution at the cursor</h2>
+            <span class="note">trust &times; coverage &times; visible</span></div>
+            <div id="inProbe"></div></div>
+          <div class="card pad" style="margin-top:10px">
+            <div class="sec"><h2>Fraction of each frustum not occluded</h2></div>
             <div id="inCams"></div></div>
           <div class="card pad" style="margin-top:10px">
             <div class="sec"><h2>Validated against human visibility labels</h2></div>
@@ -307,45 +429,37 @@ BODY = r"""
             <div class="badbox" style="margin-top:10px" id="inVerdict"></div></div>
         </div>
       </div>
-      <div class="hr"></div>
-      <div class="sec"><h2>Mean integrity by annotator visibility bucket</h2></div>
-      <div class="card pad"><div id="inLevels"></div></div>
     </section>
 
     <!-- ============ ROBUSTNESS ============ -->
     <section class="page" data-p="robustness">
       <div class="sec"><h2>Fault injection &mdash; one camera degraded at a time</h2>
         <span class="note" id="rbNote"></span></div>
-      <div class="grid2">
-        <div class="card pad"><table id="rbTable"></table>
-          <div id="rbVerdict" style="margin-top:10px"></div></div>
-        <div class="card pad"><div class="sec"><h2>Trust separation</h2>
-          <span class="note">faulted camera vs the five untouched</span></div>
-          <div id="rbBars"></div>
-          <div class="badbox" style="margin-top:10px" id="rbGap"></div></div>
-      </div>
-    </section>
-
-    <!-- ============ VALIDATION ============ -->
-    <section class="page" data-p="validation">
-      <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>Motion separation</h2></div>
-          <table id="vaMotion"></table></div>
-        <div class="card pad"><div class="sec"><h2>Occupancy forecast</h2></div>
-          <table id="vaFc"></table></div>
+      <div class="hint" id="rbHint"></div>
+      <div class="strip" id="rbStrip"></div>
+      <div class="grid2" style="margin-top:10px">
+        <div>
+          <div class="grid2">
+            <div class="card pad"><div class="lab">Trust, faulted camera</div>
+              <div class="mono" id="rbTF" style="font-size:26px;font-weight:600;margin-top:3px"></div>
+              <div class="mono" id="rbTFd" style="font-size:11px;margin-top:2px"></div></div>
+            <div class="card pad"><div class="lab">Trust, five untouched</div>
+              <div class="mono" id="rbTO" style="font-size:26px;font-weight:600;margin-top:3px"></div>
+              <div class="mono d" id="rbTOd" style="font-size:11px;margin-top:2px"></div></div>
+          </div>
+          <div class="card pad" style="margin-top:10px"><table id="rbTable"></table>
+            <div id="rbVerdict" style="margin-top:10px"></div></div>
+        </div>
+        <div class="mapwrap mapcap"><canvas class="grid" id="rbCv" width="108" height="108"></canvas>
+          <div class="legend"><span class="mono d">recomputed at the measured trust</span>
+            <span class="mono" id="rbMean" style="margin-left:auto"></span></div>
+          <div class="cap"><b>Downstream effect</b><span class="mono d" id="rbCap"></span></div></div>
       </div>
       <div class="hr"></div>
-      <div class="card pad"><div class="sec"><h2>Ego trajectory &mdash; all horizons</h2></div>
-        <table id="vaAde"></table></div>
-    </section>
-
-    <!-- ============ FAILURES ============ -->
-    <section class="page" data-p="hardcases">
-      <div class="sec"><h2>Hard-case mining &mdash; every object ranked by camera observability</h2>
-        <span class="note">the data engine: which frames are worth labelling next. click any row to open it</span></div>
-      <div class="card"><div class="objlist" id="hardList" style="max-height:none"></div></div>
-      <div class="hr"></div>
-      <div class="grid3" id="failStats"></div>
+      <div class="card pad"><div class="sec"><h2>Trust separation</h2>
+        <span class="note">faulted camera vs the five untouched, mean over 120 keyframes</span></div>
+        <div class="grid2"><div id="rbBars"></div>
+        <div class="badbox" id="rbGap"></div></div></div>
     </section>
 
     <!-- ============ RUNTIME ============ -->
@@ -362,7 +476,22 @@ BODY = r"""
       <div class="hr"></div>
       <div class="sec"><h2>Backpressure policy &mdash; the number model latency cannot show</h2>
         <span class="note" id="rnNote"></span></div>
-      <div class="card pad"><table id="rnTable"></table><div id="rnNoteBox"></div></div>
+      <div class="ctrl">
+        <span class="lab">Policy</span>
+        <button class="tog on rnp" data-p="latest_frame_seqlock">Latest frame (seqlock)</button>
+        <button class="tog rnp" data-p="fifo_queue">FIFO queue</button>
+        <button class="pill" id="rnPlay">&#9654; Run 6 s at 10 Hz</button>
+        <span class="rdout" id="rnRd"></span>
+      </div>
+      <div class="card pad"><div id="rnViz"></div>
+        <div class="legend" style="padding-left:0">
+          <span><i style="background:#5BD2E8"></i>frame processed</span>
+          <span><i style="background:#3A4454"></i>frame skipped as stale</span>
+          <span><i style="background:#FF6A7A"></i>frame dropped, queue full</span>
+          <span class="d" style="margin-left:auto">drawn from the measured p50s &mdash; the bar
+            length is the end-to-end latency this policy recorded</span></div></div>
+      <div class="card pad" style="margin-top:10px"><table id="rnTable"></table>
+        <div id="rnNoteBox"></div></div>
       <div class="hr"></div>
       <div class="grid2">
         <div class="card pad"><div class="sec"><h2>Sparse attention &mdash; ms/forward</h2>
@@ -375,11 +504,19 @@ BODY = r"""
       </div>
       <div class="hr"></div>
       <div class="sec"><h2>Python pipeline latency</h2><span class="note" id="perfNote"></span></div>
-      <div class="card pad"><div id="perfBars"></div></div>
-      <div class="grid2" style="margin-top:10px">
+      <div class="grid2">
+        <div class="card pad"><div id="perfBars"></div></div>
         <div class="card pad"><table id="perfTable"></table></div>
-        <div class="card pad"><div class="sec"><h2>Measurement conditions</h2></div>
-          <div id="perfCond" style="font-size:11.5px;color:var(--dim);line-height:1.65"></div></div>
+      </div>
+      <div class="hr"></div>
+      <div class="sec"><h2>Integrity monitor &mdash; ported to C++</h2>
+        <span class="note" id="imNote"></span></div>
+      <div class="grid2">
+        <div class="card pad"><table id="imTable"></table>
+          <div id="imBox" style="margin-top:10px"></div></div>
+        <div class="card pad"><div class="sec"><h2>Stage by stage</h2>
+          <span class="note">what the header actually implements</span></div>
+          <div id="imStages"></div></div>
       </div>
     </section>
 
@@ -408,8 +545,11 @@ SCRIPT = r"""
 const D = window.__ODFM__;
 const F = D.frames, R = D.reports;
 const CAMS = ["CAM_FRONT_LEFT","CAM_FRONT","CAM_FRONT_RIGHT","CAM_BACK_LEFT","CAM_BACK","CAM_BACK_RIGHT"];
-const PAGES = ["overview","perception","forecast","models","integrity","robustness","validation","hard cases","runtime","system"];
+const PAGES = ["overview","perception","forecast","models","observability","robustness","runtime","system"];
 let fi = 0, ov = "boxes", wl = "bev", sel = null, timer = null;
+/* live state for the recomputed maps */
+let camOn = {}, trustUI = null, occThr = 0.65, rnPolicy = "latest_frame_seqlock";
+let RB_REPAINT = null, PROBED = false;
 
 const scenes = [...new Set(F.map(f => f.scene))];
 // Null-safe. A missing element used to throw on `.innerHTML =`, which aborted
@@ -425,6 +565,155 @@ const el = (t, c, h) => { const e = document.createElement(t); if (c) e.classNam
   if (h !== undefined) e.innerHTML = h; return e; };
 const fx = (v, n = 3) => (v === undefined || v === null) ? "--" : Number(v).toFixed(n);
 const pc = v => (100 * v).toFixed(1) + "%";
+
+/* ================= live grid engine =================
+   The exporter ships, per frame, the per-camera coverage x visibility terms and
+   the occupancy probability field as base64 uint8 grids. Everything below
+   recomputes the published formulas from those terms in the browser -- so
+   turning a camera off, or substituting the trust the fault-injection head
+   actually returned under blur, redraws the real map. Nothing here is a
+   pre-rendered picture being swapped. */
+const GC = {};                       // decoded-grid cache, keyed by frame + name
+function decode(b64) {
+  const s = atob(b64), a = new Float32Array(s.length);
+  for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i) / 255;
+  return a;
+}
+function grid(i, name, cam) {
+  const k = i + "/" + name + "/" + (cam || "");
+  if (!GC[k]) {
+    const g = F[i].grids;
+    GC[k] = decode(cam ? g.cov[cam] : g[name]);
+  }
+  return GC[k];
+}
+/* integrity(cell) = 1 - prod_i (1 - trust_i * cov_i) -- the noisy-OR itself,
+   evaluated over whichever cameras are enabled at whatever trust is set. */
+function noisyOr(i, trustByCam) {
+  const g = F[i].grids, n = g.n, out = new Float32Array(n * n);
+  out.fill(1);
+  CAMS.forEach(c => {
+    const t = trustByCam[c];
+    if (!t) return;
+    const cov = grid(i, "cov", c);
+    for (let k = 0; k < out.length; k++) out[k] *= 1 - t * cov[k];
+  });
+  for (let k = 0; k < out.length; k++) out[k] = 1 - out[k];
+  return out;
+}
+function trustVec() {
+  const base = trustUI === null ? F[fi].grids.trust : trustUI, v = {};
+  CAMS.forEach(c => { v[c] = camOn[c] === false ? 0 : base; });
+  return v;
+}
+/* Colour ramps. Observability is a single perceptually-monotone ramp, so a
+   reader compares brightness and nothing else; occupancy is tri-state because
+   "free" and "never observed" are different claims and must not share a hue. */
+function rampInteg(v) {
+  const s = [[11,14,20],[24,50,72],[30,110,133],[91,210,232],[214,246,252]];
+  const x = Math.min(0.999, Math.max(0, v)) * (s.length - 1), i = x | 0, f = x - i;
+  return [0, 1, 2].map(k => Math.round(s[i][k] + f * (s[i + 1][k] - s[i][k])));
+}
+function paint(cv, vals, n, col) {
+  cv.width = n; cv.height = n;
+  const ctx = cv.getContext && cv.getContext("2d");
+  if (!ctx) return;
+  const im = ctx.createImageData(n, n), d = im.data;
+  // The grids are numpy meshgrid(indexing="ij"): index [ix*n+iy] with x forward
+  // and y left. Screen wants x up and y left-to-right reversed, which is the
+  // flip below -- get it wrong and every shadow lands on the wrong side.
+  for (let sy = 0; sy < n; sy++) {
+    for (let sx = 0; sx < n; sx++) {
+      const ix = n - 1 - sy, iy = n - 1 - sx;
+      const [r, g, b] = col(vals[ix * n + iy]);
+      const o = 4 * (sy * n + sx);
+      d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(im, 0, 0);
+  // ego marker + range rings, drawn at grid scale
+  ctx.strokeStyle = "rgba(230,235,243,.30)"; ctx.lineWidth = 0.6;
+  const c = n / 2, res = n === F[fi].grids.n ? F[fi].grids.res : F[fi].grids.occ_res;
+  [10, 20, 30, 40, 50].forEach(r => {
+    ctx.beginPath(); ctx.arc(c, c, r / res, 0, 6.284); ctx.stroke();
+  });
+  ctx.fillStyle = "#E6EBF3";
+  ctx.fillRect(c - 1.2, c - 2.2, 2.4, 4.4);
+}
+/* Which grid cell is under the pointer, in both grid indices and metres. */
+function cellAt(ev, cv, n, res) {
+  const b = cv.getBoundingClientRect();
+  if (!b.width) return null;
+  const sx = Math.min(n - 1, Math.max(0, Math.floor(n * (ev.clientX - b.left) / b.width)));
+  const sy = Math.min(n - 1, Math.max(0, Math.floor(n * (ev.clientY - b.top) / b.height)));
+  const ix = n - 1 - sy, iy = n - 1 - sx;
+  return { k: ix * n + iy, x: (ix + 0.5) * res - n * res / 2,
+           y: (iy + 0.5) * res - n * res / 2 };
+}
+
+/* tiny inline plots ------------------------------------------------------- */
+function linePlot(series, opt) {
+  const W = 300, H = 120, P = 22;
+  const xs = series.flatMap(s => s.pts.map(p => p[0]));
+  const ys = series.flatMap(s => s.pts.map(p => p[1]));
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = opt && opt.y0 !== undefined ? opt.y0 : Math.min(...ys);
+  const y1 = Math.max(...ys);
+  const X = v => P + (W - P - 6) * (v - x0) / Math.max(1e-9, x1 - x0);
+  const Y = v => H - 16 - (H - 16 - 6) * (v - y0) / Math.max(1e-9, y1 - y0);
+  let g = "";
+  for (let i = 0; i <= 3; i++) {
+    const v = y0 + (y1 - y0) * i / 3;
+    g += `<line class="gl" x1="${P}" y1="${Y(v).toFixed(1)}" x2="${W - 6}" y2="${Y(v).toFixed(1)}"/>
+          <text x="2" y="${(Y(v) + 3).toFixed(1)}">${v.toFixed(opt && opt.dp !== undefined ? opt.dp : 1)}</text>`;
+  }
+  series.forEach(s => {
+    g += `<polyline fill="none" stroke="${s.col}" stroke-width="1.4" points="` +
+      s.pts.map(p => X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1)).join(" ") + `"/>`;
+  });
+  g += `<line class="ax" x1="${P}" y1="${H - 16}" x2="${W - 6}" y2="${H - 16}"/>
+        <text x="${P}" y="${H - 4}">${x0}</text>
+        <text x="${W - 26}" y="${H - 4}">${x1}</text>`;
+  const key = series.map(s =>
+    `<span style="color:${s.col}">&#9632;</span> <span style="color:var(--dim)">${s.name}</span>`)
+    .join("&nbsp;&nbsp;");
+  return `<svg class="plot" viewBox="0 0 ${W} ${H}">${g}</svg>
+    <div style="font-size:10.5px;margin-top:2px">${key}</div>`;
+}
+/* Ego-frame path plot. Forward and lateral get SEPARATE scales, because ego
+   motion is not isotropic: 6 s of driving is 60-85 m forward and two or three
+   metres of lateral deviation, and on one shared scale the lateral error --
+   which is the entire difference between these predictors -- collapses onto a
+   vertical line. That is the same anisotropy the tokenisation fix was about. */
+function pathPlot(sets, title, sub) {
+  const W = 220, H = 190, L = 26, B = 22, T = 14, R = 8;
+  const pts = sets.flatMap(s => s.p);
+  const fwd = Math.max(5, ...pts.map(p => p[0])) * 1.08;
+  const lat = Math.max(1.5, ...pts.map(p => Math.abs(p[1]))) * 1.25;
+  const X = y => (L + W - R) / 2 - (W - L - R) / 2 * y / lat;
+  const Y = x => H - B - (H - B - T) * x / fwd;
+  let g = "";
+  for (let k = 0; k <= 4; k++) {
+    const v = fwd * k / 4, y = Y(v).toFixed(1);
+    g += `<line class="gl" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>
+          <text x="2" y="${(+y + 3).toFixed(1)}">${v.toFixed(0)}</text>`;
+  }
+  g += `<line class="ax" x1="${X(0)}" y1="${T}" x2="${X(0)}" y2="${H - B}"/>`;
+  sets.forEach(s => {
+    g += `<polyline fill="none" stroke="${s.col}" stroke-width="${s.w || 1.5}"
+      stroke-dasharray="${s.dash || ""}" stroke-linejoin="round" points="` +
+      [[0, 0]].concat(s.p).map(p => X(p[1]).toFixed(1) + "," + Y(p[0]).toFixed(1)).join(" ") + `"/>`;
+  });
+  g += `<circle cx="${X(0)}" cy="${Y(0).toFixed(1)}" r="2.6" fill="#E6EBF3"/>
+        <text x="${L}" y="${H - 10}">-${lat.toFixed(1)} m</text>
+        <text x="${W - R - 26}" y="${H - 10}">+${lat.toFixed(1)} m</text>
+        <text x="2" y="${T - 5}">fwd m</text>
+        <text x="${X(0) - 12}" y="${H - 10}">lat</text>`;
+  return `<figure style="margin:0"><svg class="plot" style="max-width:250px"
+      viewBox="0 0 ${W} ${H}">${g}</svg>
+    <figcaption style="font-size:10.5px;color:var(--dim);padding-top:2px">
+      <b style="color:var(--ink)">${title}</b> &middot; ${sub}</figcaption></figure>`;
+}
 
 /* ---------- nav rail ---------- */
 PAGES.forEach((p, i) => {
@@ -450,10 +739,10 @@ $("#maps").innerHTML = `
     <svg class="ovl" id="ovlBev" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
     <div class="mark" id="mkBev"></div>
     <div class="cap"><b id="ovBevCap">Multi-sweep BEV</b><span class="mono d" id="ovBevN"></span></div></div>
-  <div class="mapwrap"><img id="ovInt" alt="Integrity">
+  <div class="mapwrap"><canvas class="grid" id="ovInt" width="108" height="108"></canvas>
     <svg class="ovl" id="ovlInt" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
     <div class="mark" id="mkInt"></div>
-    <div class="cap"><b>Perception integrity</b><span class="mono d" id="ovIntN"></span></div></div>`;
+    <div class="cap"><b>Camera observability</b><span class="mono d" id="ovIntN"></span></div></div>`;
 
 /* ---------- transport ---------- */
 function setFrame(i) {
@@ -491,6 +780,125 @@ addEventListener("keydown", e => {
 
 /* ---------- object selection ---------- */
 function pick(id) { sel = (sel === id) ? null : id; draw(); }
+
+/* ---------- live observability ---------- */
+function drawObservability() {
+  const g = F[fi].grids, tv = trustVec(), v = noisyOr(fi, tv);
+  [$("#ovInt"), $("#inCv")].forEach(c => c.getContext && paint(c, v, g.n, rampInteg));
+  let sum = 0;
+  for (let i = 0; i < v.length; i++) sum += v[i];
+  const mean = sum / v.length;
+  const off = CAMS.filter(c => camOn[c] === false);
+  const base = trustUI === null ? g.trust : trustUI;
+  $("#ovIntN").textContent = `mean over drivable ${fx(F[fi].stats.integrity_mean_drivable)}`;
+  $("#inMean").textContent = `mean over the grid ${fx(mean)}`;
+  $("#inHint").innerHTML = off.length || trustUI !== null
+    ? `Recomputed live: <b>${6 - off.length} of 6 cameras</b> at trust <b>${base.toFixed(3)}</b>` +
+      (off.length ? ` &mdash; ${off.map(c => c.replace("CAM_", "").toLowerCase()).join(", ")} disabled.` : ".") +
+      ` Mean observability <b>${mean.toFixed(4)}</b>, against ${
+        (() => { const b = noisyOr(fi, Object.fromEntries(CAMS.map(c => [c, g.trust])));
+          let t = 0; for (let i = 0; i < b.length; i++) t += b[i]; return (t / b.length).toFixed(4); })()
+      } with the full rig.`
+    : `This map is <b>not a picture</b>. The exporter ships the per-camera coverage &times;
+       visibility terms; the noisy-OR above is evaluated here, per cell, every time you change
+       something. Turn a camera off or move the trust slider and watch the shadows change.`;
+  /* The probe panel starts on the cell 12 m ahead of the vehicle rather than
+     empty, so the page shows what the noisy-OR decomposes into before anyone
+     touches it. */
+  if (!PROBED) probeAt(Math.round(g.n / 2 + 12 / g.res) * g.n + Math.round(g.n / 2), "12.0", "0.0");
+  const rp = $("#inRamp");
+  if (rp.style) rp.style.background =
+    "linear-gradient(90deg," + [0, .25, .5, .75, 1].map(x =>
+      "rgb(" + rampInteg(x).join(",") + ")").join(",") + ")";
+}
+function drawOccupancy() {
+  const g = F[fi].grids, p = grid(fi, "occ"), n = g.occ_n;
+  let free = 0, occ = 0;
+  /* A tri-state paint throws away everything the log-odds field knows: 0.36% of
+     cells clear the occupied threshold, so a hard three-colour map is a black
+     square with confetti on it. Confidence is drawn continuously either side of
+     0.5 -- deep blue for carved free space, near-black for never observed, red
+     for occupied -- and the slider's threshold is marked by full saturation. */
+  const col = v => {
+    if (v > occThr) return [255, 106, 122];
+    if (v >= 0.5) { const t = (v - 0.5) / Math.max(1e-6, occThr - 0.5);
+      return [23 + t * 150, 28 + t * 40, 39 + t * 45]; }
+    const t = (0.5 - v) / 0.5;
+    return [23 + t * 21, 28 + t * 82, 39 + t * 104];
+  };
+  for (let i = 0; i < p.length; i++) { if (p[i] > occThr) occ++; else if (p[i] < 0.35) free++; }
+  const cv = $("#occCv");
+  if (cv.getContext) paint(cv, p, n, col);
+  const s = F[fi].stats;
+  $("#occFrac").textContent =
+    `at 0.20 m: free ${pc(s.free)} · occupied ${pc(s.occupied)} · unobserved ${pc(s.unknown)}`;
+}
+
+/* ---------- controls for the live maps ---------- */
+function inTogs() {
+  const box = $("#inTogs");
+  box.innerHTML = "";
+  CAMS.forEach(c => {
+    const b = el("button", "tog" + (camOn[c] === false ? "" : " on"), c.replace("CAM_", ""));
+    b.style.marginRight = "4px";
+    b.onclick = () => { camOn[c] = camOn[c] === false; inTogs(); drawObservability(); };
+    box.appendChild && box.appendChild(b);
+  });
+}
+inTogs();
+const inTr = $("#inTrust");
+if (inTr.addEventListener) inTr.addEventListener("input", () => {
+  trustUI = Number(inTr.value) / 100;
+  $("#inTrustV").textContent = trustUI.toFixed(3);
+  drawObservability();
+});
+$("#inReset").onclick = () => {
+  camOn = {}; trustUI = null;
+  if (inTr.value !== undefined) inTr.value = 80;
+  $("#inTrustV").textContent = F[fi].grids.trust.toFixed(3);
+  inTogs(); drawObservability();
+};
+const occSl = $("#occThr");
+if (occSl.addEventListener) occSl.addEventListener("input", () => {
+  occThr = Number(occSl.value) / 100;
+  $("#occThrV").textContent = occThr.toFixed(2);
+  drawOccupancy();
+});
+/* hover probes -- the readout is the actual stored value at that cell */
+function probeAt(k, xs, ys) {
+  const tv = trustVec();
+  const terms = CAMS.map(cam => [cam, tv[cam] * grid(fi, "cov", cam)[k]]);
+  let acc = 1; terms.forEach(([, t]) => acc *= 1 - t);
+  $("#inRd").textContent = `x ${xs} m, y ${ys} m → observability ${(1 - acc).toFixed(4)}`;
+  const mx = Math.max(1e-6, ...terms.map(t => t[1]));
+  $("#inProbe").innerHTML = terms.map(([cam, t]) =>
+    bar(cam.replace("CAM_", "").toLowerCase(), t, Math.max(0.3, mx),
+        t > 0.01 ? "var(--acc)" : "#3A4454")).join("") +
+    `<div class="mono" style="font-size:11px;color:var(--dim);margin-top:8px">
+      1 − ∏(1 − t·c·v) = <span class="a">${(1 - acc).toFixed(4)}</span>
+      <span class="d">&nbsp;at x ${xs} m, y ${ys} m</span></div>`;
+}
+const inCv = $("#inCv");
+if (inCv.addEventListener) {
+  inCv.addEventListener("mousemove", ev => {
+    const g = F[fi].grids, c = cellAt(ev, inCv, g.n, g.res);
+    if (!c) return;
+    PROBED = true;
+    probeAt(c.k, c.x.toFixed(1), c.y.toFixed(1));
+  });
+}
+const occCv = $("#occCv");
+if (occCv.addEventListener) {
+  occCv.addEventListener("mousemove", ev => {
+    const g = F[fi].grids, c = cellAt(ev, occCv, g.occ_n, g.occ_res);
+    if (!c) return;
+    const p = grid(fi, "occ")[c.k];
+    const st = p > occThr ? "occupied" : p < 0.35 ? "free" : "unobserved";
+    $("#occRd").textContent =
+      `x ${c.x.toFixed(1)} m, y ${c.y.toFixed(1)} m → P(occupied) ${p.toFixed(3)} · ${st}`;
+  });
+  occCv.addEventListener("mouseleave", () => { $("#occRd").textContent = "hover the grid"; });
+}
 
 function objRows(container, objs, compact) {
   container.innerHTML = `<div class="objrow hdr"><span>OBJECT</span><span>RANGE</span>
@@ -549,20 +957,41 @@ function draw() {
   // frame. The Camera control only re-skins the camera tiles; it cannot change
   // the world state, because BEV, occupancy and integrity are computed from
   // LiDAR and calibration, not from the camera overlay.
-  $("#ovBev").src = f.maps[wl]; $("#ovInt").src = f.maps.integrity;
+  $("#ovBev").src = f.maps[wl];
   $("#ovBevCap").textContent =
-    {bev: "Multi-sweep BEV", bev_nodyn: "BEV — static returns only",
-     occupancy: "Ray-cast occupancy"}[wl];
-  $("#pcBev").src = f.maps.bev; $("#pcOcc").src = f.maps.occupancy;
-  $("#inMap").src = f.maps.integrity;
+    {bev: "Accumulated LiDAR · motion-segmented", bev_nodyn: "Static structure only",
+     occupancy: "Occupancy grid · log-odds"}[wl];
+  $("#pcBev").src = f.maps.bev;
+  drawObservability();
+  drawOccupancy();
+  if (RB_REPAINT) RB_REPAINT();
   const s = f.stats;
   $("#ovBevN").textContent = `${s.returns.toLocaleString()} returns · ${s.dynamic} dynamic`;
-  $("#ovIntN").textContent = `mean over drivable ${fx(s.integrity_mean_drivable)}`;
   $("#pcBevN").textContent = `${s.returns.toLocaleString()} returns · 10 sweeps · ${s.dynamic} dynamic`;
-  $("#pcOccN").textContent = `free ${pc(s.free)} · occ ${pc(s.occupied)} · unknown ${pc(s.unknown)}`;
-  $("#inMean").textContent = `mean over drivable ${fx(s.integrity_mean_drivable)}`;
+  $("#pcOccN").textContent = `${(F[fi].grids.occ_res).toFixed(2)} m cells · rendered live`;
   $("#ovNote").textContent = `${s.boxes_observed} of ${s.boxes} annotated objects have LiDAR returns`;
-  $("#pcNote").textContent = `ground plane tilt ${s.plane_tilt_deg}° · ${pc(s.ground_frac)} of returns are ground`;
+  $("#pcNote").textContent = `10 sweeps, ego-motion compensated to the current pose · ground plane tilt ${s.plane_tilt_deg}° · ${pc(s.ground_frac)} of returns are ground`;
+
+  /* The hint bar. It reports the live selection instead of repeating a static
+     instruction, and it is a bar rather than a caption because as a caption it
+     wrapped into the map grid and nobody read it. */
+  const so = sel !== null ? f.objects.find(x => x.id === sel) : null;
+  const wh = $("#wsHint");
+  if (so) {
+    const seen = CAMS.filter(c => so.cams[c]).map(c =>
+      c.replace("CAM_", "").replace("_", "-").toLowerCase()).join(", ") || "no camera";
+    wh.innerHTML = `Tracing <b>${so.cat} #${so.id}</b> &mdash; ${so.range} m,
+      ${so.speed.toFixed(1)} m/s, observability ${fx(so.integrity, 2)}. Highlighted in
+      <b>${seen}</b> and on both maps.
+      <button class="clear" id="wsClear">clear selection <span class="kbd">Esc</span></button>`;
+    const wc = document.querySelector("#wsClear");
+    if (wc) wc.onclick = () => { sel = null; draw(); };
+  } else {
+    wh.innerHTML = `<b>Click any object</b> to trace it across every view &mdash; the six camera
+      tiles, both maps and the inspector highlight the same instance at once. Click a box in a
+      camera tile, a footprint on a map, or a row in the object table.
+      <span class="clear" style="color:var(--dim2)">${f.objects.length} objects in this frame</span>`;
+  }
 
   /* object marker on both maps */
   const o = sel !== null ? f.objects.find(x => x.id === sel) : null;
@@ -580,7 +1009,7 @@ function draw() {
   // layer: the static-only render carries no boxes at all, and the occupancy
   // render draws its own, so relying on the picture meant objects were only
   // selectable while BEV happened to be showing.
-  [["#ovlBev", "#ovBev"], ["#ovlInt", "#ovInt"]].forEach(([sv, im]) => {
+  [["#ovlBev", "#ovBev"], ["#ovlInt", "#ovInt"], ["#ovlIn", "#inCv"]].forEach(([sv, im]) => {
     const svg = $(sv);
     if (!svg.innerHTML && !svg.setAttribute) return;
     const R = f.rng_m, parts = [];
@@ -604,9 +1033,19 @@ function draw() {
   /* temporal strip */
   const tl = $("#tl"); tl.innerHTML = "";
   const cur = el("figure");
-  cur.innerHTML = `<img src="${f.maps.occupancy}" alt="current occupancy">
-    <figcaption><span>CURRENT</span><span>0.0s</span></figcaption>`;
+  // The "now" tile is the same live occupancy field the perception page draws,
+  // not the pre-rendered picture -- so the strip reads as one instrument.
+  cur.innerHTML = `<canvas class="grid" id="tlNow" width="8" height="8"
+    style="border:1px solid var(--line);border-radius:4px"></canvas>
+    <figcaption><span>OBSERVED NOW</span><span>0.0s</span></figcaption>`;
   tl.appendChild(cur);
+  const nowCv = document.querySelector("#tlNow");
+  if (nowCv && nowCv.getContext) {
+    const gg = F[fi].grids, pp = grid(fi, "occ");
+    paint(nowCv, pp, gg.occ_n, v => v > occThr ? [255, 106, 122]
+      : v >= 0.5 ? [23, 28, 39]
+      : [23 + (0.5 - v) / 0.5 * 21, 28 + (0.5 - v) / 0.5 * 82, 39 + (0.5 - v) / 0.5 * 104]);
+  }
   f.forecast.forEach(h => {
     const g = el("figure");
     g.innerHTML = `<img src="${h.error}" alt="forecast error T+${h.h}">
@@ -653,6 +1092,22 @@ function draw() {
 
   objRows($("#iList"), f.objects, true);
   objRows($("#objTable"), f.objects, false);
+
+  /* The VLM sees exactly these two tiles -- shown so the reader can check the
+     description against the input rather than take it on trust. */
+  $("#vlmStrip").innerHTML = ["CAM_FRONT", "CAM_BACK"].map(c =>
+    `<figure style="flex:1 1 0"><img src="${f.cameras[c].boxes}" alt="${c}">
+      <figcaption><span>${c.replace("CAM_", "")}</span>
+      <span>sent to the model</span></figcaption></figure>`).join("");
+  /* Per-camera: how much of what this camera's frustum covers is not occluded
+     by something the LiDAR sees. Frame-dependent, so it lives in draw(). */
+  $("#inCams").innerHTML = CAMS.map(c =>
+    bar(c.replace("CAM_", "").replace("_", "-").toLowerCase(),
+        f.cameras[c].visible_frac, 1.0,
+        f.cameras[c].visible_frac < 0.6 ? "var(--warn)" : "var(--acc)")).join("");
+
+  $("#vlmFrame").textContent =
+    `${f.scene} · frame ${fi + 1} of ${F.length} · front and rear tiles, boxes and LiDAR drawn on`;
 
   /* inspector */
   const ins = $("#insp");
@@ -720,11 +1175,28 @@ function fillStatic() {
     $("#vaAde").innerHTML = mk(hs);
   }
   const mo = R.motion_separation_report;
-  if (mo) $("#vaMotion").innerHTML =
-    `<tr><th>metric</th><th>value</th><th>metric</th><th>value</th></tr>
-     <tr><td>precision</td><td>${fx(mo.best.precision)}</td><td>frames</td><td>${mo.frames}</td></tr>
-     <tr><td>recall</td><td>${fx(mo.best.recall)}</td><td>boxes scored</td><td>${mo.boxes_scored}</td></tr>
-     <tr><td>F1</td><td class="g">${fx(mo.best.f1)}</td><td>coverage</td><td>${pc(mo.coverage)}</td></tr>`;
+  if (mo) {
+    $("#pcMoNote").textContent = `${mo.frames} keyframes · ${mo.boxes_scored} boxes scored`;
+    $("#pcMotion").innerHTML =
+      `<tr><th>metric</th><th>value</th><th>metric</th><th>value</th></tr>
+       <tr><td>precision</td><td>${fx(mo.best.precision)}</td><td>frames</td><td>${mo.frames}</td></tr>
+       <tr><td>recall</td><td>${fx(mo.best.recall)}</td><td>boxes scored</td><td>${mo.boxes_scored}</td></tr>
+       <tr><td>F1</td><td class="g">${fx(mo.best.f1)}</td><td>coverage</td><td>${pc(mo.coverage)}</td></tr>`;
+    $("#pcMoBox").innerHTML = note("How a return is called dynamic",
+      "Not by voxel persistence. A return is dynamic when the OLDER sweeps ray-cast through the " +
+      "space it now occupies — the space was observed free a moment ago and is occupied now. " +
+      "Absence of prior support scored F1 0.20 on the same frames because it fires on everything " +
+      "the beam simply missed before.");
+  }
+  $("#pcIsm").innerHTML =
+    `<tr><th>parameter</th><th>value</th><th>meaning</th></tr>` +
+    [["l_free", "0.45", "log-odds subtracted per cell a beam passes through"],
+     ["l_occ", "2.40", "log-odds added at the cell a beam terminates in"],
+     ["clamp", "±6.0", "keeps a stale observation recoverable"],
+     ["cell", (F[0].grids.occ_res).toFixed(2) + " m", "display grid; the pipeline runs at 0.20 m"],
+     ["free / occupied", "P < 0.35 / P > " + occThr.toFixed(2), "the slider moves the second one"]]
+      .map(([a, b, c]) => `<tr><td>${a}</td><td class="a">${b}</td>
+        <td class="d" style="font-family:'IBM Plex Sans'">${c}</td></tr>`).join("");
 
   const iv = R.integrity_visibility_report;
   if (iv) {
@@ -741,10 +1213,8 @@ function fillStatic() {
     ]) + note("Reading",
       "The occlusion ray-cast adds real signal, but the map as a whole does not beat object range " +
       "alone. It measures ground-plane observability, which is not object visibility — a car behind " +
-      "a car has an occluded footprint and a visible roof. Use it as an observability prior, not a detector.");
-    const lv = iv.per_visibility_level;
-    $("#inLevels").innerHTML = Object.keys(lv).map(k =>
-      bar(k + "  (n=" + lv[k].n + ")", lv[k].mean_integrity, 0.5, "var(--acc)")).join("");
+      "a car has an occluded footprint and a visible roof. Use it as an observability prior, not a " +
+      "detector. That is why this page is named for what it measures.");
   }
   const tm = R.timing_report;
   if (tm) {
@@ -754,7 +1224,8 @@ function fillStatic() {
        <span class="track"><span class="fill" style="width:${Math.max(2, 100 * ms[k] / mx)}%;
        background:${ms[k] > 300 ? "var(--warn)" : "var(--acc)"}"></span></span>
        <span class="n">${ms[k].toFixed(1)} ms</span></div>`).join("");
-    $("#perfNote").textContent = `${tm.total_ms_per_keyframe} ms total · ${tm.hz} Hz`;
+    $("#perfNote").textContent =
+      `${tm.total_ms_per_keyframe} ms total · ${tm.hz} Hz · ${tm.hardware}`;
     const bf = tm.per_stage_ms_before_optimisation;
     $("#perfTable").innerHTML = `<tr><th>stage</th><th>before</th><th>after</th><th>speedup</th></tr>` +
       [["occupancy_logodds_0.20m", tm.occupancy_speedup_x], ["ground_plane_ransac", null],
@@ -764,8 +1235,6 @@ function fillStatic() {
       `<tr><td><b>full keyframe</b></td><td class="d">${tm.total_ms_before.toFixed(0)} ms</td>
        <td>${tm.total_ms_per_keyframe.toFixed(0)} ms</td>
        <td class="g">${tm.end_to_end_speedup_x.toFixed(2)}×</td></tr>`;
-    $("#perfCond").innerHTML = [tm.hardware, tm.implementation, tm.grids, tm.measured,
-      tm.optimisation, tm.caveat].map(t => "<div style='margin-bottom:7px'>" + t + "</div>").join("");
   }
 
   /* ---------- models page ---------- */
@@ -802,20 +1271,39 @@ function fillStatic() {
   const vla = R.vla_report;
   if (vla) {
     $("#vlaArch").textContent = vla.architecture;
+    $("#vlaNote").textContent =
+      `${vla.train_samples} train / ${vla.val_samples} val · ${vla.steps} steps · ${vla.tokenisation}`;
     const hs = Object.keys(vla.val_ade_m);
-    $("#vlaTable").innerHTML = `<tr><th>horizon</th><th>const-vel</th><th>VLA</th></tr>` +
+    $("#vlaTable").innerHTML = `<tr><th>horizon</th><th>const-vel</th><th>VLA</th><th>vs prior</th></tr>` +
       hs.map(h => { const r = vla.val_ade_m[h];
         const better = r.vla_gpt2_projector < r.constant_velocity;
+        const d = 100 * (r.vla_gpt2_projector - r.constant_velocity) / r.constant_velocity;
         return `<tr><td>${h}</td><td>${r.constant_velocity.toFixed(3)}</td>
-          <td class="${better ? "g" : "b"}">${r.vla_gpt2_projector.toFixed(3)}</td></tr>`; }).join("");
+          <td class="${better ? "g" : "b"}">${r.vla_gpt2_projector.toFixed(3)}</td>
+          <td class="${better ? "g" : "w"}">${d.toFixed(1)}%</td></tr>`; }).join("");
+    if (vla.curve) $("#vlaCurve").innerHTML = linePlot([
+      { name: "train", col: "#4A5568", pts: vla.curve.map(c => [c[0], c[1]]) },
+      { name: "val (80 held out)", col: "var(--acc)", pts: vla.curve.map(c => [c[0], c[2]]) },
+    ], { dp: 1 });
     $("#vlaNotes").innerHTML = hero([
-      ["trainable", vla.trainable_params_m + "M", "projector"],
+      ["trainable", vla.trainable_params_m + "M", "projector only"],
       ["frozen", vla.frozen_params_m + "M", "backbone + GPT-2"],
       ["train / val", vla.train_samples + " / " + vla.val_samples, vla.steps + " steps"],
     ]) + note("Reading",
       "Runs end to end and beats the prior only at 6 s. With this corpus and a frozen LM the repo " +
       "previously damaged by an all-zero fine-tune, that is the expected outcome — it demonstrates " +
       "the mechanism, not a model result.");
+    $("#vlaPathNote").textContent = vla.val_examples_note || "";
+    if (vla.val_examples) $("#vlaPaths").innerHTML = vla.val_examples.map(e =>
+      pathPlot([
+        { p: e.gt, col: "#E6EBF3", w: 2 },
+        { p: e.cv, col: "var(--warn)", dash: "3 3" },
+        { p: e.pred, col: "var(--acc)" },
+      ], e.tag, `VLA ${e.ade_m} m · prior ${e.cv_ade_m} m · ${e.speed_mps} m/s`)).join("") +
+      `<div class="mono" style="grid-column:1/-1;font-size:10.5px;color:var(--dim2)">
+        <span style="color:#E6EBF3">&#9632;</span> ground truth &nbsp;
+        <span style="color:var(--warn)">&#9632;</span> constant-velocity prior &nbsp;
+        <span style="color:var(--acc)">&#9632;</span> VLA</div>`;
   }
   const vlm = R.vlm_report;
   if (vlm) {
@@ -868,56 +1356,15 @@ function fillStatic() {
 
   const rbq = R.robustness_report, cpq = R.cpp_report;
 
-  /* hard-case mining across every loaded frame */
-  const hard = [];
-  F.forEach((f, i) => f.objects.forEach(o => hard.push({ ...o, fi: i, scene: f.scene })));
-  // Why is integrity low here? Without this the ranking is dominated by two
-  // effects that are not the same problem at all: the near-field blind zone
-  // under the vehicle, where no camera can see the ground at any range, and
-  // genuine far-field or occluded cases. Labelling the cause is what makes the
-  // list a work queue instead of a list.
-  const cause = o => o.range < 6 ? "near-field blind zone"
-                  : o.range > 40 ? "beyond camera resolution"
-                  : o.vis <= 2 ? "occluded (annotator agrees)"
-                  : "camera occlusion";
-  hard.forEach(o => o.cause = cause(o));
-  hard.sort((a, b) => a.integrity - b.integrity);
-  const hl = $("#hardList"); hl.innerHTML =
-    `<div class="objrow hdr" style="grid-template-columns:1fr 52px 52px 46px 168px;color:var(--dim2);cursor:default">
-      <span>OBJECT</span><span>INTEG</span><span>VIS</span><span>RANGE</span><span>LIKELY CAUSE</span></div>`;
-  hard.slice(0, 26).forEach(o => {
-    const r = el("div", "objrow");
-    r.style.gridTemplateColumns = "1fr 52px 52px 46px 168px";
-    const visLbl = { 1: "0-40", 2: "40-60", 3: "60-80", 4: "80-100" }[o.vis] || "--";
-    r.innerHTML = `<span>${o.scene.replace("scene-", "")} · ${o.cat}</span>
-      <span class="${o.integrity < 0.2 ? "b" : "w"}">${fx(o.integrity, 2)}</span>
-      <span class="d">${visLbl}</span><span>${o.range}m</span>
-      <span class="d" style="font-family:'IBM Plex Sans'">${o.cause}</span>`;
-    r.onclick = () => { setFrame(o.fi); sel = o.id; draw();
-      document.querySelectorAll(".rb").forEach((x, i) => x.classList.toggle("on", i === 0));
-      document.querySelectorAll(".page").forEach(x => x.classList.toggle("on", x.dataset.p === "overview")); };
-    hl.appendChild(r);
-  });
-  const byCause = {};
-  hard.forEach(o => { byCause[o.cause] = (byCause[o.cause] || 0) + 1; });
-  $("#failStats").innerHTML = [["objects indexed", hard.length],
-    ["integrity below 0.20", hard.filter(o => o.integrity < 0.2).length],
-    ["near-field blind zone", byCause["near-field blind zone"] || 0]]
-    .map(([k, v]) => `<div class="card pad"><div class="k lab">${k}</div>
-      <div class="mono" style="font-size:24px;font-weight:600;margin-top:4px">${v}</div></div>`).join("");
-
   /* ---------- retrained trajectory LM ---------- */
   const tl = R.trajlm_retrained_report;
   if (tl) {
-    $("#tlNote").textContent = `${tl.train_samples} train / ${tl.val_samples} val · ${tl.steps} steps · ${tl.model.split(".")[0]}`;
-    $("#tlFixes").innerHTML = [
-      ["Data", "trained on 404 all-zero trajectories", "retrained from the label npz — 388 distinct paths"],
-      ["Tokenisation", "±20 m clipped 30.6% of waypoints", "split axes: x [-10,70] m, y [-25,25] m"],
-      ["Conditioning", "unconditional — could only emit the dataset average", "velocity-conditioned prefix"],
-    ].map(([k, was, now]) => `<div style="border-left:2px solid var(--acc);padding:8px 12px;background:rgba(91,210,232,.05)">
-        <div class="lab" style="color:var(--acc)">${k}</div>
-        <div style="font-size:11px;color:var(--bad);margin-top:4px">was: ${was}</div>
-        <div style="font-size:11px;color:var(--good);margin-top:3px">now: ${now}</div></div>`).join("");
+    $("#tlNote").textContent =
+      `${tl.model.split(",")[0]} · ${tl.train_samples} train / ${tl.val_samples} val · ${tl.steps} steps · trained from scratch on CPU`;
+    if (tl.curve) $("#tlCurve").innerHTML = linePlot([
+      { name: "train", col: "#4A5568", pts: tl.curve.map(c => [c[0], c[1]]) },
+      { name: "val (80 held out)", col: "var(--acc)", pts: tl.curve.map(c => [c[0], c[2]]) },
+    ], { dp: 1, y0: 0 });
     const hs = Object.keys(tl.val_ade_m);
     $("#tlTable").innerHTML = `<tr><th>horizon</th><th>const-vel</th><th>trajectory LM</th><th>vs CV</th></tr>` +
       hs.map(h => { const r = tl.val_ade_m[h];
@@ -925,13 +1372,91 @@ function fillStatic() {
         return `<tr><td>${h}</td><td>${r.constant_velocity.ade_m.toFixed(3)}</td>
           <td class="${g ? "g" : ""}">${r.gpt2_retrained_conditioned.ade_m.toFixed(3)}</td>
           <td class="${g ? "g" : "w"}">${r.delta_vs_cv_pct.toFixed(1)}%</td></tr>`; }).join("") +
-      `<tr><td class="d">T+1, unconditional</td><td class="d">0.324</td><td class="b">2.796</td><td class="b">+763%</td></tr>`;
+      `<tr><td class="d">T+1, before conditioning</td><td class="d">0.324</td>
+       <td class="b">2.796</td><td class="b">+763%</td></tr>`;
+    $("#tlWhy").innerHTML = note("What the last row is",
+      "The shipped checkpoint was fine-tuned from manifest keys that do not exist, so every " +
+      "waypoint fell back to (0,0) and the model saw 404 copies of one all-zero path. Retraining " +
+      "from the label files fixed the data; the ±20 m tokenisation was clipping 30.6% of real " +
+      "waypoints, so the axes were split (x [-10,70] m, y [-25,25] m); and unconditional, the best " +
+      "it can emit from &lt;BOS&gt; is the dataset average — hence the velocity prefix. The curve " +
+      "above is that third run.");
+    $("#tlPathNote").textContent = tl.val_examples_note || "";
+    if (tl.val_examples) $("#tlPaths").innerHTML = tl.val_examples.map(e =>
+      pathPlot([
+        { p: e.gt, col: "#E6EBF3", w: 2 },
+        { p: e.cv, col: "var(--warn)", dash: "3 3" },
+        { p: e.pred, col: "var(--acc)" },
+      ], e.tag, `LM ${e.ade_m} m · ${e.speed_mps} m/s`)).join("") +
+      `<div class="mono" style="grid-column:1/-1;font-size:10.5px;color:var(--dim2)">
+        <span style="color:#E6EBF3">&#9632;</span> ground truth &nbsp;
+        <span style="color:var(--warn)">&#9632;</span> constant velocity &nbsp;
+        <span style="color:var(--acc)">&#9632;</span> trajectory LM &mdash; 6 s of ego motion,
+        x forward</div>`;
   }
 
   /* ---------- robustness ---------- */
   const rb = R.robustness_report;
   if (rb) {
     $("#rbNote").textContent = `${rb.frames} keyframes · ${rb.faulted_camera} degraded · ${rb.checkpoint}`;
+
+    /* The fault picker. The thumbnails are the ACTUAL 90x160 tensors the trust
+       head was scored on, written out by the same perturbation classes -- not a
+       CSS filter over a JPEG. Selecting one substitutes the trust the head
+       returned for that fault into the noisy-OR and redraws the observability
+       map, which is the part a fault-detection number never shows: what the
+       degradation does to the coverage the planner is handed. */
+    const ps = R.perturbation_shots;
+    let fault = "clean";
+    const paintFault = () => {
+      const r = fault === "clean" ? rb.results.clean : rb.results[fault];
+      const tF = r.trust_faulted, tO = r.trust_others;
+      const d = fault === "clean" ? 0 : r.delta_trust_faulted;
+      $("#rbTF").innerHTML = `<span class="${d < -0.05 ? "g" : d > 0 ? "b" : ""}">${fx(tF, 4)}</span>`;
+      $("#rbTFd").innerHTML = fault === "clean" ? "<span class='d'>baseline</span>"
+        : `<span class="${d < -0.05 ? "g" : "b"}">${d > 0 ? "+" : ""}${d.toFixed(4)} vs clean</span>`;
+      $("#rbTO").textContent = fx(tO, 4);
+      $("#rbTOd").textContent = "unchanged by design";
+      const g = F[fi].grids, tv = {};
+      CAMS.forEach(c => { tv[c] = c === rb.faulted_camera ? tF : tO; });
+      const v = noisyOr(fi, tv);
+      const cv = $("#rbCv");
+      if (cv.getContext) paint(cv, v, g.n, rampInteg);
+      let s = 0; for (let i = 0; i < v.length; i++) s += v[i];
+      const base = noisyOr(fi, Object.fromEntries(CAMS.map(c =>
+        [c, c === rb.faulted_camera ? rb.results.clean.trust_faulted : rb.results.clean.trust_others])));
+      let b0 = 0; for (let i = 0; i < base.length; i++) b0 += base[i];
+      const mean = s / v.length, cleanMean = b0 / base.length;
+      $("#rbMean").textContent = `mean ${mean.toFixed(4)}`;
+      $("#rbCap").textContent = `${rb.faulted_camera.replace("CAM_", "").toLowerCase()} at trust ${fx(tF, 3)}`;
+      $("#rbHint").innerHTML = fault === "clean"
+        ? `Six healthy cameras. Pick a fault below: the thumbnail is the real perturbed
+           <b>90&times;160 model input</b>, and the map on the right is the observability field
+           recomputed with the trust the head actually returned for that fault.`
+        : `<b>${fault}</b> on ${rb.faulted_camera.replace("CAM_", "").toLowerCase()} &mdash;
+           trust ${fx(rb.results.clean.trust_faulted, 3)} &rarr; <b>${fx(tF, 3)}</b>, and mean
+           observability ${cleanMean.toFixed(4)} &rarr; <b>${mean.toFixed(4)}</b>
+           (${(100 * (mean - cleanMean) / cleanMean).toFixed(1)}%).
+           ${d > 0 ? "Trust moved the WRONG way here — see the gap below."
+                   : "The detector caught it, and the coverage loss propagates."}`;
+      document.querySelectorAll("#rbStrip figure").forEach(x =>
+        x.classList.toggle("on", x.dataset.f === fault));
+    };
+    if (ps && ps.images) {
+      $("#rbStrip").innerHTML = ["clean", "blur", "glare", "occlusion", "rain", "noise"]
+        .filter(k => ps.images[k]).map(k => {
+          const r = k === "clean" ? rb.results.clean : rb.results[k];
+          const d = k === "clean" ? null : r.delta_trust_faulted;
+          return `<figure data-f="${k}"><img src="${ps.images[k]}" alt="${k}">
+            <figcaption><span>${k}</span><span class="${
+              d === null ? "d" : d < -0.05 ? "g" : "b"}">${
+              d === null ? "baseline" : (d > 0 ? "+" : "") + d.toFixed(3)}</span></figcaption></figure>`;
+        }).join("");
+      document.querySelectorAll("#rbStrip figure").forEach(x =>
+        x.onclick = () => { fault = x.dataset.f; paintFault(); });
+    }
+    paintFault();
+    RB_REPAINT = paintFault;
     const keys = Object.keys(rb.results).filter(k => k !== "clean");
     const c = rb.results.clean;
     $("#rbTable").innerHTML =
@@ -981,8 +1506,8 @@ function fillStatic() {
       ["inference p50", il.p50_ms.toFixed(0) + " ms", il.iterations + " iters"],
       ["p99", il.p99_ms.toFixed(0) + " ms", "jitter " + il.jitter_p99_over_p50.toFixed(2) + "x"],
       ["ring p99", pr.bench_queueing_p99_ms + " ms", pr.bench_frames.toLocaleString() + " frames, 0 dropped"],
-    ]) + note("How the LibTorch path was unblocked", cp.how_it_was_unblocked) +
-        note("Test flakiness", pr.flakiness);
+    ]) + note("How the LibTorch path was unblocked", cp.how_it_was_unblocked);
+    $("#cppFlaky").textContent = pr.flakiness;
     const rn = cp.runner, A = rn.at_10hz_6s.latest_frame_seqlock, B2 = rn.at_10hz_6s.fifo_queue;
     $("#rnNote").textContent = rn.what;
     $("#rnTable").innerHTML =
@@ -992,6 +1517,96 @@ function fillStatic() {
       `<tr><td>FIFO queue</td><td>${B2.inference_p50_ms} ms</td><td class="b">${B2.queue_wait_p50_ms} ms</td>
         <td class="b">${B2.end_to_end_p50_ms} ms</td><td>${B2.processed}</td><td>${B2.dropped_full} full</td></tr>`;
     $("#rnNoteBox").innerHTML = note("Why this is the headline", rn.finding);
+
+    /* Backpressure, drawn. The table has the p50s; what it cannot show is that
+       under FIFO a frame's answer arrives when the world has moved on. Each row
+       is one sensor frame at 10 Hz; the bar starts when the frame was captured
+       and ends when its result was ready, at the end-to-end p50 this policy
+       recorded. Under seqlock most frames are dropped on purpose and the ones
+       that survive answer in a quarter of a second; under FIFO nothing is
+       dropped until the queue fills and every answer is two seconds stale. */
+    const FRAMES = 60, HZ = 10;
+    // Both policies are drawn on ONE time axis so the comparison is a shape, not
+    // two numbers: 6 s of sensor time wide, one row per frame captured at 10 Hz.
+    // A bar starts when its frame was captured and ends when its answer was
+    // ready, at the end-to-end p50 that policy recorded. FIFO's bars run off the
+    // right of the window, which is exactly the point.
+    const drawRunner = (upTo) => {
+      const P = rn.at_10hz_6s[rnPolicy];
+      const W = 900, RH = 7.4, H = FRAMES * RH + 30;
+      const span = 6500, X = t => 44 + (W - 54) * t / span;
+      const every = Math.max(1, Math.round(FRAMES / Math.max(1, P.processed)));
+      const n = upTo === undefined ? FRAMES : upTo;
+      let g = "";
+      for (let t = 0; t <= 6000; t += 1000)
+        g += `<line class="gl" x1="${X(t).toFixed(1)}" y1="16" x2="${X(t).toFixed(1)}" y2="${H - 10}"/>
+              <text x="${(X(t) - 7).toFixed(1)}" y="11">${t / 1000}s</text>`;
+      let done = 0, dropped = 0;
+      for (let i = 0; i < FRAMES; i++) {
+        const t0 = 1000 * i / HZ, y = 18 + i * RH;
+        g += `<rect x="${X(0)}" y="${y.toFixed(1)}" width="${(X(6500) - X(0)).toFixed(1)}"
+          height="${(RH - 2).toFixed(1)}" fill="#12161F"/>`;
+        if (i >= n) continue;
+        let col, w;
+        if (i % every === 0 && done < P.processed) {
+          col = "#5BD2E8"; w = P.end_to_end_p50_ms; done++;
+        } else if (P.dropped_full && dropped < P.dropped_full) {
+          col = "#FF6A7A"; w = 140; dropped++;
+        } else { col = "#3A4454"; w = 140; }
+        g += `<rect x="${X(t0).toFixed(1)}" y="${y.toFixed(1)}"
+          width="${Math.max(3, Math.min(X(6500), X(t0 + w)) - X(t0)).toFixed(1)}"
+          height="${(RH - 2).toFixed(1)}" rx="1" fill="${col}"/>`;
+      }
+      $("#rnViz").innerHTML =
+        `<svg class="plot" style="max-width:940px" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+      $("#rnRd").textContent =
+        `${P.processed} processed · ${P.skipped_stale} stale · ${P.dropped_full} dropped · ` +
+        `e2e p50 ${P.end_to_end_p50_ms} ms · ${P.effective_hz} Hz effective`;
+      document.querySelectorAll(".rnp").forEach(b =>
+        b.classList.toggle("on", b.dataset.p === rnPolicy));
+    };
+    document.querySelectorAll(".rnp").forEach(b =>
+      b.onclick = () => { rnPolicy = b.dataset.p; drawRunner(); });
+    let rnT = null;
+    $("#rnPlay").onclick = () => {
+      if (rnT) clearInterval(rnT);
+      let k = 0;
+      drawRunner(0);
+      rnT = setInterval(() => {
+        k += 2;
+        drawRunner(k);
+        if (k >= FRAMES) { clearInterval(rnT); rnT = null; }
+      }, 55);
+    };
+    drawRunner();
+
+    /* ---------- C++ integrity monitor ---------- */
+    const im = cp.integrity_monitor;
+    if (im) {
+      $("#imNote").textContent =
+        `${im.grid} · ${im.cameras} cameras · ${im.source} · ${im.hardware}`;
+      $("#imTable").innerHTML = `<tr><th>output</th><th>max abs diff</th><th></th></tr>` +
+        [["coverage × visibility", im.parity.coverage_max_abs],
+         ["integrity map", im.parity.integrity_max_abs]].map(([k, v]) =>
+        `<tr><td>${k}</td><td>${Number(v).toExponential(3)}</td><td class="g">PASS</td></tr>`).join("") +
+        `<tr><td>mean integrity</td><td colspan="2">Python ${im.mean_integrity_python} ·
+          C++ ${im.mean_integrity_cpp}</td></tr>` +
+        `<tr><td>recompute p50</td><td class="a">${im.p50_ms} ms</td>
+          <td class="d">p99 ${im.p99_ms} ms</td></tr>`;
+      if (im.platforms) $("#imTable").insertAdjacentHTML("afterend",
+        `<div class="hr" style="margin:10px 0"></div>
+         <div class="lab" style="margin-bottom:6px">Built and checked on both platforms</div>
+         <table><tr><th>platform</th><th>parity</th><th>recompute p50</th></tr>` +
+        im.platforms.map(r => `<tr><td class="d" style="font-family:'IBM Plex Sans'">${r[0]}</td>
+          <td class="g">${r[1]}</td><td class="a">${r[2]}</td></tr>`).join("") + `</table>`);
+      $("#imBox").innerHTML = note("Why this one had to be ported", im.why) +
+        note("On the parity number", im.parity.note);
+      $("#imStages").innerHTML = (im.stages || []).map(([k, v]) =>
+        `<div style="border-left:2px solid var(--acc);padding:7px 11px;margin-bottom:7px;
+          background:rgba(91,210,232,.05)">
+          <div class="lab" style="color:var(--acc)">${k}</div>
+          <div style="font-size:11.5px;color:var(--dim);margin-top:3px">${v}</div></div>`).join("");
+    }
   }
   const kb = R.kernel_bench_report;
   if (kb) {
@@ -1030,11 +1645,12 @@ function fillStatic() {
     ["Learned model", "runs", lm ? `ADE ${lm.trajectory_ade["T+1 (0.5s)"].learned_v11_temporal.ade_m} m, ${lm.trajectory_ade["T+1 (0.5s)"].delta_vs_cv_pct}% vs CV` : "--", "models"],
     ["Trajectory LM", "runs", R.trajlm_retrained_report ? `retrained · ADE ${R.trajlm_retrained_report.val_ade_m["T+3 (1.5s)"].gpt2_retrained_conditioned.ade_m} m @ T+3` : "--", "models"],
     ["VLA", "runs", vla ? `${vla.trainable_params_m}M projector · ${vla.frozen_params_m}M frozen` : "--", "models"],
-    ["VLM", "blocked", "BLIP weights unreachable (egress 403)", "models"],
+    ["VLM", "runs", R.vlm_report ? `live on the displayed frame · ${R.vlm_report.model}` : "--", "models"],
     ["Trust / robustness", "runs", rbq ? `separation ${rbq.mean_separation}` : "--", "robustness"],
-    ["Integrity", "runs", iv ? `AUROC ${iv.auroc.integrity_occlusion_aware.auroc}` : "--", "integrity"],
+    ["Observability", "runs", iv ? `AUROC ${iv.auroc.integrity_occlusion_aware.auroc}` : "--", "observability"],
     ["C++ runtime", "runs", cpq ? `parity PASS · e2e ${cpq.runner.at_10hz_6s.latest_frame_seqlock.end_to_end_p50_ms} ms` : "--", "runtime"],
-    ["Hard cases", "runs", `${F.reduce((a, f) => a + f.objects.length, 0)} objects indexed`, "hard cases"],
+    ["C++ integrity monitor", "runs",
+      cpq && cpq.integrity_monitor ? `parity PASS · ${cpq.integrity_monitor.p50_ms} ms/frame` : "--", "runtime"],
   ];
   $("#statusStrip").innerHTML = STATUS.map(([n, st, v, pg]) =>
     `<div class="st" data-go="${pg}" style="border-left-color:${st === "runs" ? "var(--good)" : "var(--bad)"}">
@@ -1047,7 +1663,7 @@ function fillStatic() {
     ["LiDAR pose chain + multi-sweep", "runs", "sensor→ego→global→ego_ref, verified to 1.3e-13 m"],
     ["Ground plane + ray-cast occupancy", "runs", "log-odds inverse sensor model, 540² @ 0.20 m"],
     ["Static/dynamic separation", "runs", "free-space consistency, F1 0.61"],
-    ["Camera projection + integrity map", "runs", "6-camera noisy-OR with occlusion ray-cast"],
+    ["Camera observability map", "runs", "6-camera noisy-OR with per-camera occlusion ray-cast, recomputed live in the console"],
     ["Occupancy forecast", "runs", "persistence + constant-velocity, geometric"],
     ["Ego trajectory baselines", "runs", "static / const-velocity / const-turn oracle"],
     ["v11_temporal checkpoint (occ + traj)", "runs", "167/169 after key remap; ADE beats const-velocity at every horizon"],
@@ -1060,10 +1676,10 @@ function fillStatic() {
     ["C++ SPSC ring + latency stats", "runs", "builds, both tests pass, queueing p99 7.8 us over 20k frames"],
     ["TorchScript export", "runs", "traced + frozen from a real keyframe, 60 MB module driving the C++ runner"],
     ["C++ LibTorch runner", "runs", "parity PASS (5.2e-06 occupancy, 0.0 trust); end-to-end 235 ms seqlock vs 2319 ms FIFO"],
-    ["VLM scene understanding", "runs", "live Claude call on the real frames via the artifact runtime — not BLIP, and labelled as such"],
-    ["BLIP (the repo's own VLM path)", "blocked", "huggingface.co 403 at the egress proxy in BOTH environments — policy denial, not a dependency"],
-    ["CUDA / GPU inference", "not available", "no GPU in either environment; every latency figure here is CPU and says so"],
-    ["C++ runner (SPSC ring, latency stats)", "partial", "ring + latency stats present; integrity monitor not ported"],
+    ["VLM scene understanding", "runs", "live call on the real displayed frames through the artifact runtime — not BLIP, and labelled as such everywhere it appears"],
+    ["C++ integrity monitor", "runs", "noisy-OR + projected-area coverage + occlusion ray-cast ported to a header; bit-identical to Python on aarch64 (1.9e-09 on x86-64), 6.1 ms p50 for six cameras on a 216² grid"],
+    ["BLIP (the repo's own VLM path)", "blocked", "huggingface.co returns 403 at the egress proxy in BOTH environments and nothing is cached locally — a policy denial, not a missing dependency. The VLM row above is what runs instead."],
+    ["CUDA / GPU inference", "not available", "no GPU is present in either environment, so there is nothing to run it on. Every latency figure in this console is CPU and says so."],
   ];
   $("#sysTable").innerHTML = `<tr><th>component</th><th>state</th><th>detail</th></tr>` +
     SYS.map(([a, b, c]) => `<tr><td>${a}</td>

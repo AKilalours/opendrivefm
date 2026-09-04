@@ -74,5 +74,57 @@
     "Every latency figure is CPU. No CUDA, no TensorRT, no GPU was benchmarked; the deadline-miss rates are what a CPU-only build gives and are not a claim about deployable hardware.",
     "ego_deltas is baked into the traced module from one keyframe. The runner measures latency and staleness, where that does not matter, and the parity check compares against Python run with the same baked value.",
     "The 33.3 ms budget in the parity output is a 30 Hz reference, not a target this build meets."
-  ]
+  ],
+  "integrity_monitor": {
+    "status": "RUNS \u2014 ported, parity PASS",
+    "source": "cpp/include/odfm/integrity_monitor.hpp, header-only, no LibTorch",
+    "grid": "216x216 @ 0.50 m",
+    "cameras": 6,
+    "hardware": "two platforms: Linux VM (aarch64, Apple Silicon) and cloud container (x86-64), g++ -O3, single thread, no -march=native",
+    "reference": "scripts/odfm_geom.py (camera_ground_coverage, integrity_map) and scripts/odfm_ground.py (visibility_from), on nuScenes scene-0061",
+    "parity": {
+      "coverage_max_abs": 0.0,
+      "integrity_max_abs": 0.0,
+      "verdict": "PASS",
+      "tolerance": 1e-05,
+      "note": "Bit-identical on aarch64. On x86-64 the same source differs by 1.9e-09, which is float32 accumulation order, not an algorithmic difference \u2014 float32 storage of a value in [0,1] already carries ~6e-08."
+    },
+    "mean_integrity_python": 0.120252,
+    "mean_integrity_cpp": 0.120252,
+    "p50_ms": 6.11,
+    "p99_ms": 6.15,
+    "iterations": 25,
+    "test": "cpp/tests/test_integrity_monitor.cpp, registered with ctest; skips with a message rather than passing vacuously when the dumped case is absent",
+    "why": "This is the one piece the traced model does not provide. The TorchScript graph gives occupancy, trajectory and trust; the observability map is computed from calibration and an occupancy grid, in Python, at 216x216 for six cameras. A deployed runner cannot call back into Python for it, so it had to exist in C++ \u2014 and once it does, the whole monitor runs in 10.9 ms, inside the 33.3 ms budget the 296 ms model misses by an order of magnitude.",
+    "stages": [
+      [
+        "1 \u00b7 ground coverage",
+        "Projected AREA of each cell quad in the image, by shoelace on the four projected corners, normalised by 140 px and clipped to 1. Not a binary frustum test: a cell at 54 m is viewed at grazing incidence and images to a sliver, and must not count as evidence equal to a cell at 5 m."
+      ],
+      [
+        "2 \u00b7 occlusion ray-cast",
+        "Bearing-bucket cast from the CAMERA position, not the LiDAR \u2014 the cameras sit up to 1.7 m forward and 1 m to the side, so casting from the sensor origin puts every shadow in the wrong place. A running minimum over three neighbouring bearings closes the sliver gap a one-cell obstacle would leave."
+      ],
+      [
+        "3 \u00b7 noisy-OR",
+        "integrity = 1 \u2212 \u220f(1 \u2212 trust \u00b7 coverage \u00b7 visible). Independence is an upper bound, not an unbiased estimate: six cameras on one vehicle share weather, sun and a power rail."
+      ]
+    ],
+    "caveats": [
+      "CPU only. No CUDA path exists in either environment to compare against.",
+      "The port is validated against one real keyframe, not the full 404 \u2014 parity at 1.9e-09 on 216\u00b2\u00d76 grids is what the check is for, not coverage of the dataset."
+    ],
+    "platforms": [
+      [
+        "aarch64 (Apple Silicon VM)",
+        "0.0 max abs",
+        "6.11 ms p50"
+      ],
+      [
+        "x86-64 (cloud container)",
+        "1.9e-09 max abs",
+        "10.89 ms p50"
+      ]
+    ]
+  }
 }

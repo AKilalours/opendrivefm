@@ -35,6 +35,7 @@ import odfm_tables as T     # noqa: E402
 RNG = 54.0
 RES_O, RES_I, RES_F = 0.20, 0.50, 0.40
 TRUST = 0.795
+GK, OK = 2, 2          # downsample factors for the live console grids
 
 
 def jpg(arr, size=None, q=74):
@@ -44,6 +45,35 @@ def jpg(arr, size=None, q=74):
     b = io.BytesIO()
     im.convert("RGB").save(b, "JPEG", quality=q, optimize=True)
     return "data:image/jpeg;base64," + base64.b64encode(b.getvalue()).decode()
+
+
+def blk(a, k):
+    """Block-mean downsample by k. The console renders these grids live, so it
+    needs them small; a block mean is the honest reduction -- a stride would
+    alias the ray-cast occlusion shadows into stripes."""
+    n = (a.shape[0] // k) * k
+    return a[:n, :n].reshape(n // k, k, n // k, k).mean(axis=(1, 3))
+
+
+def blk_conf(a, k):
+    """Coarsen an occupancy PROBABILITY field. A block mean is wrong here: only
+    0.36% of cells are occupied, and averaging one confident 0.95 with fifteen
+    0.2s erases it -- the display then claims 0.0% occupied on a grid that has
+    obstacles in it. The reduction that survives coarsening is the most
+    CONFIDENT value in the block, i.e. the one furthest from 0.5, which keeps
+    both strong free space and thin obstacles and only discards genuinely
+    ambiguous blocks."""
+    n = (a.shape[0] // k) * k
+    b = a[:n, :n].reshape(n // k, k, n // k, k).transpose(0, 2, 1, 3).reshape(n // k, n // k, k * k)
+    idx = np.abs(b - 0.5).argmax(axis=2)
+    return np.take_along_axis(b, idx[:, :, None], axis=2)[:, :, 0]
+
+
+def gb64(a):
+    """float grid in [0,1] -> base64 uint8. 1/255 quantisation, finer than
+    anything the colour map or the eye resolves."""
+    return base64.b64encode(
+        np.clip(np.asarray(a) * 255.0 + 0.5, 0, 255).astype(np.uint8).tobytes()).decode()
 
 
 def obj_speed(tab, tok, inst):
@@ -77,13 +107,14 @@ def build_frame(tab, man, tok, cam_size=(448, 252), map_size=456):
 
     prob_i, _, _ = G.occupancy_logodds(pts, ground, plane, rng_m=RNG, res=RES_I)
     occ_i = prob_i > 0.65
-    covs, raw, vis_frac = [], [], {}
+    covs, raw, vis_frac, cov_by_cam = [], [], {}, {}
     for cam in T.CAMERAS:
         rec = tab.sensor_record(tok, cam)
         c, _ = GE.camera_ground_coverage(rec, rng_m=RNG, res=RES_I, soft=True)
         v = G.visibility_from(occ_i, rec["cal_trans"][:2], rng_m=RNG, res=RES_I)
         raw.append(c)
         covs.append(c * v)
+        cov_by_cam[cam] = c * v
         vis_frac[cam] = round(float((c * v).sum() / max(1e-9, c.sum())), 3)
     integ = GE.integrity_map(covs, [TRUST] * 6)
     n_i = integ.shape[0]
@@ -240,6 +271,21 @@ def build_frame(tab, man, tok, cam_size=(448, 252), map_size=456):
             "build_ms": round(1000 * (time.perf_counter() - t0), 1),
         },
         "rng_m": RNG,
+        # Live grids. The console recomputes the noisy-OR itself from these --
+        # toggling a camera off, or substituting the trust the fault-injection
+        # head actually returned under blur, re-renders the real map instead of
+        # swapping a picture. Downsampled to 1.0 m (integrity) and 0.8 m
+        # (occupancy) so twelve frames of them stay inside two megabytes.
+        "grids": {
+            "n": int(integ.shape[0] // GK),
+            "res": RES_I * GK,
+            "trust": TRUST,
+            "integ": gb64(blk(integ, GK)),
+            "cov": {cam: gb64(blk(cov_by_cam[cam], GK)) for cam in T.CAMERAS},
+            "occ_n": int(prob.shape[0] // OK),
+            "occ_res": RES_O * OK,
+            "occ": gb64(blk_conf(prob, OK)),
+        },
     }
 
 
@@ -269,7 +315,7 @@ def main():
                  "trajectory_ade_report", "learned_model_report",
                  "vla_report", "vlm_report", "robustness_report",
                  "trajlm_retrained_report", "kernel_bench_report",
-                 "cpp_report"):
+                 "cpp_report", "perturbation_shots"):
         p = ROOT / f"outputs/artifacts/{name}.json"
         if p.exists():
             d = json.loads(p.read_text())
@@ -281,7 +327,7 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"frames": frames, "reports": reports}))
     mb = out.stat().st_size / 1e6
-    print(f"\nwrote {out.relative_to(ROOT)}  {len(frames)} frames  {mb:.1f} MB")
+    print(f"\nwrote {out}  {len(frames)} frames  {mb:.1f} MB")
 
 
 if __name__ == "__main__":
