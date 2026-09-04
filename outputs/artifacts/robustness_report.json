@@ -1,66 +1,79 @@
 {
-  "frames": 24,
+  "frames": 120,
   "faulted_camera": "CAM_FRONT",
   "results": {
     "clean": {
-      "trust_faulted": 0.7524783611297607,
-      "trust_others": 0.7381188273429871,
-      "ade_T3_m": 0.521,
-      "occ_iou": 0.2817
+      "trust_faulted": 0.6634755730628967,
+      "trust_others": 0.7370917201042175,
+      "ade_T3_m": 0.429,
+      "occ_iou": 0.2943
     },
     "blur": {
-      "trust_faulted": 0.5446218848228455,
-      "trust_others": 0.7381188273429871,
-      "ade_T3_m": 0.541,
-      "occ_iou": 0.2103,
-      "delta_trust_faulted": -0.2079,
+      "trust_faulted": 0.4805360734462738,
+      "trust_others": 0.7370917201042175,
+      "ade_T3_m": 0.566,
+      "occ_iou": 0.2358,
+      "delta_trust_faulted": -0.1829,
       "delta_trust_others": 0.0,
-      "delta_ade_pct": 3.8
+      "delta_ade_pct": 31.9,
+      "delta_iou_pct": -19.9
     },
     "glare": {
-      "trust_faulted": 0.6966419219970703,
-      "trust_others": 0.7381188273429871,
-      "ade_T3_m": 0.525,
-      "occ_iou": 0.2666,
-      "delta_trust_faulted": -0.0558,
+      "trust_faulted": 0.6101052761077881,
+      "trust_others": 0.7370917201042175,
+      "ade_T3_m": 0.439,
+      "occ_iou": 0.286,
+      "delta_trust_faulted": -0.0534,
       "delta_trust_others": 0.0,
-      "delta_ade_pct": 0.8
+      "delta_ade_pct": 2.3,
+      "delta_iou_pct": -2.8
     },
     "occlusion": {
-      "trust_faulted": 0.7648430466651917,
-      "trust_others": 0.7381188273429871,
-      "ade_T3_m": 0.525,
-      "occ_iou": 0.2711,
-      "delta_trust_faulted": 0.0124,
+      "trust_faulted": 0.6786537170410156,
+      "trust_others": 0.7370917201042175,
+      "ade_T3_m": 0.437,
+      "occ_iou": 0.2918,
+      "delta_trust_faulted": 0.0152,
       "delta_trust_others": 0.0,
-      "delta_ade_pct": 0.8
+      "delta_ade_pct": 1.9,
+      "delta_iou_pct": -0.8
     },
     "rain": {
-      "trust_faulted": 0.4825713336467743,
-      "trust_others": 0.7381188273429871,
-      "ade_T3_m": 0.53,
-      "occ_iou": 0.2764,
-      "delta_trust_faulted": -0.2699,
+      "trust_faulted": 0.46783480048179626,
+      "trust_others": 0.7370917201042175,
+      "ade_T3_m": 0.429,
+      "occ_iou": 0.2844,
+      "delta_trust_faulted": -0.1956,
       "delta_trust_others": 0.0,
-      "delta_ade_pct": 1.7
+      "delta_ade_pct": 0.0,
+      "delta_iou_pct": -3.4
     },
     "noise": {
-      "trust_faulted": 0.47264203429222107,
-      "trust_others": 0.7381188273429871,
-      "ade_T3_m": 0.563,
-      "occ_iou": 0.2124,
-      "delta_trust_faulted": -0.2798,
+      "trust_faulted": 0.47151267528533936,
+      "trust_others": 0.7370917201042175,
+      "ade_T3_m": 0.497,
+      "occ_iou": 0.2569,
+      "delta_trust_faulted": -0.192,
       "delta_trust_others": 0.0,
-      "delta_ade_pct": 8.1
+      "delta_ade_pct": 15.9,
+      "delta_iou_pct": -12.7
     }
   },
-  "mean_separation": 0.1652,
-  "verdict": "The trust head DOES respond to degradation: perturbing one camera moves its own score while the untouched five stay put, separating by 0.1652 on average. On clean frames it sits at 0.584 +/- 0.0002 across all cameras, which is the correct behaviour for a head trained to detect injected faults -- it is a fault detector, not a scene-quality score, and should be read that way.",
-  "caveats": [
-    "stat_calibrated is False in this checkpoint, so the head's statistics branch runs on default buffers and the fused score leans on its CNN branch. calibrate_trust_stats.py exists to fill those in and has not been run against this checkpoint.",
-    "Perturbations are applied to the model's 90x160 input tensor, not to full-resolution images.",
-    "24 keyframes, one camera faulted at a time.",
-    "gradio_app.py hard-codes clean trust at 0.795; the live head returns 0.584 on clean nuScenes frames. That constant is stale and should be read from the model."
+  "mean_separation": 0.1278,
+  "detected": [
+    "blur",
+    "glare",
+    "rain",
+    "noise"
   ],
-  "checkpoint": "checkpoints_v11_trustfix2/trust_fixed_v2_cal.ckpt"
+  "missed": [
+    "occlusion"
+  ],
+  "checkpoint": "checkpoints_v11_trustfix2/trust_fixed_v2_cal.ckpt (171/171, stat_calibrated=True)",
+  "verdict": "Trust separates a degraded camera from the five untouched ones by 0.1278 on average. Untouched cameras do not move at all, which independently confirms the batch-contamination fix. It detects blur, glare, rain, noise and MISSES occlusion, which moves the score the wrong way: a masked region has low local variance, which this head reads as a clean flat surface.",
+  "caveats": [
+    "120 keyframes, one camera faulted at a time.",
+    "Perturbations are applied to the model's 90x160 input tensor, not to full-resolution images.",
+    "gradio_app.py hard-codes clean trust at 0.795; the live head returns a different value and that constant is stale."
+  ]
 }

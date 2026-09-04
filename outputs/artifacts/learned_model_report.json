@@ -1,120 +1,99 @@
 {
-  "samples": 80,
+  "samples": 404,
   "checkpoint": "checkpoints_v11_temporal/best_val_ade.ckpt",
-  "weights_loaded": "167 of 169 tensors after remapping the trust-scorer keys. The checkpoint stores CameraTrustScorer as one flat Sequential named cnn; the current class splits the same stack into trunk / pool / cnn_head. Every renamed tensor was shape-checked before being accepted, and 0 were rejected. The 2 still missing are stat_running_mean and stat_calibrated, buffers added after this checkpoint was written -- they stay at defaults, which reads as 'statistics not calibrated'.",
+  "weights_loaded": "167 of 169 after remapping the trust-scorer keys (checkpoint stores one flat Sequential named cnn; the class splits it into trunk/pool/cnn_head). Every rename shape-checked, 0 rejected.",
   "trajectory_ade": {
     "T+1 (0.5s)": {
       "static": {
-        "ade_m": 2.615,
-        "fde_m": 2.615
+        "ade_m": 2.745,
+        "fde_m": 2.745
       },
       "constant_velocity": {
-        "ade_m": 0.281,
-        "fde_m": 0.281
+        "ade_m": 0.191,
+        "fde_m": 0.191
       },
       "learned_v11_temporal": {
-        "ade_m": 0.245,
-        "fde_m": 0.245
+        "ade_m": 0.202,
+        "fde_m": 0.202
       },
-      "delta_vs_cv_pct": -12.77
+      "delta_vs_cv_pct": 6.22
     },
     "T+2 (1.0s)": {
       "static": {
-        "ade_m": 3.867,
-        "fde_m": 5.119
+        "ade_m": 4.082,
+        "fde_m": 5.418
       },
       "constant_velocity": {
-        "ade_m": 0.503,
-        "fde_m": 0.724
+        "ade_m": 0.334,
+        "fde_m": 0.478
       },
       "learned_v11_temporal": {
-        "ade_m": 0.396,
-        "fde_m": 0.548
+        "ade_m": 0.312,
+        "fde_m": 0.421
       },
-      "delta_vs_cv_pct": -21.13
+      "delta_vs_cv_pct": -6.7
     },
     "T+3 (1.5s)": {
       "static": {
-        "ade_m": 5.081,
-        "fde_m": 7.509
+        "ade_m": 5.395,
+        "fde_m": 8.02
       },
       "constant_velocity": {
-        "ade_m": 0.77,
-        "fde_m": 1.306
+        "ade_m": 0.507,
+        "fde_m": 0.852
       },
       "learned_v11_temporal": {
-        "ade_m": 0.551,
-        "fde_m": 0.859
+        "ade_m": 0.421,
+        "fde_m": 0.639
       },
-      "delta_vs_cv_pct": -28.53
+      "delta_vs_cv_pct": -16.92
     },
     "3.0s": {
       "static": {
-        "ade_m": 8.507,
-        "fde_m": 14.042
+        "ade_m": 9.193,
+        "fde_m": 15.407
       },
       "constant_velocity": {
-        "ade_m": 1.843,
-        "fde_m": 3.844
+        "ade_m": 1.177,
+        "fde_m": 2.411
       },
       "learned_v11_temporal": {
-        "ade_m": 1.128,
-        "fde_m": 2.157
+        "ade_m": 0.812,
+        "fde_m": 1.526
       },
-      "delta_vs_cv_pct": -38.81
+      "delta_vs_cv_pct": -31.03
     },
     "6.0s": {
       "static": {
-        "ade_m": 14.409,
-        "fde_m": 24.278
+        "ade_m": 16.135,
+        "fde_m": 28.175
       },
       "constant_velocity": {
-        "ade_m": 4.949,
-        "fde_m": 11.4
+        "ade_m": 3.043,
+        "fde_m": 6.876
       },
       "learned_v11_temporal": {
-        "ade_m": 2.684,
-        "fde_m": 5.895
+        "ade_m": 1.89,
+        "fde_m": 4.069
       },
-      "delta_vs_cv_pct": -45.76
+      "delta_vs_cv_pct": -37.91
     }
   },
   "occupancy": {
     "best": {
-      "threshold": 0.5,
-      "iou": 0.28434284034107615,
-      "precision": 0.34601141385047496,
-      "recall": 0.6147025171624714,
-      "f1": 0.44278339304724074
+      "threshold": 0.7,
+      "iou": 0.23101871101871102,
+      "precision": 0.3171009522791798,
+      "recall": 0.4597523873911941,
+      "f1": 0.3753293251367966
     },
-    "grid": "128x128 label grid, nuscenes_labels_128 key 'occ'"
+    "grid": "128x128 label grid"
   },
-  "trust": {
-    "per_camera_mean": {
-      "CAM_FRONT": 0.5842,
-      "CAM_FRONT_LEFT": 0.5842,
-      "CAM_FRONT_RIGHT": 0.5842,
-      "CAM_BACK": 0.5842,
-      "CAM_BACK_LEFT": 0.5843,
-      "CAM_BACK_RIGHT": 0.5841
-    },
-    "per_camera_sd": {
-      "CAM_FRONT": 0.0001,
-      "CAM_FRONT_LEFT": 0.0002,
-      "CAM_FRONT_RIGHT": 0.0001,
-      "CAM_BACK": 0.0001,
-      "CAM_BACK_LEFT": 0.0001,
-      "CAM_BACK_RIGHT": 0.0003
-    },
-    "within_frame_spread_mean": 0.0004,
-    "note": "Live per-frame, per-camera scores from the trained head, now that its weights load. Previously the integrity map used a single hard-coded 0.795 for all six cameras."
-  },
-  "inference_ms_per_sample": 173,
+  "inference_ms_per_sample": 407,
   "hardware": "cloud container CPU, 2 torch threads, batch 1, 6 cameras x 4 frames at 90x160",
   "caveats": [
-    "80 keyframes, nuScenes mini.",
+    "All 404 keyframes of nuScenes v1.0-mini, 10 scenes, 2 cities.",
     "The model predicts a RESIDUAL on a constant-velocity prior; cv + residual is the absolute trajectory, as lightning_module composes it.",
-    "Trust statistics are uncalibrated (stat_calibrated=False): the head's stats branch is running on default buffers, so the fused score leans on its CNN branch.",
-    "Separate from the GPT-2 trajectory LM, which had its own defect."
+    "Trust is reported from the trust-specialised checkpoint, not this one."
   ]
 }

@@ -1,9 +1,12 @@
 {
-  "status": "BLOCKED",
-  "model": "Salesforce/blip-image-captioning-base",
-  "code": "scripts/vlm_scene_understanding.py",
-  "reason": "huggingface.co returns 403 at this environment's egress proxy \u2014 an organisation policy denial, not a missing dependency. torch and transformers are both installed and the captioning code imports cleanly; only the pretrained weights cannot be fetched.",
-  "not_the_reason": "Earlier notes in this project said the VLM was blocked because PyTorch was unavailable. That was true of the local machine and false of the cloud container, where torch 2.13 and transformers 5.16 install fine. The real and remaining blocker is the model-hub egress policy.",
-  "unblocks_with": "Any environment that can reach huggingface.co, or the BLIP weights copied in by hand the way the GPT-2 checkpoint was.",
-  "would_not_substitute": "A rule-based scene description generated from object counts and occupancy would be a template. The repo's own docstring is explicit that this component is a real VLM and not a template, so no stand-in caption is produced."
+  "status": "LIVE",
+  "model": "Claude, via the artifact runtime's sample capability (images)",
+  "how": "The console sends the current CAM_FRONT and CAM_BACK frames to Claude and streams back a scene description. A real vision-language model running on real frames, on the viewer's own Claude account.",
+  "why_not_blip": "scripts/vlm_scene_understanding.py targets Salesforce BLIP. huggingface.co returns 403 at the egress proxy from the cloud container AND from the local machine, with no cached copy on either -- an organisation policy denial, not a missing dependency. Rather than ship a dead panel or fabricate captions, the VLM slot is served by a model this environment can actually reach.",
+  "honest_difference": "This is NOT the repo's BLIP pipeline and does not share its weights or its latency. It is a different, larger VLM, called at view time, and no metric in this project depends on its output.",
+  "caveats": [
+    "Requires the viewer to allow the call; it spends their Claude usage.",
+    "Descriptions are qualitative. Nothing downstream consumes them.",
+    "BLIP remains the code path in the repo for an environment that can reach the model hub."
+  ]
 }

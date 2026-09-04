@@ -29,8 +29,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ---------- command bar ---------- */
-.bar{position:sticky;top:0;z-index:40;height:var(--bar);display:flex;align-items:center;
-  gap:22px;padding:0 16px;background:#0C1017;border-bottom:1px solid var(--line)}
+.bar{position:sticky;top:0;z-index:40;display:flex;align-items:center;flex-wrap:wrap;
+  gap:10px 18px;padding:8px 14px;background:#0C1017;border-bottom:1px solid var(--line)}
 .brand{font-weight:700;letter-spacing:.02em;font-size:15px}
 .brand span{color:var(--acc)}
 .grp{display:flex;align-items:center;gap:7px}
@@ -45,10 +45,10 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
 
 /* ---------- shell ---------- */
-.shell{display:flex;min-height:calc(100vh - var(--bar))}
+.shell{display:flex;min-height:60vh}
 .rail{width:var(--rail);flex:0 0 var(--rail);background:#0C1017;border-right:1px solid var(--line);
   display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:2px;position:sticky;
-  top:var(--bar);height:calc(100vh - var(--bar))}
+  top:0;height:100vh}
 .rb{width:44px;padding:8px 0;border-radius:4px;font-size:8.5px;letter-spacing:.06em;
   text-transform:uppercase;color:var(--dim2);text-align:center;line-height:1.25}
 .rb:hover{background:var(--surf);color:var(--dim)}
@@ -82,7 +82,15 @@ tr:last-child td{border-bottom:none}
 .cam .hit{position:absolute;border:2px solid var(--acc);border-radius:2px;pointer-events:none;
   box-shadow:0 0 0 1px rgba(10,12,17,.8) inset;display:none}
 .cam .hit.on{display:block}
-.cam .zone{position:absolute;cursor:pointer}
+.cam .zones{position:absolute;inset:0}
+.cam .zone{position:absolute;cursor:pointer;border:1px solid transparent;border-radius:2px}
+.cam .zone:hover{border-color:rgba(91,210,232,.85);background:rgba(91,210,232,.14)}
+.mapwrap.clickable{cursor:crosshair}
+.ovl{position:absolute;inset:0;width:100%;height:100%}
+.ovl rect{fill:rgba(120,210,255,.10);stroke:rgba(140,220,255,.65);stroke-width:.22;cursor:pointer;
+  vector-effect:non-scaling-stroke}
+.ovl rect:hover{fill:rgba(91,210,232,.34);stroke:var(--acc)}
+.ovl rect.sel{fill:rgba(91,210,232,.45);stroke:#fff;stroke-width:.5}
 
 /* ---------- maps ---------- */
 .maps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -120,10 +128,12 @@ tr:last-child td{border-bottom:none}
 .br .n{font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:right}
 
 /* ---------- inspector ---------- */
-.insp{position:fixed;right:0;top:var(--bar);width:270px;height:calc(100vh - var(--bar));
+.insp{position:fixed;right:0;top:0;width:270px;height:100vh;
   background:#0D1119;border-left:1px solid var(--line2);padding:14px;overflow:auto;
   transform:translateX(100%);transition:transform .16s ease;z-index:30}
 .insp.on{transform:none}
+body.insp-open main{padding-right:284px}
+body.insp-open .bar{padding-right:290px}
 .insp h3{margin:0 0 2px;font-size:15px}
 .insp .cls{font-size:11px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase}
 .kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(35,42,54,.6);
@@ -138,9 +148,28 @@ tr:last-child td{border-bottom:none}
 .objrow.on{background:rgba(91,210,232,.12);color:var(--acc)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.statusgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.st{background:var(--surf);border:1px solid var(--line);border-radius:6px;padding:10px 12px;
+  cursor:pointer;border-left-width:3px}
+.st:hover{border-color:var(--line2);background:var(--surf2)}
+.st .n{font-size:12px;font-weight:600;margin-bottom:3px}
+.st .v{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--dim)}
 .hr{height:1px;background:var(--line);margin:14px 0}
 .warnbox{border-left:2px solid var(--warn);padding:8px 12px;background:rgba(255,156,92,.05);
   font-size:11.5px;color:var(--dim);border-radius:0 4px 4px 0}
+details.notes{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+details.notes summary{cursor:pointer;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim2);list-style:none}
+details.notes summary::-webkit-details-marker{display:none}
+details.notes summary::before{content:"+ ";color:var(--acc)}
+details.notes[open] summary::before{content:"− "}
+details.notes .body{font-size:11.5px;color:var(--dim);line-height:1.6;margin-top:8px}
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.hero div{background:var(--surf);padding:10px 12px}
+.hero .k{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim2)}
+.hero .v{font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:600;margin-top:2px}
+.hero .s{font-size:10px;color:var(--dim2);margin-top:1px}
 .badbox{border-left:2px solid var(--bad);padding:8px 12px;background:rgba(255,106,122,.05);
   font-size:11.5px;color:var(--dim);border-radius:0 4px 4px 0}
 @media(max-width:1100px){.maps{grid-template-columns:1fr}.cams{grid-template-columns:repeat(2,1fr)}}
@@ -188,6 +217,9 @@ BODY = r"""
       <div class="tl" id="tl"></div>
 
       <div style="margin-top:16px" class="kpi" id="kpi"></div>
+      <div class="sec" style="margin-top:16px"><h2>Stack status</h2>
+        <span class="note">every tile links to the page holding its numbers</span></div>
+      <div class="statusgrid" id="statusStrip"></div>
     </section>
 
     <!-- ============ PERCEPTION ============ -->
@@ -213,16 +245,10 @@ BODY = r"""
       <div class="grid2">
         <div class="card pad"><div class="sec"><h2>Occupancy IoU &mdash; 30 keyframes</h2></div>
           <table id="fcTable"></table>
-          <div class="badbox" style="margin-top:10px">Persistence wins at every horizon.
-            Recall is unchanged (0.4727 &rarr; 0.4726) while precision falls 0.576 &rarr; 0.496:
-            advection moves correct cells to wrong places. Root cause is motion-label precision
-            of 0.56, not the advection.</div></div>
+          <div id="fcNote"></div></div>
         <div class="card pad"><div class="sec"><h2>Ego trajectory ADE &mdash; 404 keyframes</h2></div>
           <table id="adeTable"></table>
-          <div class="warnbox" style="margin-top:10px">The GPT-2 checkpoint in this repo is
-            <b>not evaluated</b>: it was fine-tuned from manifest keys that do not exist, so every
-            waypoint fell back to (0,0) and it saw 404 copies of one all-zero trajectory. Real
-            waypoints live in the label files. Retraining is the prerequisite for a learned number.</div></div>
+          <div id="adeNote"></div></div>
       </div>
     </section>
 
@@ -251,7 +277,14 @@ BODY = r"""
                id="vlaArch"></div>
           <table id="vlaTable"></table>
           <div id="vlaNotes" style="margin-top:10px"></div></div>
-        <div class="card pad"><div class="sec"><h2>VLM &mdash; scene captioning</h2></div>
+        <div class="card pad"><div class="sec"><h2>VLM &mdash; scene understanding</h2>
+          <span class="note" id="vlmModel"></span></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+            <button class="pill" id="vlmRun">Describe this frame</button>
+            <button class="pill" id="vlmStop" hidden>Stop</button>
+            <span class="mono" id="vlmState" style="font-size:11px;color:var(--dim2)"></span></div>
+          <div id="vlmOut" style="font-size:12px;line-height:1.6;color:var(--ink);
+            white-space:pre-wrap;min-height:60px"></div>
           <div id="vlmBox"></div></div>
       </div>
     </section>
@@ -334,7 +367,11 @@ BODY = r"""
       <div class="hr"></div>
       <div class="sec"><h2>Python pipeline latency</h2><span class="note" id="perfNote"></span></div>
       <div class="card pad"><div id="perfBars"></div></div>
-      <div class="card pad" style="margin-top:10px"><table id="perfTable"></table></div>
+      <div class="grid2" style="margin-top:10px">
+        <div class="card pad"><table id="perfTable"></table></div>
+        <div class="card pad"><div class="sec"><h2>Measurement conditions</h2></div>
+          <div id="perfCond" style="font-size:11.5px;color:var(--dim);line-height:1.65"></div></div>
+      </div>
     </section>
 
     <!-- ============ SYSTEM ============ -->
@@ -366,7 +403,15 @@ const PAGES = ["overview","perception","forecast","models","integrity","robustne
 let fi = 0, ov = "boxes", wl = "bev", sel = null, timer = null;
 
 const scenes = [...new Set(F.map(f => f.scene))];
-const $ = s => document.querySelector(s);
+// Null-safe. A missing element used to throw on `.innerHTML =`, which aborted
+// fillStatic() and left every panel after the throw point blank -- one deleted
+// card silently emptied five pages. Now a missing node costs its own panel and
+// nothing else, and says so in the console.
+const DEAD = () => ({ innerHTML: "", textContent: "", style: {}, src: "",
+  classList: { add() {}, remove() {}, toggle() {} }, appendChild() {},
+  insertAdjacentHTML() {}, getBoundingClientRect: () => ({ width: 0, height: 0 }) });
+const $ = s => document.querySelector(s) ||
+  (console.warn("[odfm] missing element", s), DEAD());
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c;
   if (h !== undefined) e.innerHTML = h; return e; };
 const fx = (v, n = 3) => (v === undefined || v === null) ? "--" : Number(v).toFixed(n);
@@ -385,15 +430,20 @@ PAGES.forEach((p, i) => {
 CAMS.forEach(c => {
   const d = el("div", "cam");
   d.innerHTML = `<img data-cam="${c}" alt="${c}"><div class="tag">${c.replace("CAM_","")}</div>
-    <div class="vis" data-vis="${c}"></div><div class="hit" data-hit="${c}"></div>`;
+    <div class="vis" data-vis="${c}"></div><div class="hit" data-hit="${c}"></div>
+    <div class="zones" data-zones="${c}"></div>`;
   $("#cams").appendChild(d);
 });
 
 /* ---------- map panels ---------- */
 $("#maps").innerHTML = `
-  <div class="mapwrap"><img id="ovBev" alt="BEV"><div class="mark" id="mkBev"></div>
-    <div class="cap"><b>Multi-sweep BEV</b><span class="mono d" id="ovBevN"></span></div></div>
-  <div class="mapwrap"><img id="ovInt" alt="Integrity"><div class="mark" id="mkInt"></div>
+  <div class="mapwrap"><img id="ovBev" alt="BEV">
+    <svg class="ovl" id="ovlBev" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    <div class="mark" id="mkBev"></div>
+    <div class="cap"><b id="ovBevCap">Multi-sweep BEV</b><span class="mono d" id="ovBevN"></span></div></div>
+  <div class="mapwrap"><img id="ovInt" alt="Integrity">
+    <svg class="ovl" id="ovlInt" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    <div class="mark" id="mkInt"></div>
     <div class="cap"><b>Perception integrity</b><span class="mono d" id="ovIntN"></span></div></div>`;
 
 /* ---------- transport ---------- */
@@ -458,6 +508,23 @@ function draw() {
     const img = document.querySelector(`img[data-cam="${c}"]`);
     img.src = f.cameras[c][ov];
     document.querySelector(`[data-vis="${c}"]`).textContent = fx(f.cameras[c].visible_frac, 2);
+    // One clickable zone per object this camera can see. The boxes come from
+    // the exporter, which projected each 3D box into every camera that has it
+    // in frame -- so clicking a vehicle here is the same object id the BEV,
+    // the inspector and the hard-case list use.
+    const zc = document.querySelector(`[data-zones="${c}"]`);
+    zc.innerHTML = "";
+    f.objects.forEach(ob => {
+      const bb = ob.cams[c];
+      if (!bb) return;
+      const z = el("div", "zone");
+      z.style.left = (100 * bb[0]) + "%"; z.style.top = (100 * bb[1]) + "%";
+      z.style.width = (100 * (bb[2] - bb[0])) + "%";
+      z.style.height = (100 * (bb[3] - bb[1])) + "%";
+      z.title = `${ob.cat} · ${ob.range} m · ${ob.speed.toFixed(1)} m/s`;
+      z.onclick = ev => { ev.stopPropagation(); pick(ob.id); };
+      zc.appendChild(z);
+    });
     const hit = document.querySelector(`[data-hit="${c}"]`);
     const o = sel !== null ? f.objects.find(x => x.id === sel) : null;
     if (o && o.cams[c]) {
@@ -473,9 +540,9 @@ function draw() {
   // the world state, because BEV, occupancy and integrity are computed from
   // LiDAR and calibration, not from the camera overlay.
   $("#ovBev").src = f.maps[wl]; $("#ovInt").src = f.maps.integrity;
-  document.querySelector("#maps .mapwrap .cap b").textContent =
-    {bev:"Multi-sweep BEV", bev_nodyn:"BEV — static returns only",
-     occupancy:"Ray-cast occupancy"}[wl];
+  $("#ovBevCap").textContent =
+    {bev: "Multi-sweep BEV", bev_nodyn: "BEV — static returns only",
+     occupancy: "Ray-cast occupancy"}[wl];
   $("#pcBev").src = f.maps.bev; $("#pcOcc").src = f.maps.occupancy;
   $("#inMap").src = f.maps.integrity;
   const s = f.stats;
@@ -496,6 +563,32 @@ function draw() {
     m.style.left = (box.width * (0.5 - o.y / (2 * f.rng_m))) + "px";
     m.style.top = (box.height * (0.5 - o.x / (2 * f.rng_m))) + "px";
     m.classList.add("on");
+  });
+
+  // Object footprints are drawn as an SVG layer OVER the map, not baked into
+  // the rendered image. That is what makes them clickable on every world
+  // layer: the static-only render carries no boxes at all, and the occupancy
+  // render draws its own, so relying on the picture meant objects were only
+  // selectable while BEV happened to be showing.
+  [["#ovlBev", "#ovBev"], ["#ovlInt", "#ovInt"]].forEach(([sv, im]) => {
+    const svg = $(sv);
+    if (!svg.innerHTML && !svg.setAttribute) return;
+    const R = f.rng_m, parts = [];
+    f.objects.forEach(ob => {
+      const w = ob.wl[0], l = ob.wl[1], c = Math.cos(ob.yaw), s2 = Math.sin(ob.yaw);
+      const half = Math.max(Math.abs(l * c) + Math.abs(w * s2),
+                            Math.abs(l * s2) + Math.abs(w * c)) / 2;
+      const cx = 50 - 50 * ob.y / R, cy = 50 - 50 * ob.x / R;
+      const sz = Math.max(1.6, 50 * half / R);
+      parts.push(`<rect data-id="${ob.id}" x="${(cx - sz).toFixed(2)}" y="${(cy - sz).toFixed(2)}"
+        width="${(2 * sz).toFixed(2)}" height="${(2 * sz).toFixed(2)}" rx="0.4"
+        class="${sel === ob.id ? "sel" : ""}"><title>${ob.cat} · ${ob.range} m · ${ob.speed.toFixed(1)} m/s</title></rect>`);
+    });
+    svg.innerHTML = parts.join("");
+    svg.querySelectorAll && svg.querySelectorAll("rect").forEach(r =>
+      r.onclick = ev => { ev.stopPropagation(); pick(Number(r.dataset.id)); });
+    const node = $(im);
+    node.parentElement && node.parentElement.classList.add("clickable");
   });
 
   /* temporal strip */
@@ -553,6 +646,7 @@ function draw() {
 
   /* inspector */
   const ins = $("#insp");
+  document.body.classList.toggle("insp-open", !!o);
   if (o) {
     ins.classList.add("on");
     $("#iCls").textContent = o.group;
@@ -572,6 +666,14 @@ function draw() {
 }
 
 /* ---------- static report-driven pages ---------- */
+function note(title, body) {
+  return `<details class="notes"><summary>${title}</summary><div class="body">${body}</div></details>`;
+}
+function hero(cells) {
+  return `<div class="hero">` + cells.map(([k, v, sub]) =>
+    `<div><div class="k">${k}</div><div class="v">${v}</div>
+     <div class="s">${sub || "&nbsp;"}</div></div>`).join("") + `</div>`;
+}
 function bar(label, v, max, col) {
   return `<div class="br"><span class="t">${label}</span>
     <span class="track"><span class="fill" style="width:${Math.max(2, 100 * v / max)}%;background:${col}"></span></span>
@@ -589,6 +691,13 @@ function fillStatic() {
         return `<tr><td>${h}</td><td>${fx(r.iou)}</td><td>${fx(r.precision)}</td>
           <td>${fx(r.recall)}</td><td>${fx(r.f1)}</td></tr>`; }).join("");
   }
+  $("#fcNote").innerHTML = note("Why persistence wins",
+    "Recall is unchanged (0.4727 &rarr; 0.4726) while precision falls 0.576 &rarr; 0.496 — advection " +
+    "moves correct cells to wrong places rather than finding new ones. Root cause is motion-label " +
+    "precision of 0.56, not the advection.");
+  $("#adeNote").innerHTML = note("On the shipped GPT-2 checkpoint",
+    "It was fine-tuned from manifest keys that do not exist, so every waypoint fell back to (0,0) " +
+    "and it saw 404 copies of one all-zero trajectory. Retrained from the label files — see Models.");
   const ad = R.trajectory_ade_report;
   if (ad) {
     const hs = Object.keys(ad.results);
@@ -614,12 +723,15 @@ function fillStatic() {
       bar("occlusion-aware", a.integrity_occlusion_aware.auroc, 0.75, "var(--acc)") +
       bar("no occlusion", a.integrity_no_occlusion.auroc, 0.75, "#4A5568") +
       bar("object range alone", a.range_only_baseline.auroc, 0.75, "var(--warn)");
-    $("#inVerdict").innerHTML = `The occlusion ray-cast adds real signal
-      (<b>${iv.occlusion_term_delta_auroc > 0 ? "+" : ""}${iv.occlusion_term_delta_auroc}</b> AUROC,
-      CI [${iv.occlusion_term_delta_ci95.join(", ")}]). The map as a whole does <b>not</b> beat
-      object range alone (${iv.beats_range_baseline_by}). It measures ground-plane observability,
-      which is not object visibility &mdash; use it as an observability prior, not a detector.
-      ${iv.boxes_scored} objects.`;
+    $("#inVerdict").outerHTML = hero([
+      ["occlusion term", (iv.occlusion_term_delta_auroc > 0 ? "+" : "") + iv.occlusion_term_delta_auroc,
+       "AUROC, CI [" + iv.occlusion_term_delta_ci95.join(", ") + "]"],
+      ["vs range baseline", iv.beats_range_baseline_by, "not a difference"],
+      ["objects scored", iv.boxes_scored, "human visibility labels"],
+    ]) + note("Reading",
+      "The occlusion ray-cast adds real signal, but the map as a whole does not beat object range " +
+      "alone. It measures ground-plane observability, which is not object visibility — a car behind " +
+      "a car has an occluded footprint and a visible roof. Use it as an observability prior, not a detector.");
     const lv = iv.per_visibility_level;
     $("#inLevels").innerHTML = Object.keys(lv).map(k =>
       bar(k + "  (n=" + lv[k].n + ")", lv[k].mean_integrity, 0.5, "var(--acc)")).join("");
@@ -686,25 +798,65 @@ function fillStatic() {
         const better = r.vla_gpt2_projector < r.constant_velocity;
         return `<tr><td>${h}</td><td>${r.constant_velocity.toFixed(3)}</td>
           <td class="${better ? "g" : "b"}">${r.vla_gpt2_projector.toFixed(3)}</td></tr>`; }).join("");
-    $("#vlaNotes").innerHTML =
-      `<div class="warnbox"><b>${vla.trainable_params_m}M trainable</b> projector,
-       ${vla.frozen_params_m}M frozen · ${vla.train_samples} train / ${vla.val_samples} val ·
-       ${vla.steps} steps. Runs end to end and beats the prior only at 6 s. With 64 training
-       samples and a frozen LM this repo previously damaged by an all-zero fine-tune, that is
-       what it should do &mdash; this demonstrates the mechanism, not a model result.</div>`;
+    $("#vlaNotes").innerHTML = hero([
+      ["trainable", vla.trainable_params_m + "M", "projector"],
+      ["frozen", vla.frozen_params_m + "M", "backbone + GPT-2"],
+      ["train / val", vla.train_samples + " / " + vla.val_samples, vla.steps + " steps"],
+    ]) + note("Reading",
+      "Runs end to end and beats the prior only at 6 s. With this corpus and a frozen LM the repo " +
+      "previously damaged by an all-zero fine-tune, that is the expected outcome — it demonstrates " +
+      "the mechanism, not a model result.");
   }
   const vlm = R.vlm_report;
   if (vlm) {
+    $("#vlmModel").textContent = vlm.model;
     $("#vlmBox").innerHTML =
-      `<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-         <span class="pill" style="border-color:var(--bad);color:var(--bad)">${vlm.status}</span>
-         <span class="mono" style="font-size:11.5px">${vlm.model}</span></div>
-       <div class="badbox">${vlm.reason}</div>
-       <div class="warnbox" style="margin-top:8px">${vlm.not_the_reason}</div>
-       <div style="margin-top:10px;font-size:11.5px;color:var(--dim)">
-         <b>Unblocks with:</b> ${vlm.unblocks_with}</div>
-       <div style="margin-top:8px;font-size:11.5px;color:var(--dim2)">${vlm.would_not_substitute}</div>`;
+      note("What this is, and what it is not",
+        vlm.how + "<br><br><b>Not BLIP.</b> " + vlm.why_not_blip +
+        "<br><br>" + vlm.honest_difference);
   }
+
+  /* ---------- live VLM: a real vision-language model on the real frames ----
+     The repo's BLIP path cannot run here -- huggingface.co is refused by the
+     egress proxy in both available environments. Rather than ship a dead panel
+     or write captions from object counts and call them a model, this asks
+     Claude, which the runtime can actually reach, and labels it as such. */
+  (async () => {
+    const btn = $("#vlmRun"), stopBtn = $("#vlmStop");
+    const out = $("#vlmOut"), state = $("#vlmState");
+    const sample = window.claude && await window.claude.use("sample").catch(() => null);
+    if (!sample) { state.textContent = "sampling unavailable in this view"; btn.disabled = true; return; }
+    const lim = await sample.limits().catch(() => null);
+    if (!lim || !lim.images) { state.textContent = "images unavailable in this view"; btn.disabled = true; return; }
+    let ctl = null;
+    stopBtn.onclick = () => ctl && ctl.abort();
+    btn.onclick = async () => {
+      const f = F[fi];
+      const blobs = [];
+      for (const c of ["CAM_FRONT", "CAM_BACK"]) {
+        blobs.push(await (await fetch(f.cameras[c].boxes)).blob());
+      }
+      ctl = new AbortController();
+      btn.disabled = true; stopBtn.hidden = false;
+      state.textContent = "Thinking..."; out.textContent = "";
+      try {
+        await sample(
+          "These are the front and rear camera frames from an autonomous vehicle " +
+          "on a nuScenes drive, with LiDAR returns and 3D boxes drawn over them. " +
+          "In under 90 words: describe the scene, then name the single most " +
+          "safety-relevant thing in it and say why. Plain prose, no preamble.",
+          { images: blobs, signal: ctl.signal, modelTier: "quick",
+            onText: ({ text }) => { state.textContent = ""; out.textContent = text; } });
+        state.textContent = `${f.scene} · frame ${fi + 1}`;
+      } catch (e) {
+        out.textContent = e.text || "";
+        state.textContent = e.code === "cancelled" ? "stopped"
+          : e.code === "not_granted" ? "declined by viewer" : (e.code || "failed");
+      } finally { btn.disabled = false; stopBtn.hidden = true; }
+    };
+  })();
+
+  const rbq = R.robustness_report, cpq = R.cpp_report;
 
   /* hard-case mining across every loaded frame */
   const hard = [];
@@ -784,13 +936,16 @@ function fillStatic() {
           <td>${r.ade_T3_m} m</td></tr>`; }).join("");
     $("#rbBars").innerHTML = keys.map(k => bar(k, Math.abs(rb.results[k].delta_trust_faulted), 0.32,
       rb.results[k].delta_trust_faulted < -0.05 ? "var(--good)" : "var(--bad)")).join("");
-    $("#rbVerdict").innerHTML = `<div class="warnbox">${rb.verdict}</div>`;
+    $("#rbVerdict").innerHTML = hero([
+      ["separation", rb.mean_separation, "faulted vs untouched"],
+      ["detected", ((rb.detected || []).length) + " / 5", (rb.detected || []).join(", ") || "—"],
+      ["missed", (rb.missed || []).join(", ") || "none", "wrong sign"],
+    ]) + note("Verdict", rb.verdict);
     const occ = rb.results.occlusion;
-    $("#rbGap").innerHTML = `<b>The gap:</b> occlusion moves trust the WRONG way
-      (${occ.delta_trust_faulted > 0 ? "+" : ""}${occ.delta_trust_faulted}). Blur, rain and noise all
-      register; a black patch over the lens does not. A masked region has low local variance, which
-      looks to this head like a clean flat surface. That is a real hole in a fault detector meant to
-      catch a blocked camera.`;
+    $("#rbGap").outerHTML = note("The gap",
+      `Occlusion moves trust the wrong way (${occ.delta_trust_faulted > 0 ? "+" : ""}${occ.delta_trust_faulted}). ` +
+      "A masked region has low local variance, which this head reads as a clean flat surface — a hole " +
+      "in a detector meant to catch a blocked camera.");
   }
 
   /* ---------- runtime ---------- */
@@ -807,7 +962,7 @@ function fillStatic() {
        ["queueing p99", b.queueing_p99_ms.toFixed(4) + " ms"],
        ["queueing max", b.queueing_max_ms.toFixed(4) + " ms"]]
       .map(([k, v]) => `<tr><td>${k}</td><td class="${k.includes("p99") ? "a" : ""}">${v}</td></tr>`).join("");
-    $("#cppFlaky").innerHTML = `<b>Test flakiness:</b> ${cp.tests.flakiness}`;
+    $("#cppFlaky").outerHTML = note("Test flakiness", cp.tests.flakiness);
     $("#cppBuild").innerHTML =
       `<div style="margin-bottom:8px"><span class="pill" style="border-color:var(--good);color:var(--good)">test_spsc_ring PASS</span>
         <span class="pill" style="border-color:var(--good);color:var(--good);margin-left:6px">test_latency_stats PASS</span></div>
@@ -824,17 +979,44 @@ function fillStatic() {
         return `<tr><td>${h}</td><td class="d">${r.dense}</td>
           <td class="${c(r.strided)}">${r.strided}</td><td class="${c(r.window)}">${r.window}</td>
           <td class="${c(r.combined)}">${r.combined}</td></tr>`; }).join("");
-    $("#spNote").innerHTML = `At horizon 12 sparsity costs slightly more than it saves
-      (${sa["12"].dense} &rarr; ${sa["12"].strided} ms). At 128 it pays:
-      ${sa["128"].dense} &rarr; ${sa["128"].combined} ms, ${(100*(1-sa["128"].combined/sa["128"].dense)).toFixed(0)}% faster.
-      The repo's own docstring predicted exactly that; this measures it.`;
+    $("#spNote").innerHTML = note("Does sparsity pay?",
+      `No at horizon 12 (${sa["12"].dense} → ${sa["12"].strided} ms), yes at 128 ` +
+      `(${sa["128"].dense} → ${sa["128"].combined} ms, ${(100*(1-sa["128"].combined/sa["128"].dense)).toFixed(0)}% faster). ` +
+      "The repo's own docstring predicted exactly that; this measures it.");
     const bp = kb.bev_pooling;
     $("#bpBars").innerHTML = bar("python loop", bp.python_loop_ms, bp.python_loop_ms * 1.15, "var(--warn)") +
       bar("fused kernel", bp.kernel_ms, bp.python_loop_ms * 1.15, "var(--acc)");
-    $("#bpNote").innerHTML = `<b>${bp.speedup_x}&times;</b> on CPU, outputs shape-identical.
-      The docstring claims ${bp.claimed_in_docstring} &mdash; a different device, so the two are not
-      the same measurement and the CPU figure is the one taken here.`;
+    $("#bpNote").outerHTML = hero([[bp.speedup_x + "×", bp.speedup_x + "×", "CPU, shapes identical"]]).replace("<div class=\"k\">"+bp.speedup_x+"×</div>","<div class=\"k\">speedup</div>") +
+      note("Against the docstring",
+      `The docstring claims ${bp.claimed_in_docstring} — a different device, so the two are not the ` +
+      "same measurement and the CPU figure is the one taken here.");
   }
+
+  /* ---------- overview status strip ---------- */
+  const goTo = page => {
+    document.querySelectorAll(".rb").forEach(x =>
+      x.classList.toggle("on", x.textContent === page));
+    document.querySelectorAll(".page").forEach(x =>
+      x.classList.toggle("on", x.dataset.p === page.replace(" ", "")));
+    scrollTo(0, 0);
+  };
+  const STATUS = [
+    ["Perception", "runs", `occupancy IoU ${lm ? lm.occupancy.best.iou.toFixed(3) : "--"}`, "perception"],
+    ["Forecast", "runs", fcr ? `persistence IoU ${fcr.results["T+1"].persistence.iou.toFixed(3)} @ T+1` : "--", "forecast"],
+    ["Learned model", "runs", lm ? `ADE ${lm.trajectory_ade["T+1 (0.5s)"].learned_v11_temporal.ade_m} m, ${lm.trajectory_ade["T+1 (0.5s)"].delta_vs_cv_pct}% vs CV` : "--", "models"],
+    ["Trajectory LM", "runs", R.trajlm_retrained_report ? `retrained · ADE ${R.trajlm_retrained_report.val_ade_m["T+3 (1.5s)"].gpt2_retrained_conditioned.ade_m} m @ T+3` : "--", "models"],
+    ["VLA", "runs", vla ? `${vla.trainable_params_m}M projector · ${vla.frozen_params_m}M frozen` : "--", "models"],
+    ["VLM", "blocked", "BLIP weights unreachable (egress 403)", "models"],
+    ["Trust / robustness", "runs", rbq ? `separation ${rbq.mean_separation}` : "--", "robustness"],
+    ["Integrity", "runs", iv ? `AUROC ${iv.auroc.integrity_occlusion_aware.auroc}` : "--", "integrity"],
+    ["C++ runtime", "runs", cpq ? `p99 ${cpq.benchmark.queueing_p99_ms} ms · 0 drops` : "--", "runtime"],
+    ["Hard cases", "runs", `${F.reduce((a, f) => a + f.objects.length, 0)} objects indexed`, "hard cases"],
+  ];
+  $("#statusStrip").innerHTML = STATUS.map(([n, st, v, pg]) =>
+    `<div class="st" data-go="${pg}" style="border-left-color:${st === "runs" ? "var(--good)" : "var(--bad)"}">
+       <div class="n">${n} <span style="color:${st === "runs" ? "var(--good)" : "var(--bad)"};font-weight:400">· ${st}</span></div>
+       <div class="v">${v}</div></div>`).join("");
+  document.querySelectorAll(".st").forEach(e => e.onclick = () => goTo(e.dataset.go));
 
   /* system inventory */  /* system inventory */
   const SYS = [
@@ -853,7 +1035,9 @@ function fillStatic() {
     ["Trust-weighted BEV pooling kernel", "runs", "3.09x over the Python loop on CPU, outputs shape-identical"],
     ["C++ SPSC ring + latency stats", "runs", "builds, both tests pass, queueing p99 7.8 us over 20k frames"],
     ["C++ LibTorch runner", "blocked", "CUDA-built torch wheel refuses to cmake-configure without a GPU; needs a CPU LibTorch"],
-    ["BLIP vision-language captioning", "blocked", "huggingface.co 403 at the egress proxy in BOTH environments — policy denial, not a dependency"],
+    ["VLM scene understanding", "runs", "live Claude call on the real frames via the artifact runtime — not BLIP, and labelled as such"],
+    ["BLIP (the repo's own VLM path)", "blocked", "huggingface.co 403 at the egress proxy in BOTH environments — policy denial, not a dependency"],
+    ["CUDA / GPU inference", "not available", "no GPU in either environment; every latency figure here is CPU and says so"],
     ["C++ runner (SPSC ring, latency stats)", "partial", "ring + latency stats present; integrity monitor not ported"],
   ];
   $("#sysTable").innerHTML = `<tr><th>component</th><th>state</th><th>detail</th></tr>` +

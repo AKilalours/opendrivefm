@@ -2,32 +2,36 @@
   "architecture": "6 cameras -> frozen OpenDriveFM backbone -> z(384) -> trainable projector -> 4 prefix embeddings -> frozen GPT-2 (85.4M, vocab 404) -> residual waypoint tokens",
   "trainable_params_m": 1.773,
   "frozen_params_m": 100.9,
-  "train_samples": 64,
-  "val_samples": 16,
-  "steps": 320,
-  "tokenisation": "residual on constant-velocity prior, 200 bins over \u00b110.0 m per axis, mean quantisation error 0.534 m",
+  "train_samples": 324,
+  "val_samples": 80,
+  "steps": 700,
+  "tokenisation": "residual on the constant-velocity prior, 200 bins over \u00b110.0 m per axis",
   "val_ade_m": {
     "T+1 (0.5s)": {
-      "constant_velocity": 0.419,
-      "vla_gpt2_projector": 0.571
+      "constant_velocity": 0.288,
+      "vla_gpt2_projector": 0.298,
+      "delta_vs_cv_pct": 3.5
     },
     "T+2 (1.0s)": {
-      "constant_velocity": 0.687,
-      "vla_gpt2_projector": 1.085
+      "constant_velocity": 0.474,
+      "vla_gpt2_projector": 0.536,
+      "delta_vs_cv_pct": 13.1
     },
     "T+3 (1.5s)": {
-      "constant_velocity": 0.995,
-      "vla_gpt2_projector": 1.397
+      "constant_velocity": 0.693,
+      "vla_gpt2_projector": 0.758,
+      "delta_vs_cv_pct": 9.4
     },
     "6.0s": {
-      "constant_velocity": 6.093,
-      "vla_gpt2_projector": 5.47
+      "constant_velocity": 3.678,
+      "vla_gpt2_projector": 3.605,
+      "delta_vs_cv_pct": -2.0
     }
   },
   "caveats": [
-    "80 keyframes total, 64 train / 16 val. This demonstrates the mechanism end to end; it is far too little data for the number to be a model result.",
-    "The frozen GPT-2 is the repo's own checkpoint, previously fine-tuned on 404 copies of an all-zero trajectory. Its language-modelling ability was damaged by that run, so it is a weak prior here. The pretrained GPT-2 could not be substituted: huggingface.co is blocked by this environment's egress policy.",
-    "Decoding is constrained so even positions emit x-bins and odd positions y-bins; without that the model can emit syntactically invalid sequences.",
-    "Compared against the constant-velocity prior it predicts residuals on, which is the honest baseline for this design."
+    "All 404 keyframes: 324 train / 80 val. Still a small corpus for a language model.",
+    "The frozen GPT-2 is the repo's own checkpoint, previously fine-tuned on 404 copies of an all-zero trajectory, so it is a weak prior. Pretrained GPT-2 could not be substituted: huggingface.co is blocked by egress policy in both environments.",
+    "Decoding is constrained so even positions emit x-bins and odd positions y-bins.",
+    "Compared against the constant-velocity prior it predicts residuals on."
   ]
 }
