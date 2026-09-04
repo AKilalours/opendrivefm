@@ -66,7 +66,7 @@ def obj_speed(tab, tok, inst):
     return best
 
 
-def build_frame(tab, man, tok, cam_size=(336, 189), map_size=456):
+def build_frame(tab, man, tok, cam_size=(448, 252), map_size=456):
     t0 = time.perf_counter()
     pts = L.load_sweep_stack(tok, man, n_sweeps=10)
     plane = G.fit_ground_plane(pts[:, :3])
@@ -95,11 +95,12 @@ def build_frame(tab, man, tok, cam_size=(336, 189), map_size=456):
         rec = tab.sensor_record(tok, cam)
         raw_im = np.asarray(Image.open(rec["path"]).convert("RGB"))
         lid = O.draw_lidar_depth(raw_im, cur, rec, radius=2, stride=5)
-        box, _ = O.draw_boxes_3d(lid, boxes, rec, label=False)
+        box, _ = O.draw_boxes_3d(lid, boxes, rec, label=True,
+                                 box_width=3, label_size=34, min_label_frac=0.075)
         cams[cam] = {
-            "plain": jpg(raw_im, cam_size),
-            "lidar": jpg(lid, cam_size),
-            "boxes": jpg(box, cam_size),
+            "plain": jpg(raw_im, cam_size, 78),
+            "lidar": jpg(lid, cam_size, 78),
+            "boxes": jpg(box, cam_size, 80),
             "visible_frac": vis_frac[cam],
         }
 
@@ -200,7 +201,8 @@ def build_frame(tab, man, tok, cam_size=(336, 189), map_size=456):
                          round(float(y1 / rec["height"]), 4)]
         objs.append({
             "id": k,
-            "cat": b["category"].split(".")[-1],
+            "cat": O.display_name(b["category"]),
+            "raw_cat": b["category"],
             "group": b["category"].split(".")[0],
             "x": round(float(b["centre"][0]), 2),
             "y": round(float(b["centre"][1]), 2),

@@ -128,22 +128,26 @@ tr:last-child td{border-bottom:none}
 .br .n{font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:right}
 
 /* ---------- inspector ---------- */
-.insp{position:fixed;right:0;top:0;width:270px;height:100vh;
+.insp{position:fixed;right:0;top:0;width:326px;height:100vh;
   background:#0D1119;border-left:1px solid var(--line2);padding:14px;overflow:auto;
   transform:translateX(100%);transition:transform .16s ease;z-index:30}
 .insp.on{transform:none}
-body.insp-open main{padding-right:284px}
-body.insp-open .bar{padding-right:290px}
+body.insp-open main{padding-right:340px}
+body.insp-open .bar{padding-right:344px}
 .insp h3{margin:0 0 2px;font-size:15px}
 .insp .cls{font-size:11px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase}
-.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(35,42,54,.6);
-  font-size:12px}
-.kv span:first-child{color:var(--dim)}
-.kv span:last-child{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
+  border-bottom:1px solid rgba(35,42,54,.6);font-size:12px;align-items:baseline}
+.kv span:first-child{color:var(--dim);flex:0 0 auto}
+.kv span:last-child{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  text-align:right;min-width:0;overflow-wrap:anywhere}
 .close{position:absolute;right:10px;top:10px;color:var(--dim2);font-size:15px}
 .objlist{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:4px}
-.objrow{display:grid;grid-template-columns:1fr 46px 46px 42px;gap:6px;padding:4px 8px;font-size:11px;
+.objrow{display:grid;grid-template-columns:1fr 52px 48px 44px;gap:8px;padding:5px 9px;font-size:11px;
   font-family:"IBM Plex Mono",monospace;cursor:pointer;border-bottom:1px solid rgba(35,42,54,.5)}
+.objrow span:not(:first-child){text-align:right}
+.objrow.hdr{cursor:default;color:var(--dim2);font-size:9px;letter-spacing:.08em;
+  position:sticky;top:0;background:var(--surf);border-bottom:1px solid var(--line)}
 .objrow:hover{background:var(--surf2)}
 .objrow.on{background:rgba(91,210,232,.12);color:var(--acc)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -190,9 +194,9 @@ BODY = r"""
     <button class="step" id="fn">&#9654;</button>
     <button class="pill" id="play">&#9654; Play</button></div>
   <div class="grp"><span class="lab">Camera</span>
-    <button class="pill ov" data-ov="plain">Raw</button>
-    <button class="pill ov" data-ov="lidar">LiDAR</button>
-    <button class="pill ov on" data-ov="boxes">3D Boxes</button></div>
+    <button class="pill ov" data-ov="plain">Camera only</button>
+    <button class="pill ov" data-ov="lidar">LiDAR depth</button>
+    <button class="pill ov on" data-ov="boxes">Objects + LiDAR</button></div>
   <div class="grp"><span class="lab">World</span>
     <button class="pill wl on" data-wl="bev">BEV</button>
     <button class="pill wl" data-wl="bev_nodyn">Static only</button>
@@ -489,10 +493,11 @@ addEventListener("keydown", e => {
 function pick(id) { sel = (sel === id) ? null : id; draw(); }
 
 function objRows(container, objs, compact) {
-  container.innerHTML = "";
+  container.innerHTML = `<div class="objrow hdr"><span>OBJECT</span><span>RANGE</span>
+    <span>SPEED</span><span>INTEG</span></div>`;
   objs.forEach(o => {
     const r = el("div", "objrow" + (sel === o.id ? " on" : ""));
-    r.innerHTML = `<span>${o.cat}</span><span>${o.range}m</span>
+    r.innerHTML = `<span>${o.cat}</span><span>${o.range} m</span>
       <span>${o.speed.toFixed(1)}</span><span>${fx(o.integrity,2)}</span>`;
     r.onclick = () => pick(o.id);
     container.appendChild(r);
@@ -657,7 +662,7 @@ function draw() {
     $("#iCls").textContent = o.group;
     $("#iId").textContent = o.cat + " #" + o.id;
     const visLbl = { 1: "0-40%", 2: "40-60%", 3: "60-80%", 4: "80-100%" }[o.vis] || "--";
-    const seen = CAMS.filter(c => o.cams[c]).map(c => c.replace("CAM_", "")).join(", ") || "none";
+    const seen = CAMS.filter(c => o.cams[c]).map(c => c.replace("CAM_", "").replace("_", "-").toLowerCase()).join(" · ") || "none";
     $("#iKv").innerHTML = [
       ["range", o.range + " m"], ["speed", o.speed.toFixed(2) + " m/s"],
       ["position", `${o.x}, ${o.y}`], ["heading", o.yaw.toFixed(2) + " rad"],

@@ -13,13 +13,54 @@ from matplotlib import cm
 
 import odfm_geom as GE
 
+# Deeper, more saturated than the BEV palette. These are drawn over daylight
+# camera frames -- pale cyan on bright tarmac or sky is close to invisible,
+# which is exactly what the first version did. Every stroke is also laid over a
+# near-black halo (see _stroke) so the outline survives on any background.
 CLASS_COLOUR = {
-    "vehicle.car": (86, 214, 255), "vehicle.truck": (86, 214, 255),
-    "vehicle.bus": (86, 214, 255), "vehicle.trailer": (86, 214, 255),
-    "vehicle.construction": (86, 214, 255),
-    "vehicle.motorcycle": (255, 178, 64), "vehicle.bicycle": (255, 178, 64),
-    "human.pedestrian": (255, 92, 132), "movable_object": (168, 178, 196),
+    "vehicle.car": (0, 132, 255), "vehicle.truck": (0, 132, 255),
+    "vehicle.bus": (0, 132, 255), "vehicle.trailer": (0, 132, 255),
+    "vehicle.construction": (0, 132, 255), "vehicle.emergency": (0, 132, 255),
+    "vehicle.motorcycle": (255, 128, 0), "vehicle.bicycle": (255, 128, 0),
+    "human.pedestrian": (255, 26, 80),
+    "movable_object.trafficcone": (255, 196, 0),
+    "movable_object.barrier": (150, 120, 255),
+    "movable_object": (168, 178, 196),
 }
+
+# nuScenes leaf categories are not names a reader should have to decode.
+DISPLAY_NAME = {
+    "human.pedestrian.adult": "Pedestrian",
+    "human.pedestrian.child": "Child",
+    "human.pedestrian.construction_worker": "Worker",
+    "human.pedestrian.police_officer": "Police",
+    "human.pedestrian.personal_mobility": "Scooter rider",
+    "human.pedestrian.stroller": "Stroller",
+    "human.pedestrian.wheelchair": "Wheelchair",
+    "vehicle.car": "Car", "vehicle.truck": "Truck", "vehicle.bus.bendy": "Bus",
+    "vehicle.bus.rigid": "Bus", "vehicle.trailer": "Trailer",
+    "vehicle.construction": "Construction vehicle",
+    "vehicle.emergency.ambulance": "Ambulance",
+    "vehicle.emergency.police": "Police car",
+    "vehicle.motorcycle": "Motorcycle", "vehicle.bicycle": "Bicycle",
+    "movable_object.trafficcone": "Traffic cone",
+    "movable_object.barrier": "Barrier",
+    "movable_object.pushable_pullable": "Cart",
+    "movable_object.debris": "Debris",
+    "static_object.bicycle_rack": "Bike rack",
+}
+
+
+def display_name(category):
+    """A readable label for a nuScenes category, falling back to the leaf."""
+    if category in DISPLAY_NAME:
+        return DISPLAY_NAME[category]
+    for k, v in DISPLAY_NAME.items():
+        if category.startswith(k):
+            return v
+    return category.split(".")[-1].replace("_", " ").capitalize()
+
+
 _FONTS = ["/System/Library/Fonts/Supplemental/Arial Bold.ttf",
           "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
 _fc = {}
@@ -78,12 +119,24 @@ def draw_lidar_depth(img, pts_ego, rec, max_depth=60.0, radius=2, alpha=0.8,
     return np.array(im)
 
 
+def _stroke(dr, pts, colour, width=2):
+    """Draw a line with a near-black halo under it.
+
+    A single-colour outline disappears wherever the background happens to match
+    it -- pale blue on sky, orange on a brick wall. Two passes, dark underneath
+    and wider, keeps the edge readable on every frame without darkening the
+    photograph itself."""
+    dr.line(pts, fill=(6, 8, 12, 210), width=width + 3)
+    dr.line(pts, fill=colour + (255,), width=width)
+
+
 _EDGES = [(0, 1), (1, 2), (2, 3), (3, 0),          # front face
           (4, 5), (5, 6), (6, 7), (7, 4),          # back face
           (0, 4), (1, 5), (2, 6), (3, 7)]          # connecting
 
 
-def draw_boxes_3d(img, boxes, rec, min_pts=1, label=True):
+def draw_boxes_3d(img, boxes, rec, min_pts=1, label=True, box_width=2,
+                  label_size=13, min_label_frac=0.075):
     """Wireframe 3D boxes projected into the camera.
 
     A box is drawn only when ALL eight corners are in front of the camera. A
@@ -110,14 +163,29 @@ def draw_boxes_3d(img, boxes, rec, min_pts=1, label=True):
             continue
         col = class_colour(b["category"])
         for i, j in _EDGES:
-            dr.line([tuple(uv[i]), tuple(uv[j])], fill=col + (235,), width=2)
+            _stroke(dr, [tuple(uv[i]), tuple(uv[j])], col, box_width)
         # shade the front face so heading is readable at a glance
-        dr.polygon([tuple(uv[k]) for k in (0, 1, 2, 3)], fill=col + (48,))
+        dr.polygon([tuple(uv[k]) for k in (0, 1, 2, 3)], fill=col + (44,))
         drawn += 1
-        if label:
-            name = b["category"].split(".")[-1]
+        # Label only boxes big enough in frame to carry one. A street of
+        # barriers and cones at 40 m produces a wall of overlapping chips that
+        # hides the very objects it names; the near, large objects are the ones
+        # a reader is looking for anyway.
+        if label and (uv[:, 0].max() - uv[:, 0].min()) >= min_label_frac * W:
+            name = display_name(b["category"])
             x, y = float(uv[:, 0].min()), float(uv[:, 1].min())
-            dr.text((max(2, x), max(2, y - 14)), name, fill=col, font=_font(13))
+            f = _font(label_size)
+            tb = dr.textbbox((0, 0), name, font=f)
+            tw, th = tb[2] - tb[0], tb[3] - tb[1]
+            pad = 3
+            lx = max(2.0, min(x, W - tw - 2 * pad - 2))
+            ly = max(2.0, y - th - 2 * pad - 2)
+            # solid dark chip, coloured text: legible over any photograph, and
+            # it never hides the object it names
+            dr.rounded_rectangle([lx, ly, lx + tw + 2 * pad, ly + th + 2 * pad],
+                                 3, fill=(6, 8, 12, 232), outline=col + (235,))
+            dr.text((lx + pad, ly + pad - tb[1]), name, fill=col, font=f)
+
     return np.array(im), drawn
 
 
