@@ -240,7 +240,7 @@ footer a { color: var(--green); text-decoration: none; }
     <h1>OpenDriveFM</h1>
     <p class="subtitle">
       Trust-Aware Multi-Camera BEV Occupancy Prediction<br>
-      with GPT-2 Causal Trajectory Estimation
+      and the Validation Harness That Measures It
     </p>
     <div>
       <span class="tag tag-green">Self-Supervised</span>
@@ -254,39 +254,53 @@ footer a { color: var(--green); text-decoration: none; }
     </div>
   </header>
 
+  <!-- CORRECTION NOTICE -->
+  <div style="max-width:1100px;margin:0 auto 28px;padding:16px 20px;border:1px solid #d29922;
+              border-left:4px solid #d29922;border-radius:8px;background:rgba(210,153,34,0.07);
+              font-size:0.88em;line-height:1.6;">
+    <strong style="color:#d29922;">Corrected figures.</strong>
+    An earlier version of this page reported 317 FPS, ADE 2.457&nbsp;m, IoU 0.136,
+    &ldquo;+26.6% IoU under sensor faults&rdquo; and &ldquo;100% fault detection&rdquo;.
+    None of those reproduce from the code and checkpoints in the repository. Every number
+    below is produced by a script in the repo and written to a JSON artifact. The full
+    list of removed claims, and the measurement that replaced each one, is in the
+    <a href="https://github.com/AKilalours/opendrivefm#removed-claims"
+       style="color:#d29922;">repository README</a>.
+  </div>
+
   <!-- METRICS -->
   <div class="metrics-grid fade-in">
     <div class="metric">
-      <span class="metric-value">317</span>
-      <span class="metric-label">FPS (MPS)</span>
+      <span class="metric-value">0.764</span>
+      <span class="metric-label">Fault-detection AUROC</span>
     </div>
     <div class="metric">
-      <span class="metric-value">3.15ms</span>
-      <span class="metric-label">p50 Latency</span>
+      <span class="metric-value">71.2</span>
+      <span class="metric-label">FPS (C++, 4 threads)</span>
     </div>
     <div class="metric">
-      <span class="metric-value">2.457m</span>
-      <span class="metric-label">Traj ADE</span>
+      <span class="metric-value">13.9ms</span>
+      <span class="metric-label">p50 Latency (C++)</span>
     </div>
     <div class="metric">
-      <span class="metric-value">18.4%</span>
-      <span class="metric-label">Over CV Baseline</span>
+      <span class="metric-value">2.763m</span>
+      <span class="metric-label">Trajectory ADE</span>
     </div>
     <div class="metric">
-      <span class="metric-value">0.136</span>
+      <span class="metric-value">0.0767</span>
       <span class="metric-label">BEV IoU</span>
     </div>
     <div class="metric">
-      <span class="metric-value">100%</span>
-      <span class="metric-label">Fault Detection</span>
+      <span class="metric-value">82</span>
+      <span class="metric-label">Held-out frames</span>
     </div>
     <div class="metric">
       <span class="metric-value">553K</span>
       <span class="metric-label">Parameters</span>
     </div>
     <div class="metric">
-      <span class="metric-value">83×</span>
-      <span class="metric-label">Smaller than ProtoOcc</span>
+      <span class="metric-value">5</span>
+      <span class="metric-label">Injected fault types</span>
     </div>
   </div>
 
@@ -319,8 +333,8 @@ T_cam→ego frame               self-supervised, zero fault labels
       ▼                         ▼
 <span class="hl-cyan">BEV Decoder</span>               <span class="hl-purple">CausalTrajHead</span>
 4×ConvTranspose2d         GPT-2 transformer
-IoU = 0.136               3 layers, 4 heads, 666K params
-                          ADE = 2.457m</div>
+IoU = 0.0767              3 layers, 4 heads, 666K params
+                          ADE = 2.763m</div>
 
     <div class="features">
       <div class="feature">
@@ -487,9 +501,9 @@ IoU = 0.136               3 layers, 4 heads, 666K params
           <div class="ablation-bar"><div class="ablation-bar-fill" style="width:87%;background:var(--orange)"></div></div>
         </div>
         <div class="ablation-card best">
-          <h4>Trust-Aware ⭐</h4>
+          <h4>Trust-Aware</h4>
           <div class="iou">0.0814</div>
-          <p style="color:var(--green);font-size:0.82em;margin-top:4px;">+26.6% over No-Trust</p>
+          <p style="color:#d29922;font-size:0.82em;margin-top:4px;">Not reproducible: trust fusion did not improve IoU at any temperature, over 3 seeds</p>
           <div class="ablation-bar"><div class="ablation-bar-fill" style="width:100%;background:var(--green)"></div></div>
         </div>
       </div>
@@ -504,9 +518,9 @@ IoU = 0.136               3 layers, 4 heads, 666K params
       <div class="version"><span class="version-tag">v2</span><span class="version-desc">Initial CNN + trust scorer</span><span class="version-metric">First working pipeline</span></div>
       <div class="version"><span class="version-tag">v5</span><span class="version-desc">AdamW + CosineAnnealingLR</span><span class="version-metric">Loss 26→9.5</span></div>
       <div class="version"><span class="version-tag">v7</span><span class="version-desc">Scene-level splits</span><span class="version-metric">No data leakage</span></div>
-      <div class="version best"><span class="version-tag">v8 ★</span><span class="version-desc">Geometry BEV lifter</span><span class="version-metric">IoU=0.136</span></div>
+      <div class="version best"><span class="version-tag">v8 ★</span><span class="version-desc">Geometry BEV lifter</span><span class="version-metric">IoU=0.0767</span></div>
       <div class="version"><span class="version-tag">v9</span><span class="version-desc">LiDAR depth supervision</span><span class="version-metric">ADE 2.740→2.559m</span></div>
-      <div class="version best"><span class="version-tag">v11 ★</span><span class="version-desc">T=4 temporal video fusion + 128×128 BEV</span><span class="version-metric">ADE=2.457m BEST</span></div>
+      <div class="version best"><span class="version-tag">v11 ★</span><span class="version-desc">T=4 temporal video fusion + 128×128 BEV</span><span class="version-metric">ADE=2.763m BEST</span></div>
       <div class="version"><span class="version-tag">v13</span><span class="version-desc">3-class semantic labels</span><span class="version-metric">IoU=0.131 vehicle</span></div>
       <div class="version"><span class="version-tag">v14</span><span class="version-desc">Full LSS from scratch</span><span class="version-metric">Needs more epochs</span></div>
     </div>
@@ -541,10 +555,10 @@ IoU = 0.136               3 layers, 4 heads, 666K params
         </tr>
         <tr style="background:rgba(0,255,136,0.04);border-left:3px solid var(--green)">
           <td><strong>OpenDriveFM ★</strong></td>
-          <td class="trust-good"><strong>317 FPS</strong></td>
+          <td class="trust-good"><strong>71.2 FPS</strong></td>
           <td class="trust-good"><strong>553K</strong></td>
-          <td class="trust-good">✓ ADE=2.457m</td>
-          <td class="trust-good">✓ 7 fault types</td>
+          <td class="trust-good">✓ ADE=2.763m</td>
+          <td class="trust-good">✓ 5 fault types</td>
           <td class="trust-good">MacBook</td>
         </tr>
       </tbody>
@@ -580,7 +594,7 @@ IoU = 0.136               3 layers, 4 heads, 666K params
       <a href="https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm">GitHub</a>
     </p>
     <p style="margin-top:16px;font-size:0.8em;">
-      317 FPS · ADE=2.457m · IoU=0.136 · Self-supervised · GPT-2 · ViT · DDP-ready · C++ LibTorch
+      AUROC 0.764 · 71.2 FPS (C++) · ADE=2.763m · IoU=0.0767 · Self-supervised trust scoring · C++ LibTorch parity
     </p>
   </footer>
 
@@ -617,9 +631,9 @@ function animateValue(el, start, end, duration, suffix='') {
 
 // Animate on page load
 const metrics = [
-  { selector: '.metric:nth-child(1) .metric-value', start: 0, end: 317, suffix: '' },
-  { selector: '.metric:nth-child(3) .metric-value', start: 3.0, end: 2.457, suffix: 'm' },
-  { selector: '.metric:nth-child(4) .metric-value', start: 0, end: 18.4, suffix: '%' },
+  { selector: '.metric:nth-child(1) .metric-value', start: 0.434, end: 0.764, suffix: '' },
+  { selector: '.metric:nth-child(2) .metric-value', start: 0, end: 71.2, suffix: '' },
+  { selector: '.metric:nth-child(4) .metric-value', start: 3.012, end: 2.763, suffix: 'm' },
 ];
 
 setTimeout(() => {
