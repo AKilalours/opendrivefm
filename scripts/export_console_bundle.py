@@ -315,7 +315,8 @@ def main():
                  "trajectory_ade_report", "learned_model_report",
                  "vla_report", "vlm_report", "robustness_report",
                  "trajlm_retrained_report", "kernel_bench_report",
-                 "cpp_report", "perturbation_shots"):
+                 "cpp_report", "perturbation_shots",
+                 "vlm_local_report", "calibration_report"):
         p = ROOT / f"outputs/artifacts/{name}.json"
         if p.exists():
             d = json.loads(p.read_text())
