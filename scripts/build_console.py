@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Emit the OpenDriveFM validation console as one self-contained HTML file."""
 from __future__ import annotations
-import json, sys
+import datetime as _dt
+import json, subprocess, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = ROOT / "outputs/console/bundle.json"
@@ -86,7 +87,9 @@ tr:last-child td{border-bottom:none}
 .cam .zone{position:absolute;cursor:pointer;border:1px solid transparent;border-radius:2px}
 .cam .zone:hover{border-color:rgba(91,210,232,.85);background:rgba(91,210,232,.14)}
 .mapwrap.clickable{cursor:crosshair}
-.ovl{position:absolute;inset:0;width:100%;height:100%}
+/* The overlay covers the MAP, not the whole card: .mapwrap also holds the
+   legend and caption rows, so inset:0 stretched the footprints down over them. */
+.ovl{position:absolute;left:0;top:0;width:100%;height:auto;aspect-ratio:1/1}
 .ovl rect{fill:rgba(120,210,255,.10);stroke:rgba(140,220,255,.65);stroke-width:.22;cursor:pointer;
   vector-effect:non-scaling-stroke}
 .ovl rect:hover{fill:rgba(91,210,232,.34);stroke:var(--acc)}
@@ -95,7 +98,7 @@ tr:last-child td{border-bottom:none}
 /* ---------- maps ---------- */
 .maps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .mapwrap{position:relative;background:#0B0E14;border:1px solid var(--line);border-radius:5px;
-  overflow:hidden}
+  overflow:hidden;align-self:start}
 .mapwrap img{width:100%;display:block}
 .mapwrap .cap{display:flex;justify-content:space-between;align-items:baseline;
   padding:7px 10px;border-top:1px solid var(--line);background:var(--surf)}
@@ -124,7 +127,9 @@ tr:last-child td{border-bottom:none}
 .br{display:grid;grid-template-columns:132px 1fr 62px;align-items:center;gap:10px;margin:5px 0}
 .br .t{font-size:11.5px;color:var(--dim)}
 .br .track{height:11px;background:#1B212C;border-radius:2px;overflow:hidden}
-.br .fill{height:100%;border-radius:2px}
+/* display:block matters: .fill is a <span>, and an inline box ignores height,
+   so every bar on every page was rendering as an empty track. */
+.br .fill{display:block;height:100%;border-radius:2px;min-width:2px}
 .br .n{font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:right}
 
 /* ---------- inspector ---------- */
@@ -220,6 +225,36 @@ canvas.grid{width:100%;display:block;image-rendering:pixelated;background:#0B0E1
   letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .strip figure.on figcaption{color:var(--acc)}
 .plot{width:100%;display:block}
+
+/* ---------- architecture strip ---------- */
+.arch{background:var(--surf);border:1px solid var(--line);border-radius:6px;padding:10px 12px 4px}
+.arch svg{width:100%;height:auto;display:block;color:var(--ink)}
+.arch .nd rect{fill:var(--surf2);stroke:var(--line2);stroke-width:1}
+.arch .nd:hover rect{stroke:var(--acc);fill:#1B2230}
+.arch .nd.hi rect{stroke:var(--acc);stroke-width:1.6;fill:rgba(91,210,232,.10)}
+.arch .nd{cursor:pointer}
+.arch .t{fill:var(--ink);font-size:11px;font-weight:600}
+.arch .m{fill:var(--acc);font-size:10px;font-family:"IBM Plex Mono",monospace}
+.arch .lane{fill:var(--dim2);font-size:9px;letter-spacing:.14em}
+.arch .el{fill:var(--dim2);font-size:9.5px}
+.arch line,.arch path{stroke:var(--dim2)}
+.arch .bnd{stroke:var(--line2);stroke-dasharray:4 4}
+
+/* ---------- claim ---------- */
+.claim{font-size:15px;line-height:1.5;color:var(--ink);margin:2px 0 12px;max-width:105ch}
+.claim b{color:var(--acc);font-weight:600;font-family:"IBM Plex Mono",monospace;font-size:14px}
+
+/* ---------- reading paths ---------- */
+.paths{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.rp{padding:4px 11px;border:1px solid var(--line2);border-radius:3px;font-size:11.5px;color:var(--dim)}
+.rp.on{border-color:var(--acc);color:var(--acc);background:rgba(91,210,232,.10)}
+.step2{display:grid;grid-template-columns:22px 1fr 128px;gap:10px;align-items:baseline;
+  padding:7px 0;border-bottom:1px solid rgba(35,42,54,.6);font-size:12px}
+.step2:last-child{border-bottom:none}
+.step2 .no{font-family:"IBM Plex Mono",monospace;color:var(--acc);font-size:11px}
+.step2 .go{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--dim2);text-align:right;
+  cursor:pointer}
+.step2 .go:hover{color:var(--acc)}
 .plot .ax{stroke:var(--line2);stroke-width:.6}
 .plot .gl{stroke:var(--line);stroke-width:.5;stroke-dasharray:2 3}
 .plot text{fill:var(--dim2);font-size:8px;font-family:"IBM Plex Mono",monospace}
@@ -257,7 +292,20 @@ BODY = r"""
   <main>
     <!-- ============ OVERVIEW ============ -->
     <section class="page on" data-p="overview">
-      <div class="sec"><h2>Sensor input</h2><span class="note" id="ovNote"></span></div>
+      <p class="claim" id="claim"></p>
+      <div class="sec"><h2>System</h2>
+        <span class="note">click any block to open the page holding its numbers</span>
+        <span style="margin-left:auto;display:flex;gap:6px">
+          <button class="tog on am" data-m="val">Measured result</button>
+          <button class="tog am" data-m="lat">Latency</button></span></div>
+      <div class="arch" id="arch"></div>
+
+      <div class="sec" style="margin-top:16px"><h2>Where to start</h2>
+        <span class="note">pick what you care about &mdash; the blocks above highlight, and the route below is ordered</span></div>
+      <div class="paths" id="paths"></div>
+      <div class="card pad" id="pathBody"></div>
+
+      <div class="sec" style="margin-top:16px"><h2>Sensor input</h2><span class="note" id="ovNote"></span></div>
       <div class="cams" id="cams"></div>
 
       <div class="sec" style="margin-top:16px"><h2>World state</h2></div>
@@ -458,8 +506,8 @@ BODY = r"""
       <div class="hr"></div>
       <div class="card pad"><div class="sec"><h2>Trust separation</h2>
         <span class="note">faulted camera vs the five untouched, mean over 120 keyframes</span></div>
-        <div class="grid2"><div id="rbBars"></div>
-        <div class="badbox" id="rbGap"></div></div></div>
+        <div id="rbBars"></div>
+        <div style="margin-top:4px" id="rbGap"></div></div>
     </section>
 
     <!-- ============ RUNTIME ============ -->
@@ -525,6 +573,14 @@ BODY = r"""
       <div class="sec"><h2>What runs, and what does not</h2>
         <span class="note">every row is a component that exists in this repository</span></div>
       <div class="card pad"><table id="sysTable"></table></div>
+      <div class="hr"></div>
+      <div class="sec"><h2>How to re-measure any of this</h2>
+        <span class="note" id="repNote"></span></div>
+      <div class="grid2">
+        <div class="card pad"><table id="repTable"></table></div>
+        <div class="card pad"><div class="sec"><h2>Command per number</h2></div>
+          <div id="repCmds"></div></div>
+      </div>
     </section>
   </main>
 </div>
@@ -713,6 +769,135 @@ function pathPlot(sets, title, sub) {
       viewBox="0 0 ${W} ${H}">${g}</svg>
     <figcaption style="font-size:10.5px;color:var(--dim);padding-top:2px">
       <b style="color:var(--ink)">${title}</b> &middot; ${sub}</figcaption></figure>`;
+}
+
+/* ================= architecture strip =================
+   The claim this picture makes, and the reason it is a picture: the same frame
+   goes down TWO paths, and the geometric one is what validates the learned one.
+   Occupancy log-odds supplies the labels the BEV head is scored against; the
+   observability monitor is not a model output at all and had to be ported to
+   C++ separately. A prose list of components cannot show either of those, and
+   both are the argument. Every metric below is read from the report JSONs at
+   build time -- nothing here is typed by hand. */
+const AM = { m: "val", hi: null };
+function archData() {
+  const tm = R.timing_report || {}, ms = tm.per_stage_ms || {};
+  const lm = R.learned_model_report || {}, cp = R.cpp_report || {};
+  const iv = R.integrity_visibility_report || {}, mo = R.motion_separation_report || {};
+  const tl = R.trajlm_retrained_report || {}, vla = R.vla_report || {};
+  const im = cp.integrity_monitor || {}, rn = (cp.runner || {}).at_10hz_6s || {};
+  const sq = rn.latest_frame_seqlock || {}, st = F[0].stats;
+  const g = (o, k, d) => (o && o[k] !== undefined ? o[k] : d);
+  const ms1 = k => ms[k] !== undefined ? ms[k].toFixed(1) + " ms" : "--";
+  const ade = h => { const r = (lm.trajectory_ade || {})[h]; return r ? r.learned_v11_temporal.ade_m : "--"; };
+  return [
+    // id, x, y, w, title lines, latency, measured result, page
+    ["s1",  20,  48, 156, ["LiDAR", "10 sweeps"],       ms1("load_10_sweeps_from_disk"),
+      st.returns.toLocaleString() + " returns",           "perception"],
+    ["s2",  20, 196, 156, ["6 cameras", "1600 × 900"],  "--", "projected + reprojected", "perception"],
+    ["g1", 204,  48, 128, ["Ground plane", "RANSAC"],   ms1("ground_plane_ransac"),
+      "tilt " + st.plane_tilt_deg + "°",                  "perception"],
+    ["g2", 340,  48, 128, ["Occupancy", "log-odds"],    ms1("occupancy_logodds_0.20m"),
+      "free " + (100 * st.free).toFixed(1) + "%",         "perception"],
+    ["g3", 476,  48, 128, ["Motion", "separation"],     ms1("motion_separation"),
+      "F1 " + fx(g(mo.best, "f1"), 3),                    "perception"],
+    ["g4", 612,  48, 128, ["Camera", "observability"],  ms1("integrity_6cam_0.50m"),
+      "AUROC " + fx(g(g(iv.auroc, "integrity_occlusion_aware", {}), "auroc"), 3), "observability"],
+    ["l1", 204, 196, 128, ["BEV backbone", "→ z(384)"], (lm.inference_ms_per_sample || "--") + " ms",
+      "167 of 169 weights",                               "models"],
+    ["l2", 340, 196, 128, ["Occ · traj · trust", "heads"], "--",
+      "IoU " + fx(g(g(lm.occupancy, "best", {}), "iou"), 3) + " · " + ade("T+1 (0.5s)"), "models"],
+    ["l3", 476, 196, 128, ["Trajectory LM", "GPT-2 4.9M"], "--",
+      g(g(g(tl.val_ade_m, "T+3 (1.5s)", {}), "gpt2_retrained_conditioned", {}), "ade_m", "--") + " m @T+3", "models"],
+    ["l4", 612, 196, 128, ["VLA projector", "· VLM"],   "--",
+      g(g(vla.val_ade_m, "6.0s", {}), "vla_gpt2_projector", "--") + " m @6 s", "models"],
+    ["d1", 792, 196, 124, ["TorchScript"],              "--", "traced + frozen",        "runtime"],
+    ["d2", 928, 196, 152, ["LibTorch", "runner"],
+      (g(cp.inference_latency, "p50_ms", 0)).toFixed ? g(cp.inference_latency, "p50_ms", 0).toFixed(0) + " ms p50" : "--",
+      "parity " + Number(g(g(cp.parity, "occupancy", {}), "max_abs", 0)).toExponential(1), "runtime"],
+    ["d3", 928,  48, 152, ["Integrity monitor", "C++ port"], (im.p50_ms || "--") + " ms p50",
+      (im.parity && im.parity.integrity_max_abs === 0 ? "bit-identical"
+        : "parity " + Number(g(im.parity, "integrity_max_abs", 0)).toExponential(1)), "runtime"],
+    ["d4", 1092, 122, 168, ["Latest-frame", "seqlock @10 Hz"], (sq.end_to_end_p50_ms || "--") + " ms e2e",
+      sq.skipped_stale + " stale, 0 dropped",             "runtime"],
+  ];
+}
+const ARCH_EDGES = [
+  // from, to, label, kind
+  ["s1", "g1", "", "h"], ["g1", "g2", "", "h"], ["g2", "g3", "", "h"], ["g3", "g4", "", "h"],
+  ["s2", "l1", "", "h"], ["l1", "l2", "", "h"], ["l2", "l3", "", "h"], ["l3", "l4", "", "h"],
+  ["g2", "l2", "supplies the occupancy labels", "v"],
+  ["g4", "d3", "ported to C++", "h"],
+  ["l4", "d1", "traced", "h"], ["d1", "d2", "", "h"],
+];
+function drawArch() {
+  const N = {}, rows = archData();
+  rows.forEach(r => { N[r[0]] = { x: r[1], y: r[2], w: r[3], t: r[4], lat: r[5], val: r[6], p: r[7] }; });
+  const H = 70;
+  let g = `<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6"
+      markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="currentColor"
+      stroke="none" opacity=".55"/></marker></defs>`;
+  // lane labels + the process boundary, which is the one thing the reader must not miss
+  g += `<text class="lane" x="20" y="34">SENSORS</text>
+        <text class="lane" x="204" y="34">GEOMETRY &mdash; NUMPY, PER KEYFRAME</text>
+        <text class="lane" x="204" y="182">LEARNED &mdash; CHECKPOINT v11_temporal</text>
+        <text class="lane" x="792" y="34">DEPLOYMENT</text>
+        <line class="bnd" x1="764" y1="22" x2="764" y2="300"/>
+        <text class="el" x="768" y="298">python │ c++</text>`;
+  ARCH_EDGES.forEach(([a, b, lab, kind]) => {
+    const A = N[a], B = N[b];
+    if (!A || !B) return;
+    if (kind === "h") {
+      const y = A.y + H / 2, y2 = B.y + H / 2;
+      const x1 = A.x + A.w, x2 = B.x;
+      const d = y === y2 ? `M${x1},${y} L${x2 - 3},${y}`
+        : `M${x1},${y} C${(x1 + x2) / 2},${y} ${(x1 + x2) / 2},${y2} ${x2 - 3},${y2}`;
+      g += `<path d="${d}" fill="none" marker-end="url(#ah)" opacity=".7"/>`;
+      if (lab) g += `<text class="el" x="${(x1 + x2) / 2}" y="${y - 6}" text-anchor="middle">${lab}</text>`;
+    } else {
+      const x = A.x + A.w / 2, y1 = A.y + H, y2 = B.y;
+      g += `<path d="M${x},${y1} L${x},${y2 - 3}" fill="none" marker-end="url(#ah)"
+        stroke="var(--acc)" opacity=".85"/>
+        <text class="el" x="${x + 7}" y="${(y1 + y2) / 2 + 3}" style="fill:var(--acc)">${lab}</text>`;
+    }
+  });
+  // the two converging arrows into the seqlock -- what actually runs at 10 Hz
+  g += `<path d="M1080,83 C1086,83 1084,148 1089,152" fill="none" marker-end="url(#ah)" opacity=".7"/>
+        <path d="M1080,231 C1086,231 1084,166 1089,162" fill="none" marker-end="url(#ah)" opacity=".7"/>`;
+  rows.forEach(r => {
+    const n = N[r[0]], txt = AM.m === "lat" ? n.lat : n.val;
+    const on = AM.hi && AM.hi.indexOf(r[0]) >= 0;
+    g += `<g class="nd${on ? " hi" : ""}" data-a="${r[0]}" data-p="${n.p}">
+      <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${H}" rx="4"/>
+      ${n.t.map((line, k) =>
+        `<text class="t" x="${n.x + 10}" y="${n.y + 21 + k * 14}">${line}</text>`).join("")}
+      <text class="m" x="${n.x + 10}" y="${n.y + (n.t.length > 1 ? 56 : 45)}">${txt}</text></g>`;
+  });
+  $("#arch").innerHTML =
+    `<figure style="margin:0"><svg viewBox="0 0 1276 316" role="img"
+      aria-label="One frame runs down two paths: a NumPy geometry pipeline and a learned checkpoint.
+      The geometry pipeline supplies the occupancy labels the learned head is scored against, and its
+      observability monitor is ported separately to C++, where a seqlock runs the traced model at
+      the latest frame.">${g}</svg>
+    <figcaption class="el" style="font-size:11px;color:var(--dim2);padding:2px 0 6px">
+      The geometry lane is not a preprocessing step for the learned lane &mdash; it is the reference
+      the learned lane is measured against, which is why both cross the boundary into C++.
+    </figcaption></figure>`;
+  document.querySelectorAll("#arch .nd").forEach(e =>
+    e.onclick = () => goTo(e.dataset.p));
+}
+document.querySelectorAll(".am").forEach(b => b.onclick = () => {
+  AM.m = b.dataset.m;
+  document.querySelectorAll(".am").forEach(x => x.classList.toggle("on", x === b));
+  drawArch();
+});
+
+/* page navigation, shared by the strip, the status tiles and the reading paths */
+function goTo(page) {
+  document.querySelectorAll(".rb").forEach(x => x.classList.toggle("on", x.textContent === page));
+  document.querySelectorAll(".page").forEach(x =>
+    x.classList.toggle("on", x.dataset.p === page.replace(" ", "")));
+  scrollTo(0, 0);
 }
 
 /* ---------- nav rail ---------- */
@@ -1477,7 +1662,7 @@ function fillStatic() {
       ["missed", (rb.missed || []).join(", ") || "none", "wrong sign"],
     ]) + note("Verdict", rb.verdict);
     const occ = rb.results.occlusion;
-    $("#rbGap").outerHTML = note("The gap",
+    $("#rbGap").innerHTML = note("The gap",
       `Occlusion moves trust the wrong way (${occ.delta_trust_faulted > 0 ? "+" : ""}${occ.delta_trust_faulted}). ` +
       "A masked region has low local variance, which this head reads as a clean flat surface — a hole " +
       "in a detector meant to catch a blocked camera.");
@@ -1632,13 +1817,6 @@ function fillStatic() {
   }
 
   /* ---------- overview status strip ---------- */
-  const goTo = page => {
-    document.querySelectorAll(".rb").forEach(x =>
-      x.classList.toggle("on", x.textContent === page));
-    document.querySelectorAll(".page").forEach(x =>
-      x.classList.toggle("on", x.dataset.p === page.replace(" ", "")));
-    scrollTo(0, 0);
-  };
   const STATUS = [
     ["Perception", "runs", `occupancy IoU ${lm ? lm.occupancy.best.iou.toFixed(3) : "--"}`, "perception"],
     ["Forecast", "runs", fcr ? `persistence IoU ${fcr.results["T+1"].persistence.iou.toFixed(3)} @ T+1` : "--", "forecast"],
@@ -1685,16 +1863,157 @@ function fillStatic() {
     SYS.map(([a, b, c]) => `<tr><td>${a}</td>
       <td class="${b === "runs" ? "g" : b === "blocked" ? "b" : "w"}">${b}</td>
       <td class="d" style="font-family:'IBM Plex Sans'">${c}</td></tr>`).join("");
+
+  /* ---------- the one sentence ---------- */
+  // Assembled from the reports, so it cannot drift from the numbers below it.
+  const _lm = R.learned_model_report, _cp = R.cpp_report, _iv = R.integrity_visibility_report;
+  const _im = _cp && _cp.integrity_monitor;
+  $("#claim").innerHTML =
+    `A camera-plus-LiDAR perception stack on nuScenes where the geometry is the reference the
+     network is scored against, every number is measured on
+     <b>${_lm ? _lm.samples : "--"} keyframes</b>, and the parts that have to survive a vehicle are
+     in C++: trajectory ADE <b>${_lm ? _lm.trajectory_ade["T+3 (1.5s)"].learned_v11_temporal.ade_m : "--"} m</b>
+     at 1.5 s against <b>${_lm ? _lm.trajectory_ade["T+3 (1.5s)"].constant_velocity.ade_m : "--"} m</b>
+     for constant velocity, Python↔C++ parity at
+     <b>${_cp ? Number(_cp.parity.occupancy.max_abs).toExponential(1) : "--"}</b>, and an observability
+     monitor running in <b>${_im ? _im.p50_ms : "--"} ms</b> inside a 33.3 ms budget the
+     ${_cp ? _cp.inference_latency.p50_ms.toFixed(0) : "--"} ms model misses by an order of magnitude.
+     The failures are on the pages too: the trust head does not catch occlusion, and the
+     observability map does not beat object range alone.`;
+
+  /* ---------- reading paths ---------- */
+  // Ordered routes, not a sitemap. Each step names the number it is sending the
+  // reader to, so a reviewer with four minutes reads four numbers, not four pages.
+  const PATHS = [
+    ["Perception / occupancy", ["g1", "g2", "g3", "l2"], [
+      ["Occupancy under a log-odds inverse sensor model, thresholded live",
+        "perception", "free " + pc(F[0].stats.free) + " of the grid carved"],
+      ["Static/dynamic by free-space consistency, not voxel persistence",
+        "perception", "F1 0.610 vs 0.20 for absence-of-prior-support"],
+      ["The learned BEV head scored against that geometry",
+        "models", "IoU " + fx(_lm && _lm.occupancy.best.iou, 3)],
+      ["Forecast checked against the LiDAR that actually arrived",
+        "forecast", "IoU " + fx(R.occupancy_forecast_report && R.occupancy_forecast_report.results["T+1"].persistence.iou, 3) + " at T+1"],
+    ]],
+    ["Sensor health / redundancy", ["g4", "l2", "d3"], [
+      ["Observability as noisy-OR over six cameras, recomputed live",
+        "observability", "turn a camera off and watch the field change"],
+      ["Validated against human visibility labels, including where it fails",
+        "observability", "AUROC 0.569 vs 0.571 for range alone"],
+      ["Fault injection on the real model inputs, with the downstream effect drawn",
+        "robustness", "separation 0.128, occlusion missed"],
+      ["The monitor ported to C++ so a runner can call it",
+        "runtime", (_im ? _im.p50_ms : "--") + " ms p50, bit-identical"],
+    ]],
+    ["Prediction / behaviour", ["l2", "l3", "l4"], [
+      ["Ego trajectory against three geometric baselines",
+        "models", "ADE 0.421 m at T+3, −16.9% vs constant velocity"],
+      ["A trajectory LM retrained after finding the shipped one saw all-zero data",
+        "models", "loss curve and decoded paths on held-out frames"],
+      ["A LLaVA-pattern projector into a frozen GPT-2",
+        "models", "1.77M trainable of 102.7M"],
+      ["Occupancy forecast vs the realised future",
+        "forecast", "persistence beats advection at every horizon"],
+    ]],
+    ["Runtime / deployment", ["d1", "d2", "d3", "d4"], [
+      ["The traced graph checked against Python output by output",
+        "runtime", "5.2e-06 occupancy, 0.0 trust"],
+      ["Backpressure policy, drawn on one time axis",
+        "runtime", "235 ms seqlock vs 2319 ms FIFO, same inference"],
+      ["Lock-free handoff under load",
+        "runtime", "p99 7.8 µs over 20,000 frames, 0 dropped"],
+      ["What is not here, and why",
+        "system", "BLIP blocked by egress, no GPU exists"],
+    ]],
+  ];
+  let pi = 0;
+  const drawPaths = () => {
+    $("#paths").innerHTML = PATHS.map(([n], i) =>
+      `<button class="rp${i === pi ? " on" : ""}" data-i="${i}">${n}</button>`).join("");
+    document.querySelectorAll(".rp").forEach(b => b.onclick = () => {
+      pi = Number(b.dataset.i); AM.hi = PATHS[pi][1]; drawPaths(); drawArch();
+    });
+    $("#pathBody").innerHTML = PATHS[pi][2].map(([what, page, num], i) =>
+      `<div class="step2"><span class="no">${i + 1}</span>
+        <span>${what}<br><span class="mono" style="color:var(--acc);font-size:11px">${num}</span></span>
+        <span class="go" data-g="${page}">${page} →</span></div>`).join("");
+    document.querySelectorAll(".step2 .go").forEach(e => e.onclick = () => goTo(e.dataset.g));
+  };
+  AM.hi = PATHS[0][1];
+  drawPaths();
+
+  /* ---------- reproducibility ---------- */
+  const P = D.provenance || {};
+  $("#repNote").textContent =
+    `${P.dataset || "nuScenes"} · commit ${P.commit || "--"} · built ${P.built || "--"}`;
+  $("#repTable").innerHTML = `<tr><th>what</th><th>value</th></tr>` +
+    [["dataset", P.dataset], ["scenes / keyframes", P.scenes + " / " + P.keyframes],
+     ["console frames rendered", P.console_frames],
+     ["train / val split", P.split], ["seed", P.seed],
+     ["hardware", P.hardware], ["commit", P.commit], ["built", P.built]]
+    .map(([k, v]) => `<tr><td>${k}</td><td class="a">${v === undefined ? "--" : v}</td></tr>`).join("");
+  $("#repCmds").innerHTML = (P.commands || []).map(([n, c]) =>
+    `<div style="margin-bottom:9px"><div style="font-size:11.5px;color:var(--dim)">${n}</div>
+      <div class="mono" style="font-size:11px;color:var(--acc);overflow-wrap:anywhere;margin-top:2px">${c}</div></div>`).join("") +
+    note("What cannot be re-measured here",
+      "BLIP: huggingface.co returns 403 at the egress proxy and nothing is cached, so the repo's own " +
+      "VLM path cannot be run in either environment. CUDA: no GPU is present, so every latency figure " +
+      "on this console is CPU and is labelled as such. Both are listed above rather than quietly omitted.");
 }
 
 fillStatic();
+drawArch();
 draw();
 addEventListener("resize", draw);
 </script>
 """
 
+def _git(*args, default="--"):
+    try:
+        return subprocess.check_output(("git",) + args, cwd=ROOT,
+                                       stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        return default
+
+
+def provenance(bundle) -> dict:
+    """Everything a sceptic needs to re-measure the console, read from the repo
+    rather than typed. A number nobody can reproduce is an assertion."""
+    lm = bundle["reports"].get("learned_model_report", {})
+    return {
+        "dataset": "nuScenes v1.0-mini (10 scenes, 2 cities, Boston + Singapore)",
+        "scenes": 10,
+        "keyframes": lm.get("samples", 404),
+        "console_frames": len(bundle["frames"]),
+        "split": "324 train / 80 val, fixed permutation",
+        "seed": "0 (torch.manual_seed and np.random.seed) in every training and eval script",
+        "hardware": "no GPU in either environment; every latency on this console is CPU",
+        "commit": _git("rev-parse", "--short", "HEAD"),
+        "built": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "commands": [
+            ["Ego trajectory ADE, all horizons",
+             "python scripts/eval/eval_trajectory_ade.py"],
+            ["Occupancy forecast vs the realised future",
+             "python scripts/eval/eval_occupancy_forecast.py"],
+            ["Static/dynamic separation against annotated boxes",
+             "python scripts/eval/eval_motion_separation.py"],
+            ["Observability vs human visibility labels",
+             "python scripts/eval/eval_integrity_visibility.py"],
+            ["C++ integrity monitor parity and latency",
+             "python scripts/dump_integrity_case.py &amp;&amp; "
+             "cmake -S cpp -B cpp/build_ho -DCMAKE_BUILD_TYPE=Release &amp;&amp; "
+             "cmake --build cpp/build_ho -j &amp;&amp; ctest --test-dir cpp/build_ho"],
+            ["TorchScript export and Python&harr;C++ parity",
+             "python scripts/export_torchscript.py &amp;&amp; cpp/build/odfm_parity_check"],
+            ["This console, end to end",
+             "python scripts/export_console_bundle.py &amp;&amp; python scripts/build_console.py"],
+        ],
+    }
+
+
 def main():
     bundle = json.loads(BUNDLE.read_text())
+    bundle["provenance"] = provenance(bundle)
     html = HEAD + BODY + "<script>window.__ODFM__=" + json.dumps(bundle) + ";</script>" + SCRIPT
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html)
