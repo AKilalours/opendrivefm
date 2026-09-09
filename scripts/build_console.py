@@ -134,10 +134,18 @@ tr:last-child td{border-bottom:none}
 .br .n{font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:right}
 
 /* ---------- inspector ---------- */
-.insp{position:fixed;right:0;top:0;width:326px;height:100vh;
-  background:#0D1119;border-left:1px solid var(--line2);padding:14px;overflow:auto;
+/* The panel used to be top:0/height:100vh, which put its heading and first row
+   underneath the sticky command bar -- the top of the object detail was simply
+   not reachable. It now starts below the bar (measured, because the bar wraps
+   to two rows on narrow windows) and carries its own sticky heading. */
+.insp{position:fixed;right:0;top:var(--barh,52px);width:326px;
+  height:calc(100vh - var(--barh,52px));
+  background:#0D1119;border-left:1px solid var(--line2);padding:0 14px 16px;overflow:auto;
+  overscroll-behavior:contain;
   transform:translateX(100%);transition:transform .16s ease;z-index:30}
 .insp.on{transform:none}
+.insphd{position:sticky;top:0;z-index:2;background:#0D1119;padding:12px 0 9px;
+  border-bottom:1px solid var(--line)}
 body.insp-open main{padding-right:340px}
 body.insp-open .bar{padding-right:344px}
 .insp h3{margin:0 0 2px;font-size:15px}
@@ -147,7 +155,8 @@ body.insp-open .bar{padding-right:344px}
 .kv span:first-child{color:var(--dim);flex:0 0 auto}
 .kv span:last-child{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
   text-align:right;min-width:0;overflow-wrap:anywhere}
-.close{position:absolute;right:10px;top:10px;color:var(--dim2);font-size:15px}
+.close{position:absolute;right:0;top:11px;color:var(--dim2);font-size:16px;line-height:1}
+.close:hover{color:var(--ink)}
 .objlist{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:4px}
 .objrow{display:grid;grid-template-columns:1fr 52px 48px 44px;gap:8px;padding:5px 9px;font-size:11px;
   font-family:"IBM Plex Mono",monospace;cursor:pointer;border-bottom:1px solid rgba(35,42,54,.5)}
@@ -625,9 +634,11 @@ BODY = r"""
 </div>
 
 <aside class="insp" id="insp">
-  <button class="close" id="inspClose">&times;</button>
-  <div class="cls" id="iCls">&nbsp;</div>
-  <h3 id="iId">&nbsp;</h3>
+  <div class="insphd">
+    <button class="close" id="inspClose">&times;</button>
+    <div class="cls" id="iCls">&nbsp;</div>
+    <h3 id="iId">&nbsp;</h3>
+  </div>
   <div id="iKv" style="margin-top:10px"></div>
   <div class="hr"></div>
   <div class="lab" style="margin-bottom:6px">Objects in frame</div>
@@ -1447,6 +1458,8 @@ function draw() {
       ["integrity", fx(o.integrity, 3)],
       ["seen by", seen],
     ].map(([k, v]) => `<div class="kv"><span>${k}</span><span>${v}</span></div>`).join("");
+    /* a previous object may have left the panel scrolled down */
+    ins.scrollTop = 0;
   } else ins.classList.remove("on");
 }
 
@@ -2036,8 +2049,24 @@ function fillStatic() {
 
 fillStatic();
 drawArch();
+/* The command bar wraps to a second row on narrow windows, so the inspector's
+   top offset is measured rather than assumed. */
+function syncBar() {
+  const b = document.querySelector(".bar");
+  if (b && b.offsetHeight) {
+    document.documentElement.style.setProperty("--barh", b.offsetHeight + "px");
+  }
+}
+syncBar();
+/* One measurement at load is not enough: the bar grows a row once the webfont
+   swaps in, and again whenever the window narrows. Watch it instead. */
+if (typeof ResizeObserver === "function") {
+  const b = document.querySelector(".bar");
+  if (b) new ResizeObserver(syncBar).observe(b);
+}
+addEventListener("load", syncBar);
 draw();
-addEventListener("resize", draw);
+addEventListener("resize", () => { syncBar(); draw(); });
 </script>
 """
 
