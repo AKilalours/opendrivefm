@@ -1,0 +1,639 @@
+{
+  "status": "RUNS \u2014 trained here",
+  "model": "frozen OpenDriveFM backbone -> z(384) -> trainable projector -> 4 prefix embeddings -> 4-layer transformer decoder (256 embd, vocab 80), trained from scratch",
+  "trainable_params_m": 3.911,
+  "train_samples": 324,
+  "val_samples": 80,
+  "steps": 1100,
+  "vocab": 80,
+  "what": "The narrative ends in a hazard clause -- a vulnerable road user inside 20 m in the forward arc -- so the sentence carries a decision that can be scored instead of admired. Confidence is the decoder's own softmax over high/low at the moment it emits the token.",
+  "results": {
+    "hazard_precision": 0.9574,
+    "hazard_recall": 0.8824,
+    "hazard_f1": 0.9184,
+    "hazard_auroc": 0.954,
+    "confusion": {
+      "tp": 45,
+      "fp": 2,
+      "fn": 6,
+      "tn": 27
+    },
+    "confidence_saturated_frac": 0.15,
+    "positives_in_val": 51,
+    "val": 80,
+    "base_rate": 0.6375,
+    "always_high_f1": 0.7786
+  },
+  "curve": [
+    [
+      0,
+      4.5122,
+      3.2705
+    ],
+    [
+      10,
+      1.2837,
+      1.1856
+    ],
+    [
+      20,
+      1.0776,
+      1.0008
+    ],
+    [
+      30,
+      0.9016,
+      0.8753
+    ],
+    [
+      40,
+      0.7854,
+      0.7998
+    ],
+    [
+      50,
+      0.7642,
+      0.7379
+    ],
+    [
+      60,
+      0.6955,
+      0.697
+    ],
+    [
+      70,
+      0.7026,
+      0.683
+    ],
+    [
+      80,
+      0.6477,
+      0.6319
+    ],
+    [
+      90,
+      0.6336,
+      0.6012
+    ],
+    [
+      100,
+      0.5387,
+      0.5935
+    ],
+    [
+      110,
+      0.5122,
+      0.5559
+    ],
+    [
+      120,
+      0.5489,
+      0.5636
+    ],
+    [
+      130,
+      0.5426,
+      0.5254
+    ],
+    [
+      140,
+      0.5474,
+      0.5305
+    ],
+    [
+      150,
+      0.5127,
+      0.5312
+    ],
+    [
+      160,
+      0.4469,
+      0.502
+    ],
+    [
+      170,
+      0.4573,
+      0.5163
+    ],
+    [
+      180,
+      0.4391,
+      0.4982
+    ],
+    [
+      190,
+      0.4272,
+      0.484
+    ],
+    [
+      200,
+      0.4152,
+      0.4761
+    ],
+    [
+      210,
+      0.4358,
+      0.4702
+    ],
+    [
+      220,
+      0.4173,
+      0.4644
+    ],
+    [
+      230,
+      0.3685,
+      0.4593
+    ],
+    [
+      240,
+      0.3887,
+      0.4584
+    ],
+    [
+      250,
+      0.3388,
+      0.4454
+    ],
+    [
+      260,
+      0.3787,
+      0.4677
+    ],
+    [
+      270,
+      0.371,
+      0.4321
+    ],
+    [
+      280,
+      0.3856,
+      0.4422
+    ],
+    [
+      290,
+      0.3217,
+      0.4356
+    ],
+    [
+      300,
+      0.3459,
+      0.4323
+    ],
+    [
+      310,
+      0.3455,
+      0.4388
+    ],
+    [
+      320,
+      0.3361,
+      0.4294
+    ],
+    [
+      330,
+      0.3546,
+      0.4418
+    ],
+    [
+      340,
+      0.3066,
+      0.4558
+    ],
+    [
+      350,
+      0.3252,
+      0.4391
+    ],
+    [
+      360,
+      0.2474,
+      0.4368
+    ],
+    [
+      370,
+      0.2848,
+      0.4377
+    ],
+    [
+      380,
+      0.2675,
+      0.4471
+    ],
+    [
+      390,
+      0.2637,
+      0.4444
+    ],
+    [
+      400,
+      0.2895,
+      0.4449
+    ],
+    [
+      410,
+      0.2799,
+      0.445
+    ],
+    [
+      420,
+      0.2523,
+      0.4396
+    ],
+    [
+      430,
+      0.2894,
+      0.4517
+    ],
+    [
+      440,
+      0.2542,
+      0.4385
+    ],
+    [
+      450,
+      0.2901,
+      0.4287
+    ],
+    [
+      460,
+      0.2808,
+      0.4423
+    ],
+    [
+      470,
+      0.2826,
+      0.4255
+    ],
+    [
+      480,
+      0.2101,
+      0.4416
+    ],
+    [
+      490,
+      0.2365,
+      0.4487
+    ],
+    [
+      500,
+      0.2459,
+      0.4377
+    ],
+    [
+      510,
+      0.2587,
+      0.4515
+    ],
+    [
+      520,
+      0.2529,
+      0.4417
+    ],
+    [
+      530,
+      0.2586,
+      0.4401
+    ],
+    [
+      540,
+      0.2271,
+      0.448
+    ],
+    [
+      550,
+      0.2923,
+      0.4477
+    ],
+    [
+      560,
+      0.1844,
+      0.458
+    ],
+    [
+      570,
+      0.2557,
+      0.4496
+    ],
+    [
+      580,
+      0.263,
+      0.4438
+    ],
+    [
+      590,
+      0.2366,
+      0.4383
+    ],
+    [
+      600,
+      0.2105,
+      0.4519
+    ],
+    [
+      610,
+      0.1755,
+      0.4547
+    ],
+    [
+      620,
+      0.1657,
+      0.4637
+    ],
+    [
+      630,
+      0.186,
+      0.4636
+    ],
+    [
+      640,
+      0.1886,
+      0.4643
+    ],
+    [
+      650,
+      0.2108,
+      0.4537
+    ],
+    [
+      660,
+      0.1749,
+      0.4693
+    ],
+    [
+      670,
+      0.1967,
+      0.4645
+    ],
+    [
+      680,
+      0.1831,
+      0.4676
+    ],
+    [
+      690,
+      0.1886,
+      0.4644
+    ],
+    [
+      700,
+      0.2119,
+      0.4676
+    ],
+    [
+      710,
+      0.1771,
+      0.4675
+    ],
+    [
+      720,
+      0.1552,
+      0.4633
+    ],
+    [
+      730,
+      0.157,
+      0.4595
+    ],
+    [
+      740,
+      0.2147,
+      0.4681
+    ],
+    [
+      750,
+      0.1763,
+      0.4748
+    ],
+    [
+      760,
+      0.1689,
+      0.4689
+    ],
+    [
+      770,
+      0.2046,
+      0.4739
+    ],
+    [
+      780,
+      0.157,
+      0.4739
+    ],
+    [
+      790,
+      0.1716,
+      0.4694
+    ],
+    [
+      800,
+      0.1785,
+      0.4707
+    ],
+    [
+      810,
+      0.1757,
+      0.4796
+    ],
+    [
+      820,
+      0.1576,
+      0.4783
+    ],
+    [
+      830,
+      0.1512,
+      0.4727
+    ],
+    [
+      840,
+      0.1274,
+      0.4704
+    ],
+    [
+      850,
+      0.2036,
+      0.4717
+    ],
+    [
+      860,
+      0.1458,
+      0.4748
+    ],
+    [
+      870,
+      0.145,
+      0.4784
+    ],
+    [
+      880,
+      0.1729,
+      0.4792
+    ],
+    [
+      890,
+      0.1519,
+      0.482
+    ],
+    [
+      900,
+      0.171,
+      0.4825
+    ],
+    [
+      910,
+      0.1556,
+      0.4789
+    ],
+    [
+      920,
+      0.1526,
+      0.4771
+    ],
+    [
+      930,
+      0.1624,
+      0.4778
+    ],
+    [
+      940,
+      0.1565,
+      0.4785
+    ],
+    [
+      950,
+      0.1412,
+      0.4783
+    ],
+    [
+      960,
+      0.123,
+      0.4778
+    ],
+    [
+      970,
+      0.1447,
+      0.4786
+    ],
+    [
+      980,
+      0.1586,
+      0.48
+    ],
+    [
+      990,
+      0.1617,
+      0.4802
+    ],
+    [
+      1000,
+      0.1526,
+      0.4803
+    ],
+    [
+      1010,
+      0.1487,
+      0.4799
+    ],
+    [
+      1020,
+      0.1246,
+      0.4794
+    ],
+    [
+      1030,
+      0.153,
+      0.4793
+    ],
+    [
+      1040,
+      0.1549,
+      0.4795
+    ],
+    [
+      1050,
+      0.159,
+      0.4796
+    ],
+    [
+      1060,
+      0.1424,
+      0.4796
+    ],
+    [
+      1070,
+      0.1318,
+      0.4797
+    ],
+    [
+      1080,
+      0.1512,
+      0.4798
+    ],
+    [
+      1090,
+      0.1546,
+      0.4798
+    ],
+    [
+      1099,
+      0.1314,
+      0.4798
+    ]
+  ],
+  "examples": [
+    {
+      "scene": "scene-0553",
+      "token": "82597244941b4e79aa3e1e9cc6386f8b",
+      "generated": "scene 24 objects nearest car 5 metres left . ego stopped . 5 vehicles 7 pedestrians . hazard high pedestrian 10 metres ahead .",
+      "reference": "scene 28 objects nearest car 5 metres left . ego stopped . 10 vehicles 6 pedestrians . hazard high pedestrian 15 metres front-left .",
+      "hazard_confidence": 1.0,
+      "correct": true
+    },
+    {
+      "scene": "scene-0553",
+      "token": "dde297c8e12f44c4bc2f2c80e49d2b5a",
+      "generated": "scene 24 objects nearest car 5 metres left . ego stopped . 5 vehicles 7 pedestrians . hazard high pedestrian 10 metres ahead .",
+      "reference": "scene 28 objects nearest car 5 metres left . ego stopped . 10 vehicles 7 pedestrians . hazard high pedestrian 10 metres front-left .",
+      "hazard_confidence": 1.0,
+      "correct": true
+    },
+    {
+      "scene": "scene-0553",
+      "token": "6dabc0fb1df045558f802246dd186b3f",
+      "generated": "scene 24 objects nearest car 5 metres left . ego stopped . 5 vehicles 7 pedestrians . hazard high pedestrian 10 metres ahead .",
+      "reference": "scene 29 objects nearest car 5 metres left . ego stopped . 11 vehicles 6 pedestrians . hazard high pedestrian 15 metres front-left .",
+      "hazard_confidence": 1.0,
+      "correct": true
+    },
+    {
+      "scene": "scene-0655",
+      "token": "79937d5eae1d450499677a0dcffa210c",
+      "generated": "scene 38 objects nearest car 5 metres left . ego moderate . 37 vehicles 1 pedestrians . hazard low .",
+      "reference": "scene 39 objects nearest car 10 metres left . ego moderate . 37 vehicles 2 pedestrians . hazard low .",
+      "hazard_confidence": 0.0,
+      "correct": true
+    },
+    {
+      "scene": "scene-0655",
+      "token": "c9304cf98aad4ff0bb5b0cff0aab65d2",
+      "generated": "scene 38 objects nearest car 5 metres left . ego moderate . 37 vehicles 1 pedestrians . hazard low .",
+      "reference": "scene 38 objects nearest car 10 metres right . ego moderate . 37 vehicles 1 pedestrians . hazard low .",
+      "hazard_confidence": 0.0,
+      "correct": true
+    },
+    {
+      "scene": "scene-0757",
+      "token": "8b6d496ed9d84469b75836ca1c56959f",
+      "generated": "scene 13 objects nearest car 5 metres behind . ego slow . 10 vehicles 1 pedestrians . hazard low .",
+      "reference": "scene 12 objects nearest car 5 metres behind . ego slow . 10 vehicles 0 pedestrians . hazard low .",
+      "hazard_confidence": 0.0,
+      "correct": true
+    }
+  ],
+  "caveats": [
+    "404 keyframes, 10 scenes. Precision and recall on 80 held-out frames move in large steps.",
+    "The hazard rule is geometric (VRU class, forward arc, 20 m) and read from annotations; the model sees only the camera latent.",
+    "A word-level vocabulary induced from the corpus: this model can only say what the corpus can say, and is not a general-purpose captioner."
+  ]
+}

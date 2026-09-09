@@ -5,13 +5,13 @@
   "parity": {
     "verdict": "PASS",
     "occupancy": {
-      "max_abs": 5.245e-06,
-      "max_rel": 0.0003641,
-      "elements": 16384
+      "max_abs": 7.629e-06,
+      "max_rel": 0.0009853,
+      "elements": 16380
     },
     "trajectory": {
       "max_abs": 5.96e-07,
-      "max_rel": 4.091e-05,
+      "max_rel": 2.76e-06,
       "elements": 24
     },
     "trust": {
@@ -20,17 +20,17 @@
       "elements": 6
     },
     "determinism": "PASS \u2014 identical outputs on a repeated forward",
-    "note": "C++ graph matches the validated Python model. Trust is bit-identical; occupancy differs at float32 rounding."
+    "note": "Re-measured against the module re-exported with the MHA fastpath disabled and the calibrated trust checkpoint. Trust is still bit-identical; occupancy differs at float32 rounding."
   },
   "inference_latency": {
     "iterations": 200,
     "warmup": 20,
-    "p50_ms": 296.759,
-    "p95_ms": 315.794,
-    "p99_ms": 332.67,
-    "max_ms": 351.345,
-    "jitter_p99_over_p50": 1.121,
-    "throughput_fps": 3.349,
+    "p50_ms": 199.501,
+    "p95_ms": 216.111,
+    "p99_ms": 240.569,
+    "max_ms": 248.324,
+    "jitter_p99_over_p50": 1.206,
+    "throughput_fps": 5.013,
     "deadline_budget_ms": 33.3,
     "deadline_miss_rate": 1.0
   },
@@ -126,5 +126,7 @@
         "10.89 ms p50"
       ]
     ]
-  }
+  },
+  "traced_input_shape": "(1, 6, 4, 3, 90, 160) \u2014 six cameras, FOUR-frame temporal window",
+  "provenance_note": "The exporter's --frames default was 1, which silently produces a DIFFERENT model: v11_temporal consumes a four-frame window, and every ADE number on this console was measured with four. A one-frame export traces a quarter of the work and benchmarks at 67 ms against this 200 ms \u2014 a 3x 'speedup' that is really a change of model. The default is now 4 and the traced shape is recorded here so the two can never be compared by accident."
 }

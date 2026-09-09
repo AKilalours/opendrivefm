@@ -1,0 +1,163 @@
+{
+  "status": "RUNS \u2014 real BLIP weights, loaded from disk",
+  "model": "Salesforce/blip-image-captioning-base (BLIP: ViT-B/16 image encoder \u2192 cross-attention \u2192 BERT-style text decoder), 224.0M parameters",
+  "entrypoint": "scripts/vlm_scene_understanding.py :: caption_scene() \u2014 the repository's own function",
+  "device": "cpu",
+  "load_seconds": 8.0,
+  "frames": 12,
+  "cameras_per_frame": 6,
+  "captions": 72,
+  "latency_ms": {
+    "p50": 1421.6,
+    "p95": 1807.1,
+    "mean": 1489.2
+  },
+  "how_the_weights_got_here": "huggingface.co is refused at the egress proxy from this container AND from the desktop workspace VM. The weights were downloaded once in a macOS terminal, which is not behind that proxy, and are read from a local directory via BLIP_PATH. The module was changed to accept a local path so the same code runs online or offline.",
+  "what_it_is_not": "BLIP is a generic web-image captioner. It was never trained on driving scenes and has no notion of range, ego frame or safety. Its captions are included because they are what the repository's VLM path actually produces \u2014 compare them against the scene-description model trained on this dataset, which is scored rather than read.",
+  "results": [
+    {
+      "scene": "scene-0061",
+      "token": "4f545737bf3347fbbc9af60b0be9a963",
+      "captions": {
+        "CAM_FRONT": "a street with a lot of cars parked on it",
+        "CAM_FRONT_LEFT": "a building with a lot of trees in front of it",
+        "CAM_FRONT_RIGHT": "a street with a fence and a car parked in the street",
+        "CAM_BACK": "a truck driving down a street next to a tall building",
+        "CAM_BACK_LEFT": "a bus is parked in front of a building",
+        "CAM_BACK_RIGHT": "a large building with a large white sign"
+      }
+    },
+    {
+      "scene": "scene-0061",
+      "token": "7626dde27d604ac28a0240bdd54eba7a",
+      "captions": {
+        "CAM_FRONT": "a street with a lot of cars and buildings",
+        "CAM_FRONT_LEFT": "a street with a tree and a building",
+        "CAM_FRONT_RIGHT": "a street with a car parked on the side",
+        "CAM_BACK": "a bus driving down a street next to tall buildings",
+        "CAM_BACK_LEFT": "a large building with a tree in front of it",
+        "CAM_BACK_RIGHT": "a large building with a large white sign"
+      }
+    },
+    {
+      "scene": "scene-0061",
+      "token": "be99ffc878b24aca8956bbb4e0f97d0c",
+      "captions": {
+        "CAM_FRONT": "a street with cars and people walking on it",
+        "CAM_FRONT_LEFT": "a street with a tree and a building",
+        "CAM_FRONT_RIGHT": "a street with a fence and a car",
+        "CAM_BACK": "a view of a street with a bus and a building",
+        "CAM_BACK_LEFT": "a building with a lot of windows",
+        "CAM_BACK_RIGHT": "a parking lot with a building in the background"
+      }
+    },
+    {
+      "scene": "scene-0061",
+      "token": "9813c23a5f1448b09bb7910fea9baf20",
+      "captions": {
+        "CAM_FRONT": "a street with a white line",
+        "CAM_FRONT_LEFT": "a street with a tree and a building",
+        "CAM_FRONT_RIGHT": "a street with a fence and a building",
+        "CAM_BACK": "a view of a street with a construction site in the background",
+        "CAM_BACK_LEFT": "a building with a sign that says the name of the company",
+        "CAM_BACK_RIGHT": "a large building"
+      }
+    },
+    {
+      "scene": "scene-0103",
+      "token": "6832e717621341568c759151b5974512",
+      "captions": {
+        "CAM_FRONT": "a street with a crosswalk and a car",
+        "CAM_FRONT_LEFT": "a red brick building",
+        "CAM_FRONT_RIGHT": "a man walking down a street next to a building",
+        "CAM_BACK": "a view of a city from a car",
+        "CAM_BACK_LEFT": "a black car parked in front of a building",
+        "CAM_BACK_RIGHT": "a man walking past a starbucks store"
+      }
+    },
+    {
+      "scene": "scene-0103",
+      "token": "c59e60042a8643e899008da2e446acca",
+      "captions": {
+        "CAM_FRONT": "a street with cars and a traffic light",
+        "CAM_FRONT_LEFT": "a red brick building",
+        "CAM_FRONT_RIGHT": "a group of people walking down a street",
+        "CAM_BACK": "a view of a city from a car",
+        "CAM_BACK_LEFT": "a large white rocket on the street",
+        "CAM_BACK_RIGHT": "a man walking down a sidewalk in front of a building"
+      }
+    },
+    {
+      "scene": "scene-0103",
+      "token": "fa65a298c01f44e7a182bbf9e5fe3697",
+      "captions": {
+        "CAM_FRONT": "a street with cars parked on it",
+        "CAM_FRONT_LEFT": "a silver car parked on the side of a street",
+        "CAM_FRONT_RIGHT": "a group of people walking down a street",
+        "CAM_BACK": "a view of a city street from a car",
+        "CAM_BACK_LEFT": "a street scene with a large white cone",
+        "CAM_BACK_RIGHT": "a group of people walking down a street"
+      }
+    },
+    {
+      "scene": "scene-0103",
+      "token": "a98fba72bde9433fb882032d18aedb2e",
+      "captions": {
+        "CAM_FRONT": "a street with cars parked on it",
+        "CAM_FRONT_LEFT": "a brick building",
+        "CAM_FRONT_RIGHT": "a brick building",
+        "CAM_BACK": "a car is driving down a city street",
+        "CAM_BACK_LEFT": "a street scene with a car parked on the side of the road",
+        "CAM_BACK_RIGHT": "a group of people walking down a street"
+      }
+    },
+    {
+      "scene": "scene-0553",
+      "token": "dc03fe4e0a374592af7701c66d5276c4",
+      "captions": {
+        "CAM_FRONT": "a street with a crosswalk and a traffic light",
+        "CAM_FRONT_LEFT": "a car is parked in front of a building",
+        "CAM_FRONT_RIGHT": "a street with a traffic light and a building",
+        "CAM_BACK": "a truck is driving down the street in a city",
+        "CAM_BACK_LEFT": "a car parked in front of a building",
+        "CAM_BACK_RIGHT": "a street light pole"
+      }
+    },
+    {
+      "scene": "scene-0553",
+      "token": "b7f64f73e8a548488e6d85d9b0e13242",
+      "captions": {
+        "CAM_FRONT": "a street with a traffic light and a crosswalk",
+        "CAM_FRONT_LEFT": "a street scene with a car and a person crossing the street",
+        "CAM_FRONT_RIGHT": "a street with a traffic light and a building",
+        "CAM_BACK": "a truck is driving down the street with a truck behind it",
+        "CAM_BACK_LEFT": "a car parked in front of a building",
+        "CAM_BACK_RIGHT": "a street light pole"
+      }
+    },
+    {
+      "scene": "scene-0553",
+      "token": "6dabc0fb1df045558f802246dd186b3f",
+      "captions": {
+        "CAM_FRONT": "a street with a traffic light and a crosswalk",
+        "CAM_FRONT_LEFT": "a car is parked in front of a building",
+        "CAM_FRONT_RIGHT": "a street with a traffic light and a building",
+        "CAM_BACK": "a truck is driving down the street in a city",
+        "CAM_BACK_LEFT": "a car parked in front of a building",
+        "CAM_BACK_RIGHT": "a street light pole"
+      }
+    },
+    {
+      "scene": "scene-0553",
+      "token": "82597244941b4e79aa3e1e9cc6386f8b",
+      "captions": {
+        "CAM_FRONT": "a street with a traffic light and a crosswalk",
+        "CAM_FRONT_LEFT": "a car is parked in front of a building",
+        "CAM_FRONT_RIGHT": "a street with a traffic light and a building",
+        "CAM_BACK": "a truck is driving down the street in a city",
+        "CAM_BACK_LEFT": "a car parked in front of a building",
+        "CAM_BACK_RIGHT": "a street light on a pole in front of a building"
+      }
+    }
+  ]
+}

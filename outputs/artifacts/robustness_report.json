@@ -1,79 +1,78 @@
 {
   "frames": 120,
   "faulted_camera": "CAM_FRONT",
+  "checkpoint": "checkpoints_v11_trustfix2/trust_fixed_v2_cal.ckpt (171/171, stat_calibrated=True)",
   "results": {
     "clean": {
-      "trust_faulted": 0.6634755730628967,
-      "trust_others": 0.7370917201042175,
-      "ade_T3_m": 0.429,
-      "occ_iou": 0.2943
+      "trust_faulted": 0.6635,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.429
     },
     "blur": {
-      "trust_faulted": 0.4805360734462738,
-      "trust_others": 0.7370917201042175,
-      "ade_T3_m": 0.566,
-      "occ_iou": 0.2358,
-      "delta_trust_faulted": -0.1829,
-      "delta_trust_others": 0.0,
-      "delta_ade_pct": 31.9,
-      "delta_iou_pct": -19.9
+      "trust_faulted": 0.4818,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.575,
+      "delta_trust_faulted": -0.1817
     },
     "glare": {
-      "trust_faulted": 0.6101052761077881,
-      "trust_others": 0.7370917201042175,
-      "ade_T3_m": 0.439,
-      "occ_iou": 0.286,
-      "delta_trust_faulted": -0.0534,
-      "delta_trust_others": 0.0,
-      "delta_ade_pct": 2.3,
-      "delta_iou_pct": -2.8
+      "trust_faulted": 0.608,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.437,
+      "delta_trust_faulted": -0.0555
     },
     "occlusion": {
-      "trust_faulted": 0.6786537170410156,
-      "trust_others": 0.7370917201042175,
-      "ade_T3_m": 0.437,
-      "occ_iou": 0.2918,
-      "delta_trust_faulted": 0.0152,
-      "delta_trust_others": 0.0,
-      "delta_ade_pct": 1.9,
-      "delta_iou_pct": -0.8
-    },
-    "rain": {
-      "trust_faulted": 0.46783480048179626,
-      "trust_others": 0.7370917201042175,
-      "ade_T3_m": 0.429,
-      "occ_iou": 0.2844,
-      "delta_trust_faulted": -0.1956,
-      "delta_trust_others": 0.0,
-      "delta_ade_pct": 0.0,
-      "delta_iou_pct": -3.4
+      "trust_faulted": 0.6743,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.431,
+      "delta_trust_faulted": 0.0108
     },
     "noise": {
-      "trust_faulted": 0.47151267528533936,
-      "trust_others": 0.7370917201042175,
-      "ade_T3_m": 0.497,
-      "occ_iou": 0.2569,
-      "delta_trust_faulted": -0.192,
-      "delta_trust_others": 0.0,
-      "delta_ade_pct": 15.9,
-      "delta_iou_pct": -12.7
+      "trust_faulted": 0.4666,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.513,
+      "delta_trust_faulted": -0.1969
+    },
+    "rain": {
+      "trust_faulted": 0.4926,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.446,
+      "delta_trust_faulted": -0.1709
+    },
+    "fog": {
+      "trust_faulted": 0.465,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.566,
+      "delta_trust_faulted": -0.1985
+    },
+    "snow": {
+      "trust_faulted": 0.6414,
+      "trust_others": 0.7371,
+      "ade_T3_m": 0.433,
+      "delta_trust_faulted": -0.0221
     }
   },
-  "mean_separation": 0.1278,
+  "mean_separation": 0.1164,
   "detected": [
     "blur",
     "glare",
+    "noise",
     "rain",
-    "noise"
+    "fog"
   ],
   "missed": [
-    "occlusion"
+    "occlusion",
+    "snow"
   ],
-  "checkpoint": "checkpoints_v11_trustfix2/trust_fixed_v2_cal.ckpt (171/171, stat_calibrated=True)",
-  "verdict": "Trust separates a degraded camera from the five untouched ones by 0.1278 on average. Untouched cameras do not move at all, which independently confirms the batch-contamination fix. It detects blur, glare, rain, noise and MISSES occlusion, which moves the score the wrong way: a masked region has low local variance, which this head reads as a clean flat surface.",
+  "verdict": "5 of 7 conditions move the faulted camera's trust down by more than 0.05. occlusion, snow do not, and that is the finding: the head keys on local variance, so a degradation that REMOVES variance reads as a clean, flat surface.",
+  "weather_models": {
+    "rain": "slanted motion-blurred semi-transparent streaks + veiling contrast loss",
+    "fog": "atmospheric scattering I = I0*t + A*(1-t), t = exp(-beta*d), d approximated by image row",
+    "snow": "bright defocused blobs of varying radius + mild veiling"
+  },
   "caveats": [
-    "120 keyframes, one camera faulted at a time.",
+    "120 keyframes, one camera faulted at a time, CAM_FRONT.",
     "Perturbations are applied to the model's 90x160 input tensor, not to full-resolution images.",
-    "gradio_app.py hard-codes clean trust at 0.795; the live head returns a different value and that constant is stale."
+    "Fog uses image row as a depth proxy because the input tensor carries no depth, so its effect is a lower bound on real fog at range.",
+    "Rain was re-implemented for this run: the previous version painted opaque two-pixel bars, which a variance-based head detects far more easily than real rain."
   ]
 }

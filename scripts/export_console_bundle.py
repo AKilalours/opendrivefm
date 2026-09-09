@@ -313,10 +313,11 @@ def main():
     for name in ("occupancy_forecast_report", "integrity_visibility_report",
                  "motion_separation_report", "timing_report",
                  "trajectory_ade_report", "learned_model_report",
-                 "vla_report", "vlm_report", "robustness_report",
+                 "vla_report", "robustness_report",
                  "trajlm_retrained_report", "kernel_bench_report",
                  "cpp_report", "perturbation_shots",
-                 "vlm_local_report", "calibration_report"):
+                 "vlm_local_report", "calibration_report", "vllm_report",
+                 "vlm_blip_report", "device_report"):
         p = ROOT / f"outputs/artifacts/{name}.json"
         if p.exists():
             d = json.loads(p.read_text())
@@ -324,9 +325,31 @@ def main():
             d.pop("boxes", None)
             reports[name] = d
 
+    # A front-camera thumbnail for every keyframe a model report cites as an
+    # example. The examples come from the held-out split, which mostly falls
+    # outside the twelve fully rendered frames, and an output shown without the
+    # image it came from is an assertion.
+    rendered = {f["token"] for f in frames}
+    want = set()
+    for name in ("vlm_local_report", "vllm_report", "vla_report"):
+        for e in reports.get(name, {}).get("val_examples", []) or \
+                 reports.get(name, {}).get("examples", []):
+            t = e.get("token")
+            if t and t not in rendered:
+                want.add(t)
+    thumbs = {}
+    for t in sorted(want):
+        try:
+            rec = tab.sensor_record(t, "CAM_FRONT")
+            thumbs[t] = jpg(np.asarray(Image.open(rec["path"]).convert("RGB")), (256, 144), 66)
+        except Exception as exc:
+            print(f"  thumb {t[:10]} skipped: {exc}")
+    print(f"  {len(thumbs)} example thumbnails")
+
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"frames": frames, "reports": reports}))
+    out.write_text(json.dumps({"frames": frames, "reports": reports,
+                               "example_thumbs": thumbs}))
     mb = out.stat().st_size / 1e6
     print(f"\nwrote {out}  {len(frames)} frames  {mb:.1f} MB")
 

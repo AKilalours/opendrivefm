@@ -92,6 +92,12 @@ outputs/console/
 !outputs/artifacts/vla_report.json
 !outputs/artifacts/vlm_report.json
 !outputs/artifacts/robustness_report.json
+!outputs/artifacts/vllm_report.json
+!outputs/artifacts/vlm_blip_report.json
+!outputs/artifacts/vlm_local_report.json
+!outputs/artifacts/calibration_report.json
+# scene_labels.json stays out: 1.1 MB of derived annotation summary, regenerated
+# by scripts/dump_scene_labels.py in a few seconds.
 !outputs/artifacts/trajlm_retrained_report.json
 !outputs/artifacts/kernel_bench_report.json
 !outputs/artifacts/cpp_report.json
@@ -100,3 +106,4 @@ outputs/console/
 cpp/integrity_case.bin
 cpp/build*/
 .tmp/
+!outputs/artifacts/device_report.json

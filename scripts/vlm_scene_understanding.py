@@ -31,6 +31,9 @@ _vlm_processor = None
 _vlm_device = None
 
 
+import os
+
+
 def load_vlm():
     """Load BLIP captioning model once, cache globally."""
     global _vlm_model, _vlm_processor, _vlm_device
@@ -41,14 +44,18 @@ def load_vlm():
     from transformers import BlipProcessor, BlipForConditionalGeneration
 
     _vlm_device = "mps" if torch.backends.mps.is_available() else "cpu"
-    print(f"[VLM] Loading BLIP on {_vlm_device} ...")
+    print(f"[VLM] Loading BLIP on {_vlm_device} from {os.environ.get('BLIP_PATH','hub')} ...")
     t0 = time.time()
 
-    _vlm_processor = BlipProcessor.from_pretrained(
-        "Salesforce/blip-image-captioning-base"
-    )
+    # Load from a local directory when one is given. huggingface.co is refused
+    # by the egress proxy inside both the container and the desktop workspace,
+    # so the hub name alone makes this module unrunnable there; BLIP_PATH lets
+    # the same code run against weights fetched once and kept on disk.
+    src = os.environ.get("BLIP_PATH", "").strip() or "Salesforce/blip-image-captioning-base"
+    local = os.path.isdir(src)
+    _vlm_processor = BlipProcessor.from_pretrained(src, local_files_only=local)
     _vlm_model = BlipForConditionalGeneration.from_pretrained(
-        "Salesforce/blip-image-captioning-base"
+        src, local_files_only=local
     ).to(_vlm_device)
     _vlm_model.eval()
 

@@ -1,0 +1,531 @@
+{
+  "status": "RUNS \u2014 trained locally, no network",
+  "model": "frozen OpenDriveFM backbone -> z(384) -> trainable projector -> 4 prefix embeddings -> 4-layer transformer decoder (256 embd, vocab 70) trained from scratch",
+  "trainable_params_m": 3.906,
+  "train_samples": 324,
+  "val_samples": 80,
+  "steps": 900,
+  "vocab": 70,
+  "corpus": "Captions are generated deterministically from the nuScenes annotations, so every claim in a sentence is checkable. The model never sees the annotations -- only the 384-d BEV latent from the six camera images.",
+  "why_not_blip": "huggingface.co returns 403 at the egress proxy from BOTH the cloud container and the user's machine, and nothing is cached locally. Salesforce's own weight host and download.pytorch.org are refused too. The local gpt2/ folder has weights but no vocab.json or merges.txt, so its BPE cannot be reconstructed either. This is what can be built from what is reachable, and it is scored rather than described.",
+  "results": {
+    "nearest_object_class": {
+      "vlm": 0.9125,
+      "majority_caption": 0.525,
+      "n": 80
+    },
+    "nearest_object_bearing": {
+      "vlm": 0.55,
+      "majority_caption": 0.1125,
+      "n": 80
+    },
+    "nearest_object_range_mae_m": {
+      "vlm": 1.062,
+      "majority_caption": 2.062
+    },
+    "object_count_mae": {
+      "vlm": 1.837,
+      "majority_caption": 11.825
+    }
+  },
+  "curve": [
+    [
+      0,
+      4.374,
+      3.0417
+    ],
+    [
+      10,
+      1.1691,
+      1.0883
+    ],
+    [
+      20,
+      0.9698,
+      0.943
+    ],
+    [
+      30,
+      0.8854,
+      0.8389
+    ],
+    [
+      40,
+      0.7913,
+      0.7822
+    ],
+    [
+      50,
+      0.7521,
+      0.7337
+    ],
+    [
+      60,
+      0.6766,
+      0.6933
+    ],
+    [
+      70,
+      0.7096,
+      0.6774
+    ],
+    [
+      80,
+      0.6323,
+      0.6223
+    ],
+    [
+      90,
+      0.6523,
+      0.6029
+    ],
+    [
+      100,
+      0.5136,
+      0.6004
+    ],
+    [
+      110,
+      0.5112,
+      0.547
+    ],
+    [
+      120,
+      0.5723,
+      0.5468
+    ],
+    [
+      130,
+      0.5904,
+      0.5204
+    ],
+    [
+      140,
+      0.5628,
+      0.5128
+    ],
+    [
+      150,
+      0.491,
+      0.533
+    ],
+    [
+      160,
+      0.4554,
+      0.4957
+    ],
+    [
+      170,
+      0.4776,
+      0.4986
+    ],
+    [
+      180,
+      0.4868,
+      0.4956
+    ],
+    [
+      190,
+      0.4437,
+      0.482
+    ],
+    [
+      200,
+      0.4331,
+      0.476
+    ],
+    [
+      210,
+      0.4515,
+      0.4836
+    ],
+    [
+      220,
+      0.4514,
+      0.4794
+    ],
+    [
+      230,
+      0.3729,
+      0.465
+    ],
+    [
+      240,
+      0.3918,
+      0.4508
+    ],
+    [
+      250,
+      0.3266,
+      0.446
+    ],
+    [
+      260,
+      0.3787,
+      0.4642
+    ],
+    [
+      270,
+      0.3775,
+      0.4583
+    ],
+    [
+      280,
+      0.4001,
+      0.4505
+    ],
+    [
+      290,
+      0.3531,
+      0.425
+    ],
+    [
+      300,
+      0.3306,
+      0.4331
+    ],
+    [
+      310,
+      0.3626,
+      0.4367
+    ],
+    [
+      320,
+      0.3154,
+      0.4392
+    ],
+    [
+      330,
+      0.3729,
+      0.4432
+    ],
+    [
+      340,
+      0.3187,
+      0.4554
+    ],
+    [
+      350,
+      0.2957,
+      0.448
+    ],
+    [
+      360,
+      0.2865,
+      0.4352
+    ],
+    [
+      370,
+      0.2956,
+      0.4297
+    ],
+    [
+      380,
+      0.3223,
+      0.441
+    ],
+    [
+      390,
+      0.2966,
+      0.4361
+    ],
+    [
+      400,
+      0.2616,
+      0.4257
+    ],
+    [
+      410,
+      0.3077,
+      0.4207
+    ],
+    [
+      420,
+      0.29,
+      0.4342
+    ],
+    [
+      430,
+      0.2917,
+      0.4492
+    ],
+    [
+      440,
+      0.2494,
+      0.4349
+    ],
+    [
+      450,
+      0.278,
+      0.4257
+    ],
+    [
+      460,
+      0.2486,
+      0.4206
+    ],
+    [
+      470,
+      0.265,
+      0.4235
+    ],
+    [
+      480,
+      0.266,
+      0.4308
+    ],
+    [
+      490,
+      0.2398,
+      0.4501
+    ],
+    [
+      500,
+      0.2345,
+      0.4439
+    ],
+    [
+      510,
+      0.2643,
+      0.4476
+    ],
+    [
+      520,
+      0.246,
+      0.4402
+    ],
+    [
+      530,
+      0.2837,
+      0.4325
+    ],
+    [
+      540,
+      0.2638,
+      0.4294
+    ],
+    [
+      550,
+      0.2438,
+      0.4191
+    ],
+    [
+      560,
+      0.1959,
+      0.4346
+    ],
+    [
+      570,
+      0.2655,
+      0.4393
+    ],
+    [
+      580,
+      0.252,
+      0.4412
+    ],
+    [
+      590,
+      0.2368,
+      0.4379
+    ],
+    [
+      600,
+      0.2216,
+      0.4381
+    ],
+    [
+      610,
+      0.2405,
+      0.4431
+    ],
+    [
+      620,
+      0.1558,
+      0.4484
+    ],
+    [
+      630,
+      0.2148,
+      0.4433
+    ],
+    [
+      640,
+      0.2092,
+      0.4367
+    ],
+    [
+      650,
+      0.2296,
+      0.433
+    ],
+    [
+      660,
+      0.2018,
+      0.4327
+    ],
+    [
+      670,
+      0.1857,
+      0.4354
+    ],
+    [
+      680,
+      0.1648,
+      0.4358
+    ],
+    [
+      690,
+      0.223,
+      0.4409
+    ],
+    [
+      700,
+      0.2674,
+      0.4433
+    ],
+    [
+      710,
+      0.2069,
+      0.444
+    ],
+    [
+      720,
+      0.1907,
+      0.4441
+    ],
+    [
+      730,
+      0.1894,
+      0.4414
+    ],
+    [
+      740,
+      0.2357,
+      0.4383
+    ],
+    [
+      750,
+      0.2131,
+      0.4419
+    ],
+    [
+      760,
+      0.2192,
+      0.445
+    ],
+    [
+      770,
+      0.208,
+      0.4437
+    ],
+    [
+      780,
+      0.1877,
+      0.4414
+    ],
+    [
+      790,
+      0.202,
+      0.4401
+    ],
+    [
+      800,
+      0.2072,
+      0.4401
+    ],
+    [
+      810,
+      0.174,
+      0.4407
+    ],
+    [
+      820,
+      0.2113,
+      0.4416
+    ],
+    [
+      830,
+      0.1836,
+      0.4425
+    ],
+    [
+      840,
+      0.161,
+      0.4429
+    ],
+    [
+      850,
+      0.2266,
+      0.443
+    ],
+    [
+      860,
+      0.1565,
+      0.4431
+    ],
+    [
+      870,
+      0.1742,
+      0.4431
+    ],
+    [
+      880,
+      0.2014,
+      0.4431
+    ],
+    [
+      890,
+      0.2016,
+      0.4431
+    ],
+    [
+      899,
+      0.1608,
+      0.4431
+    ]
+  ],
+  "examples": [
+    {
+      "scene": "scene-0655",
+      "token": "9768a199e4884a0db50d015703efe969",
+      "generated": "scene with 38 objects . nearest car at 5 metres left . 37 vehicles 0 pedestrians .",
+      "reference": "scene with 40 objects . nearest car at 10 metres right . 38 vehicles 3 pedestrians ."
+    },
+    {
+      "scene": "scene-1094",
+      "token": "0ee7e7691e3e4bd88d43150073906a4f",
+      "generated": "scene with 8 objects . nearest pedestrian at 5 metres left . 5 vehicles 3 pedestrians .",
+      "reference": "scene with 13 objects . nearest pedestrian at 10 metres rear-left . 6 vehicles 7 pedestrians ."
+    },
+    {
+      "scene": "scene-1100",
+      "token": "0d6668bcb0644bbaaee81c17cc308845",
+      "generated": "scene with 18 objects . nearest car at 5 metres behind . 7 vehicles 11 pedestrians .",
+      "reference": "scene with 18 objects . nearest car at 5 metres right . 7 vehicles 11 pedestrians ."
+    },
+    {
+      "scene": "scene-0916",
+      "token": "6ff9723a60bf4e14b328b3b19f04dc32",
+      "generated": "scene with 40 objects . nearest car at 5 metres right . 37 vehicles 5 pedestrians .",
+      "reference": "scene with 40 objects . nearest car at 5 metres right . 37 vehicles 9 pedestrians ."
+    },
+    {
+      "scene": "scene-1094",
+      "token": "e6b0b282aa174a978272dc2d0a89d560",
+      "generated": "scene with 40 objects . nearest car at 5 metres front-right . 13 vehicles 37 pedestrians .",
+      "reference": "scene with 40 objects . nearest car at 5 metres front-right . 13 vehicles 37 pedestrians ."
+    },
+    {
+      "scene": "scene-0796",
+      "token": "d6b0de49811b4d1b86a0933719c0c44a",
+      "generated": "scene with 12 objects . nearest pedestrian at 10 metres left . 6 vehicles 6 pedestrians .",
+      "reference": "scene with 14 objects . nearest pedestrian at 5 metres front-left . 7 vehicles 7 pedestrians ."
+    }
+  ],
+  "caveats": [
+    "The vocabulary is word-level and induced from the caption corpus, so this model can only say things the corpus can say. It is not a general-purpose captioner and is not comparable to BLIP.",
+    "404 keyframes from 10 scenes. The majority-caption row is the number that matters: it is what you score by ignoring the image entirely.",
+    "Captions describe annotated objects with LiDAR returns within 50 m, ordered by range."
+  ]
+}

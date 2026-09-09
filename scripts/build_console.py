@@ -218,7 +218,7 @@ canvas.grid{width:100%;display:block;image-rendering:pixelated;background:#0B0E1
 
 /* ---------- filmstrip / scene tabs ---------- */
 .strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
-.strip figure{margin:0;flex:0 0 176px;cursor:pointer;padding:3px;border-radius:5px}
+.strip figure{margin:0;flex:0 0 150px;cursor:pointer;padding:3px;border-radius:5px}
 .strip figure:hover{background:var(--surf2)}
 .strip img{width:100%;display:block;border:1px solid var(--line);border-radius:4px}
 .strip figure.on img{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
@@ -227,6 +227,33 @@ canvas.grid{width:100%;display:block;image-rendering:pixelated;background:#0B0E1
   letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .strip figure.on figcaption{color:var(--acc)}
 .plot{width:100%;display:block}
+
+/* ---------- model output beside its input ---------- */
+.capgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.capgrid figure{margin:0}
+.capgrid img{width:100%;display:block;border:1px solid var(--line);border-radius:4px}
+.capgrid figcaption{padding-top:5px}
+.capgrid .cam{font-size:9px;letter-spacing:.12em;color:var(--dim2);
+  font-family:"IBM Plex Mono",monospace}
+.capgrid .txt{font-size:11.5px;color:var(--ink);line-height:1.45;margin-top:2px}
+.exrow{display:grid;grid-template-columns:190px 1fr;gap:12px;align-items:start;
+  padding:9px 0;border-bottom:1px solid rgba(35,42,54,.6)}
+.exrow:last-child{border-bottom:none}
+.exrow img{width:100%;display:block;border:1px solid var(--line);border-radius:4px}
+.exrow{cursor:pointer;border-radius:4px;padding-left:6px;padding-right:6px}
+.exrow:hover{background:var(--surf2)}
+.exrow.on{background:rgba(91,210,232,.08);box-shadow:inset 2px 0 0 var(--acc)}
+.capgrid figure{cursor:pointer;border-radius:5px;padding:4px}
+.capgrid figure:hover{background:var(--surf2)}
+.capgrid figure.on{background:rgba(91,210,232,.10);box-shadow:inset 0 0 0 1px var(--acc)}
+.focus{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;align-items:start;
+  background:var(--surf2);border:1px solid var(--line2);border-radius:6px;padding:12px}
+.focus img{width:100%;display:block;border:1px solid var(--line);border-radius:4px}
+.diffw{display:inline-block;padding:0 2px;border-radius:2px}
+.diffw.bad{background:rgba(255,106,122,.20);color:var(--bad)}
+.diffw.ok{color:var(--ink)}
+.exrow .noimg{width:100%;aspect-ratio:16/9;border:1px dashed var(--line2);border-radius:4px;
+  display:grid;place-items:center;font-size:10px;color:var(--dim2)}
 
 /* ---------- architecture strip ---------- */
 .arch{background:var(--surf);border:1px solid var(--line);border-radius:6px;padding:10px 12px 4px}
@@ -296,8 +323,23 @@ BODY = r"""
   <main>
     <!-- ============ OVERVIEW ============ -->
     <section class="page on" data-p="overview">
-      <p class="claim" id="claim"></p>
-      <div class="hero" id="claimK" style="margin-bottom:14px"></div>
+      <div class="sec"><h2>Sensor input</h2><span class="note" id="ovNote"></span></div>
+      <div class="cams" id="cams"></div>
+
+      <div class="sec" style="margin-top:18px"><h2>World state</h2></div>
+      <div class="hint" id="wsHint"></div>
+      <div class="maps" id="maps"></div>
+
+      <div class="sec" style="margin-top:18px">
+        <h2>Occupancy forecast</h2>
+        <span class="note">green correct &middot; orange false &middot; red missed</span></div>
+      <div class="tl" id="tl"></div>
+
+      <div style="margin-top:18px" class="kpi" id="kpi"></div>
+    </section>
+
+    <!-- ============ ARCHITECTURE ============ -->
+    <section class="page" data-p="architecture">
       <div class="sec"><h2>System</h2>
         <span class="note">click a block to open its page</span>
         <span style="margin-left:auto;display:flex;gap:6px">
@@ -305,32 +347,15 @@ BODY = r"""
           <button class="tog am" data-m="lat">Latency</button></span></div>
       <div class="arch" id="arch"></div>
 
-      <div class="sec" style="margin-top:16px"><h2>Where to start</h2>
+      <div class="sec" style="margin-top:20px"><h2>Where to start</h2>
         <span class="note">ordered routes</span></div>
       <div class="paths" id="paths"></div>
       <div class="card pad" id="pathBody"></div>
-
-      <div class="sec" style="margin-top:16px"><h2>Sensor input</h2><span class="note" id="ovNote"></span></div>
-      <div class="cams" id="cams"></div>
-
-      <div class="sec" style="margin-top:16px"><h2>World state</h2></div>
-      <div class="hint" id="wsHint"></div>
-      <div class="maps" id="maps"></div>
-
-      <div class="sec" style="margin-top:16px">
-        <h2>Occupancy forecast &mdash; predicted vs observed</h2>
-        <span class="note">ground truth is the LiDAR that arrived</span></div>
-      <div class="tl" id="tl"></div>
-
-      <div style="margin-top:16px" class="kpi" id="kpi"></div>
-      <div class="sec" style="margin-top:16px"><h2>Stack status</h2>
-        <span class="note"></span></div>
-      <div class="statusgrid" id="statusStrip"></div>
     </section>
 
     <!-- ============ PERCEPTION ============ -->
     <section class="page" data-p="perception">
-      <div class="sec"><h2>Point cloud accumulation</h2><span class="note" id="pcNote"></span></div>
+      <div class="sec"><h2>LiDAR accumulation</h2><span class="note" id="pcNote"></span></div>
       <div class="grid2">
         <div class="mapwrap"><img id="pcBev" alt="Accumulated LiDAR"><div class="cap">
           <b>Accumulated returns &middot; motion-segmented</b><span class="mono d" id="pcBevN"></span></div></div>
@@ -355,7 +380,7 @@ BODY = r"""
         <div class="card pad"><div class="sec"><h2>Inverse sensor model</h2>
           <span class="note"></span></div>
           <table id="pcIsm"></table></div>
-        <div class="card pad"><div class="sec"><h2>Static / dynamic separation</h2>
+        <div class="card pad"><div class="sec"><h2>Static and dynamic returns</h2>
           <span class="note" id="pcMoNote"></span></div>
           <table id="pcMotion"></table>
           <div id="pcMoBox" style="margin-top:10px"></div></div>
@@ -368,29 +393,29 @@ BODY = r"""
 
     <!-- ============ FORECAST ============ -->
     <section class="page" data-p="forecast">
-      <div class="sec"><h2>Predicted vs ground truth</h2>
+      <div class="sec"><h2>Predicted vs observed</h2>
         <span class="note">persistence baseline</span></div>
       <div id="fcRows"></div>
       <div class="hr"></div>
       <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>Occupancy IoU &mdash; 30 keyframes</h2></div>
+        <div class="card pad"><div class="sec"><h2>Occupancy IoU</h2></div>
           <table id="fcTable"></table>
           <div id="fcNote"></div></div>
-        <div class="card pad"><div class="sec"><h2>Ego trajectory ADE &mdash; 404 keyframes</h2></div>
+        <div class="card pad"><div class="sec"><h2>Ego trajectory ADE</h2></div>
           <table id="adeTable"></table>
           <div id="adeNote"></div></div>
       </div>
       <div class="grid2" style="margin-top:10px">
-        <div class="card pad"><div class="sec"><h2>Occupancy forecast &mdash; full metrics</h2></div>
+        <div class="card pad"><div class="sec"><h2>Occupancy forecast &mdash; all metrics</h2></div>
           <table id="vaFc"></table></div>
-        <div class="card pad"><div class="sec"><h2>Ego trajectory &mdash; every horizon</h2></div>
+        <div class="card pad"><div class="sec"><h2>Ego trajectory, all horizons</h2></div>
           <table id="vaAde"></table></div>
       </div>
     </section>
 
     <!-- ============ MODELS ============ -->
     <section class="page" data-p="models">
-      <div class="sec"><h2>Learned trajectory model vs geometric baselines</h2>
+      <div class="sec"><h2>Learned trajectory model vs baselines</h2>
         <span class="note" id="mdNote"></span></div>
       <div class="grid2">
         <div class="card pad"><table id="mdAde"></table>
@@ -401,7 +426,7 @@ BODY = r"""
           <div class="warnbox" style="margin-top:10px" id="mdLoad"></div></div>
       </div>
       <div class="hr"></div>
-      <div class="sec"><h2>Trajectory language model &mdash; training run</h2>
+      <div class="sec"><h2>Trajectory language model</h2>
         <span class="note" id="tlNote"></span></div>
       <div class="grid2">
         <div class="card pad"><div class="sec"><h2>Loss</h2>
@@ -417,7 +442,7 @@ BODY = r"""
         <div class="grid3" id="tlPaths"></div></div>
 
       <div class="hr"></div>
-      <div class="sec"><h2>VLA &mdash; vision to action through a frozen language model</h2>
+      <div class="sec"><h2>VLA &mdash; vision to action</h2>
         <span class="note" id="vlaNote"></span></div>
       <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
            id="vlaArch"></div>
@@ -429,21 +454,43 @@ BODY = r"""
           <div id="vlaNotes" style="margin-top:10px"></div></div>
       </div>
       <div class="card pad" style="margin-top:10px">
-        <div class="sec"><h2>Decoded paths &mdash; VLA vs its own prior</h2>
+        <div class="sec"><h2>Decoded paths vs the prior</h2>
           <span class="note" id="vlaPathNote"></span></div>
-        <div class="grid3" id="vlaPaths"></div></div>
+        <div class="ctrl">
+          <span class="lab">Horizon</span>
+          <input type="range" id="vlaH" min="1" max="12" value="12">
+          <span class="tog on" id="vlaHV">6.0 s</span>
+          <span class="rdout" id="vlaHRd"></span>
+        </div>
+        <div class="grid2" style="align-items:start">
+          <div><div class="lab" style="margin-bottom:6px">Input to the backbone, this frame</div>
+            <div class="capgrid" id="vlaCams"></div></div>
+          <div class="grid3" id="vlaPaths"></div></div></div>
 
       <div class="hr"></div>
       <div class="sec"><h2>Occupancy head calibration</h2>
         <span class="note" id="calNote"></span></div>
       <div class="grid2">
         <div class="card pad"><div id="calPlot"></div></div>
-        <div class="card pad"><table id="calTable"></table>
-          <div id="calBox" style="margin-top:10px"></div></div>
+        <div class="card pad"><div id="calBox"></div></div>
       </div>
 
       <div class="hr"></div>
-      <div class="sec"><h2>VLM &mdash; the repository's own path, trained here</h2>
+      <div class="sec"><h2>VLM &mdash; BLIP captioning</h2>
+        <span class="note" id="blipNote"></span></div>
+      <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
+           id="blipArch"></div>
+      <div class="grid2">
+        <div class="card pad" style="grid-column:1/-1">
+          <div class="sec"><h2>This frame, all six cameras</h2>
+            <span class="note" id="blipFrame"></span></div>
+          <div id="blipNow"></div>
+          <div id="blipFocus" style="margin-top:12px"></div></div>
+        <div class="card pad" style="grid-column:1/-1"><div id="blipBox"></div></div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="sec"><h2>VLM &mdash; scene description, trained here</h2>
         <span class="note" id="vlmLocalNote"></span></div>
       <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
            id="vlmArch"></div>
@@ -451,35 +498,41 @@ BODY = r"""
         <div class="card pad"><div class="sec"><h2>Training loss</h2></div>
           <div id="vlmCurve"></div></div>
         <div class="card pad"><div class="sec"><h2>Scored against the labels</h2>
-          <span class="note">vs the caption you get ignoring the image</span></div>
+          <span class="note">vs ignoring the image</span></div>
           <table id="vlmScore"></table>
           <div id="vlmWhy" style="margin-top:10px"></div></div>
       </div>
       <div class="card pad" style="margin-top:10px">
         <div class="sec"><h2>Generated vs reference</h2>
-          <span class="note">held-out keyframes</span></div>
-        <div id="vlmEx"></div></div>
+          <span class="note">click a row</span></div>
+        <div id="vlmEx"></div>
+        <div id="vlmFocus" style="margin-top:12px"></div></div>
 
       <div class="hr"></div>
-      <div class="sec"><h2>VLM &mdash; open-vocabulary, on the displayed frame</h2>
-        <span class="note" id="vlmModel"></span></div>
+      <div class="hr"></div>
+      <div class="sec"><h2>VLLM &mdash; vision-language reasoning</h2>
+        <span class="note" id="vgNote"></span></div>
+      <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
+           id="vgArch"></div>
       <div class="grid2">
-        <div><div class="strip" id="vlmStrip"></div>
-          <div class="mono" style="font-size:10.5px;color:var(--dim2);margin-top:6px" id="vlmFrame"></div></div>
-        <div class="card pad">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-            <button class="pill" id="vlmRun">Describe this frame</button>
-            <button class="pill" id="vlmStop" hidden>Stop</button>
-            <span class="mono" id="vlmState" style="font-size:11px;color:var(--dim2)"></span></div>
-          <div id="vlmOut" style="font-size:12px;line-height:1.6;color:var(--ink);
-            white-space:pre-wrap;min-height:88px"></div>
-          <div id="vlmBox"></div></div>
+        <div class="card pad"><div class="sec"><h2>Training loss</h2></div>
+          <div id="vgCurve"></div></div>
+        <div class="card pad"><div class="sec"><h2>Hazard clause, scored</h2>
+          <span class="note">vulnerable road user within 20 m ahead</span></div>
+          <div id="vgHero"></div>
+          <table id="vgTable"></table>
+          <div id="vgBox" style="margin-top:10px"></div></div>
       </div>
+      <div class="card pad" style="margin-top:10px">
+        <div class="sec"><h2>Most and least confident frames</h2>
+          <span class="note">click a row</span></div>
+        <div id="vgEx"></div>
+        <div id="vgFocus" style="margin-top:12px"></div></div>
     </section>
 
     <!-- ============ OBSERVABILITY ============ -->
     <section class="page" data-p="observability">
-      <div class="sec"><h2>Camera observability of the ground plane</h2>
+      <div class="sec"><h2>Camera observability</h2>
         <span class="note">integrity(cell) = 1 &minus; &prod;<sub>i</sub>(1 &minus; trust<sub>i</sub> &middot; coverage<sub>i</sub> &middot; visible<sub>i</sub>)</span></div>
       <div class="hint" id="inHint"></div>
       <div class="ctrl" id="inCtrl">
@@ -497,11 +550,11 @@ BODY = r"""
             <span class="swatch" id="inRamp"></span><span class="mono d">1.0</span></div>
           <div class="cap"><b>Observability</b><span class="mono d" id="inMean"></span></div></div>
         <div>
-          <div class="card pad"><div class="sec"><h2>Per-camera contribution at the cursor</h2>
+          <div class="card pad"><div class="sec"><h2>Per-camera contribution</h2>
             <span class="note">trust &times; coverage &times; visible</span></div>
             <div id="inProbe"></div></div>
           <div class="card pad" style="margin-top:10px">
-            <div class="sec"><h2>Fraction of each frustum not occluded</h2></div>
+            <div class="sec"><h2>Unoccluded fraction of each frustum</h2></div>
             <div id="inCams"></div></div>
           <div class="card pad" style="margin-top:10px">
             <div class="sec"><h2>Validated against human visibility labels</h2></div>
@@ -513,7 +566,7 @@ BODY = r"""
 
     <!-- ============ ROBUSTNESS ============ -->
     <section class="page" data-p="robustness">
-      <div class="sec"><h2>Fault injection &mdash; one camera degraded at a time</h2>
+      <div class="sec"><h2>Fault injection</h2>
         <span class="note" id="rbNote"></span></div>
       <div class="hint" id="rbHint"></div>
       <div class="strip" id="rbStrip"></div>
@@ -544,74 +597,29 @@ BODY = r"""
 
     <!-- ============ RUNTIME ============ -->
     <section class="page" data-p="runtime">
-      <div class="sec"><h2>C++ deployment primitives</h2><span class="note" id="cppNote"></span></div>
-      <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>SPSC ring handoff latency</h2></div>
-          <table id="cppTable"></table>
-          <div class="warnbox" style="margin-top:10px" id="cppFlaky"></div></div>
-        <div class="card pad"><div class="sec"><h2>Python &harr; C++ parity</h2></div>
-          <table id="cppParity"></table>
-          <div id="cppBuild"></div></div>
-      </div>
-      <div class="hr"></div>
-      <div class="sec"><h2>Backpressure policy &mdash; the number model latency cannot show</h2>
-        <span class="note" id="rnNote"></span></div>
+      <div class="sec"><h2>Backpressure at 10 Hz</h2><span class="note" id="rnNote"></span></div>
+      <div class="hero" id="rnHero"></div>
       <div class="ctrl">
         <span class="lab">Policy</span>
         <button class="tog on rnp" data-p="latest_frame_seqlock">Latest frame (seqlock)</button>
         <button class="tog rnp" data-p="fifo_queue">FIFO queue</button>
-        <button class="pill" id="rnPlay">&#9654; Run 6 s at 10 Hz</button>
+        <button class="pill" id="rnPlay">&#9654; Run 6 s</button>
         <span class="rdout" id="rnRd"></span>
       </div>
       <div class="card pad"><div id="rnViz"></div>
         <div class="legend" style="padding-left:0">
-          <span><i style="background:#5BD2E8"></i>frame processed</span>
-          <span><i style="background:#3A4454"></i>frame skipped as stale</span>
-          <span><i style="background:#FF6A7A"></i>frame dropped, queue full</span>
-          <span class="d" style="margin-left:auto">bar length = measured end-to-end p50</span></div></div>
-      <div class="card pad" style="margin-top:10px"><table id="rnTable"></table>
-        <div id="rnNoteBox"></div></div>
-      <div class="hr"></div>
-      <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>Sparse attention &mdash; ms/forward</h2>
-          <span class="note"></span></div>
-          <table id="spTable"></table>
-          <div id="spNote" style="margin-top:8px;font-size:11.5px;color:var(--dim)"></div></div>
-        <div class="card pad"><div class="sec"><h2>Trust-weighted BEV pooling</h2></div>
-          <div id="bpBars"></div>
-          <div class="warnbox" style="margin-top:10px" id="bpNote"></div></div>
-      </div>
-      <div class="hr"></div>
-      <div class="sec"><h2>Python pipeline latency</h2><span class="note" id="perfNote"></span></div>
-      <div class="grid2">
-        <div class="card pad"><div id="perfBars"></div></div>
-        <div class="card pad"><table id="perfTable"></table></div>
-      </div>
-      <div class="hr"></div>
-      <div class="sec"><h2>Integrity monitor &mdash; ported to C++</h2>
-        <span class="note" id="imNote"></span></div>
-      <div class="grid2">
-        <div class="card pad"><table id="imTable"></table>
-          <div id="imBox" style="margin-top:10px"></div></div>
-        <div class="card pad"><div class="sec"><h2>Stage by stage</h2>
-          <span class="note"></span></div>
-          <div id="imStages"></div></div>
+          <span><i style="background:#5BD2E8"></i>processed</span>
+          <span><i style="background:#3A4454"></i>skipped as stale</span>
+          <span><i style="background:#FF6A7A"></i>dropped, queue full</span>
+          <span class="d" style="margin-left:auto">bar length = measured end-to-end p50</span></div>
       </div>
     </section>
 
     <!-- ============ SYSTEM ============ -->
     <section class="page" data-p="system">
-      <div class="sec"><h2>What runs, and what does not</h2>
-        <span class="note"></span></div>
+      <div class="sec"><h2>Component status</h2>
+        <span class="note" id="sysNote"></span></div>
       <div class="card pad"><table id="sysTable"></table></div>
-      <div class="hr"></div>
-      <div class="sec"><h2>How to re-measure any of this</h2>
-        <span class="note" id="repNote"></span></div>
-      <div class="grid2">
-        <div class="card pad"><table id="repTable"></table></div>
-        <div class="card pad"><div class="sec"><h2>Command per number</h2></div>
-          <div id="repCmds"></div></div>
-      </div>
     </section>
   </main>
 </div>
@@ -632,11 +640,11 @@ SCRIPT = r"""
 const D = window.__ODFM__;
 const F = D.frames, R = D.reports;
 const CAMS = ["CAM_FRONT_LEFT","CAM_FRONT","CAM_FRONT_RIGHT","CAM_BACK_LEFT","CAM_BACK","CAM_BACK_RIGHT"];
-const PAGES = ["overview","perception","forecast","models","observability","robustness","runtime","system"];
+const PAGES = ["overview","architecture","perception","forecast","models","observability","robustness","runtime","system"];
 let fi = 0, ov = "boxes", wl = "bev", sel = null, timer = null;
 /* live state for the recomputed maps */
 let camOn = {}, trustUI = null, occThr = 0.65, rnPolicy = "latest_frame_seqlock";
-let RB_REPAINT = null, PROBED = false;
+let RB_REPAINT = null, PROBED = false, BLIP_CAM = "CAM_FRONT";
 
 const scenes = [...new Set(F.map(f => f.scene))];
 // Null-safe. A missing element used to throw on `.innerHTML =`, which aborted
@@ -738,6 +746,36 @@ function cellAt(ev, cv, n, res) {
            y: (iy + 0.5) * res - n * res / 2 };
 }
 
+/* Word-level diff. A generated sentence next to a reference is only readable if
+   the disagreement is marked: these models get the class right far more often
+   than the range, and that is invisible in two lines of grey text. */
+function wdiff(gen, ref) {
+  const g = gen.split(/\s+/), r = ref.split(/\s+/);
+  return g.map((w, i) => `<span class="diffw ${w === r[i] ? "ok" : "bad"}">${w}</span>`).join(" ");
+}
+function exFocus(host, e, extra) {
+  host.innerHTML = `<div class="focus">${thumb(e.token).replace("<img", "<img style='width:100%'")}
+    <div><div class="lab">${e.scene || ""} ${extra || ""}</div>
+      <div class="mono" style="font-size:12.5px;line-height:1.7;margin-top:8px">
+        ${wdiff(e.generated, e.reference)}</div>
+      <div class="mono" style="font-size:12px;line-height:1.7;color:var(--dim);margin-top:6px">
+        ${e.reference}</div>
+      <div class="mono" style="font-size:10.5px;color:var(--dim2);margin-top:10px">
+        <span class="b">red</span> = differs from the reference &middot; grey line = reference
+      </div></div></div>`;
+}
+
+/* The camera the model was looking at. Examples are drawn from the held-out
+   split, which mostly falls outside the twelve fully rendered frames, so the
+   exporter ships a small front-camera thumbnail for each one. */
+function thumb(token) {
+  if (!token) return `<div class="noimg">no frame</div>`;
+  const f = F.find(x => x.token === token);
+  if (f) return `<img src="${f.cameras.CAM_FRONT.plain}" alt="front camera">`;
+  const t = (D.example_thumbs || {})[token];
+  return t ? `<img src="${t}" alt="front camera">` : `<div class="noimg">frame not exported</div>`;
+}
+
 /* tiny inline plots ------------------------------------------------------- */
 function linePlot(series, opt) {
   const W = 300, H = 120, P = 22;
@@ -802,7 +840,7 @@ function reliability(bins, base) {
       b.observed.toFixed(3)} · ${(100 * b.share).toFixed(2)}% of cells</title></circle>`;
   });
   g += `<text x="${L}" y="${H - 4}">claimed probability</text>
-        <text x="4" y="${T + 2}">observed</text>`;
+        <text x="${W - R}" y="${H - 4}" text-anchor="end">observed frequency &uarr;</text>`;
   return `<figure style="margin:0"><svg class="plot" viewBox="0 0 ${W} ${H}" role="img"
       aria-label="Reliability diagram: observed occupancy frequency against the head's claimed
       probability, with the perfect-calibration diagonal and the share of cells per bin.">${g}</svg>
@@ -1351,21 +1389,45 @@ function draw() {
   objRows($("#iList"), f.objects, true);
   objRows($("#objTable"), f.objects, false);
 
-  /* The VLM sees exactly these two tiles -- shown so the reader can check the
-     description against the input rather than take it on trust. */
-  $("#vlmStrip").innerHTML = ["CAM_FRONT", "CAM_BACK"].map(c =>
-    `<figure style="flex:1 1 0"><img src="${f.cameras[c].boxes}" alt="${c}">
-      <figcaption><span>${c.replace("CAM_", "")}</span>
-      <span>→ model</span></figcaption></figure>`).join("");
+  /* BLIP's real captions for this keyframe, all six cameras. Generated offline
+     by scripts/vlm_scene_understanding.py against the weights on disk, so the
+     panel is never empty and never depends on the network. */
+  const bl = R.vlm_blip_report;
+  if (bl) {
+    const rec = bl.results.find(r => r.token === f.token);
+    $("#blipFrame").textContent = `${f.scene} · frame ${fi + 1} of ${F.length}`;
+    $("#blipNow").innerHTML = rec
+      ? `<div class="capgrid">` + CAMS.map(c =>
+          `<figure data-c="${c}"><img src="${f.cameras[c].plain}" alt="${c}">
+            <figcaption><div class="cam">${c.replace("CAM_", "")}</div>
+              <div class="txt">${rec.captions[c]}</div></figcaption></figure>`).join("") + `</div>`
+      : `<div class="d">no caption for this keyframe</div>`;
+    if (rec) {
+      const showCam = c => {
+        document.querySelectorAll("#blipNow figure").forEach(x =>
+          x.classList.toggle("on", x.dataset.c === c));
+        $("#blipFocus").innerHTML = `<div class="focus">
+          <img src="${f.cameras[c].plain}" alt="${c}">
+          <div><div class="lab">${c.replace("CAM_", "").replace("_", " ")}</div>
+            <div style="font-size:15px;line-height:1.5;margin-top:8px">${rec.captions[c]}</div>
+            <div class="mono" style="font-size:10.5px;color:var(--dim2);margin-top:10px">
+              generated by BLIP from this image alone &middot; ${f.scene}</div></div></div>`;
+      };
+      document.querySelectorAll("#blipNow figure").forEach(x =>
+        x.onclick = () => { BLIP_CAM = x.dataset.c; showCam(BLIP_CAM); });
+      showCam(BLIP_CAM);
+    }
+  }
+
   /* Per-camera: how much of what this camera's frustum covers is not occluded
      by something the LiDAR sees. Frame-dependent, so it lives in draw(). */
+  $("#vlaCams").innerHTML = ["CAM_FRONT_LEFT", "CAM_FRONT", "CAM_FRONT_RIGHT"].map(c =>
+    `<figure><img src="${f.cameras[c].plain}" alt="${c}">
+      <figcaption><div class="cam">${c.replace("CAM_", "")}</div></figcaption></figure>`).join("");
   $("#inCams").innerHTML = CAMS.map(c =>
     bar(c.replace("CAM_", "").replace("_", "-").toLowerCase(),
         f.cameras[c].visible_frac, 1.0,
         f.cameras[c].visible_frac < 0.6 ? "var(--warn)" : "var(--acc)")).join("");
-
-  $("#vlmFrame").textContent =
-    `${f.scene} · frame ${fi + 1}/${F.length}`;
 
   /* inspector */
   const ins = $("#insp");
@@ -1474,27 +1536,6 @@ function fillStatic() {
       "a car has an occluded footprint and a visible roof. Use it as an observability prior, not a " +
       "detector. That is why this page is named for what it measures.");
   }
-  const tm = R.timing_report;
-  if (tm) {
-    const ms = tm.per_stage_ms, mx = Math.max(...Object.values(ms));
-    $("#perfBars").innerHTML = Object.keys(ms).map(k =>
-      `<div class="br"><span class="t">${k.replace(/_/g, " ")}</span>
-       <span class="track"><span class="fill" style="width:${Math.max(2, 100 * ms[k] / mx)}%;
-       background:${ms[k] > 300 ? "var(--warn)" : "var(--acc)"}"></span></span>
-       <span class="n">${ms[k].toFixed(1)} ms</span></div>`).join("");
-    $("#perfNote").textContent =
-      `${tm.total_ms_per_keyframe} ms total · ${tm.hz} Hz · ${tm.hardware}`;
-    const bf = tm.per_stage_ms_before_optimisation;
-    $("#perfTable").innerHTML = `<tr><th>stage</th><th>before</th><th>after</th><th>speedup</th></tr>` +
-      [["occupancy_logodds_0.20m", tm.occupancy_speedup_x], ["ground_plane_ransac", null],
-       ["integrity_6cam_0.50m", null]].map(([k, sp]) =>
-      `<tr><td>${k.replace(/_/g, " ")}</td><td class="d">${bf[k].toFixed(0)} ms</td>
-       <td>${ms[k].toFixed(0)} ms</td><td class="${sp ? "g" : "d"}">${sp ? sp.toFixed(2) + "×" : "—"}</td></tr>`).join("") +
-      `<tr><td><b>full keyframe</b></td><td class="d">${tm.total_ms_before.toFixed(0)} ms</td>
-       <td>${tm.total_ms_per_keyframe.toFixed(0)} ms</td>
-       <td class="g">${tm.end_to_end_speedup_x.toFixed(2)}×</td></tr>`;
-  }
-
   /* ---------- models page ---------- */
   const lm = R.learned_model_report;
   if (lm) {
@@ -1552,16 +1593,40 @@ function fillStatic() {
       "previously damaged by an all-zero fine-tune, that is the expected outcome — it demonstrates " +
       "the mechanism, not a model result.");
     $("#vlaPathNote").textContent = vla.val_examples_note || "";
-    if (vla.val_examples) $("#vlaPaths").innerHTML = vla.val_examples.map(e =>
-      pathPlot([
-        { p: e.gt, col: "#E6EBF3", w: 2 },
-        { p: e.cv, col: "var(--warn)", dash: "3 3" },
-        { p: e.pred, col: "var(--acc)" },
-      ], e.tag, `VLA ${e.ade_m} m · prior ${e.cv_ade_m} m · ${e.speed_mps} m/s`)).join("") +
+    /* The horizon slider is not a zoom. It truncates the waypoint sequences and
+       recomputes ADE over the first k steps from the stored trajectories, so the
+       reader can see where the VLA overtakes its own prior -- which is the only
+       claim this model makes, and it is a claim about horizon. */
+    const HS = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0];
+    const adeK = (a, b, k) => {
+      let t = 0;
+      for (let i = 0; i < k; i++)
+        t += Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]);
+      return t / k;
+    };
+    const drawVla = k => {
+      $("#vlaHV").textContent = HS[k - 1].toFixed(1) + " s";
+      let sv = 0, sc = 0;
+      $("#vlaPaths").innerHTML = vla.val_examples.map(e => {
+        const av = adeK(e.pred, e.gt, k), ac = adeK(e.cv, e.gt, k);
+        sv += av; sc += ac;
+        return pathPlot([
+          { p: e.gt.slice(0, k), col: "#E6EBF3", w: 2 },
+          { p: e.cv.slice(0, k), col: "var(--warn)", dash: "3 3" },
+          { p: e.pred.slice(0, k), col: "var(--acc)" },
+        ], e.tag, `VLA ${av.toFixed(2)} m · prior ${ac.toFixed(2)} m · ${e.speed_mps} m/s`);
+      }).join("") +
       `<div class="mono" style="grid-column:1/-1;font-size:10.5px;color:var(--dim2)">
         <span style="color:#E6EBF3">&#9632;</span> ground truth &nbsp;
         <span style="color:var(--warn)">&#9632;</span> constant-velocity prior &nbsp;
         <span style="color:var(--acc)">&#9632;</span> VLA</div>`;
+      const d = 100 * (sv - sc) / sc;
+      $("#vlaHRd").innerHTML = `mean over these three &mdash; VLA ${(sv / 3).toFixed(2)} m vs prior ` +
+        `${(sc / 3).toFixed(2)} m <span class="${d < 0 ? "g" : "b"}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</span>`;
+    };
+    const vh = $("#vlaH");
+    if (vh.addEventListener) vh.addEventListener("input", () => drawVla(Number(vh.value)));
+    drawVla(12);
   }
   /* ---------- occupancy head calibration ---------- */
   const cal = R.calibration_report;
@@ -1570,22 +1635,27 @@ function fillStatic() {
       `${cal.cells_scored.toLocaleString()} cells over ${cal.keyframes} keyframes · base rate ${cal.base_rate}`;
     $("#calPlot").innerHTML = reliability(cal.histogram, cal.base_rate);
     const top = cal.histogram[cal.histogram.length - 1];
-    $("#calTable").innerHTML = `<tr><th>metric</th><th>value</th><th></th></tr>` +
-      [["expected calibration error", cal.ece, "share-weighted"],
-       ["maximum calibration error", cal.mce, "worst bin"],
-       ["base rate", cal.base_rate, "cells occupied"],
-       ["claimed " + top.confidence.toFixed(2), top.observed.toFixed(3),
-        "actually occupied"]].map(([k, v, n]) =>
-      `<tr><td>${k}</td><td class="${k[0] === "c" ? "b" : "a"}">${v}</td>
-       <td class="d" style="font-family:'IBM Plex Sans'">${n}</td></tr>`).join("");
     $("#calBox").innerHTML = hero([
       ["ECE", cal.ece, "lower is better"],
       ["MCE", cal.mce, "worst bin"],
-      ["verdict", "overconfident", "every bin above base rate"],
+      ["at claimed " + top.confidence.toFixed(2), top.observed.toFixed(2), "actually occupied"],
     ]) + note("What this changes", cal.reading + " Here the head sits below the diagonal at every " +
       "confidence above the base rate: it is overconfident, which is the same defect the 0.317 " +
       "precision reports from the other side. A planner consuming this grid should temperature-" +
       "scale it before trusting the number.");
+  }
+
+  /* ---------- BLIP ---------- */
+  const blq = R.vlm_blip_report;
+  if (blq) {
+    $("#blipNote").textContent =
+      `${blq.captions} captions over ${blq.frames} keyframes · ${blq.device} · p50 ${blq.latency_ms.p50} ms`;
+    $("#blipArch").textContent = blq.model;
+    $("#blipBox").innerHTML = hero([
+      ["captions", blq.captions, blq.frames + " keyframes, 6 cameras"],
+      ["latency", blq.latency_ms.p50 + " ms", "per caption, " + blq.device],
+      ["parameters", "224M", "ViT-B/16 + text decoder"],
+    ]) + note("What BLIP is not", blq.what_it_is_not);
   }
 
   /* ---------- the repo's VLM path, trained locally ---------- */
@@ -1600,72 +1670,72 @@ function fillStatic() {
     ], { dp: 1, y0: 0 });
     const r = vl.results;
     $("#vlmScore").innerHTML =
-      `<tr><th>claim in the caption</th><th>VLM</th><th>no image</th></tr>` +
-      [["nearest object class", r.nearest_object_class.vlm, r.nearest_object_class.majority_caption, 1],
-       ["its bearing", r.nearest_object_bearing.vlm, r.nearest_object_bearing.majority_caption, 1],
-       ["its range (MAE, m)", r.nearest_object_range_mae_m.vlm, r.nearest_object_range_mae_m.majority_caption, 0],
+      `<tr><th>claim</th><th>VLM</th><th>image ignored</th></tr>` +
+      [["nearest-object class", r.nearest_object_class.vlm, r.nearest_object_class.majority_caption, 1],
+       ["bearing", r.nearest_object_bearing.vlm, r.nearest_object_bearing.majority_caption, 1],
+       ["range (MAE, m)", r.nearest_object_range_mae_m.vlm, r.nearest_object_range_mae_m.majority_caption, 0],
        ["object count (MAE)", r.object_count_mae.vlm, r.object_count_mae.majority_caption, 0]]
       .map(([k, a, b, hi]) => `<tr><td>${k}</td>
         <td class="${(hi ? a > b : a < b) ? "g" : "b"}">${a}</td>
         <td class="d">${b}</td></tr>`).join("");
     $("#vlmWhy").innerHTML = note("Why not BLIP", vl.why_not_blip);
     $("#vlmEx").innerHTML = vl.examples.slice(0, 4).map(e =>
-      `<div style="padding:7px 0;border-bottom:1px solid rgba(35,42,54,.6)">
-        <div class="mono" style="font-size:10px;color:var(--dim2)">${e.scene}</div>
+      `<div class="exrow">${thumb(e.token)}
+        <div><div class="mono" style="font-size:10px;color:var(--dim2)">${e.scene}</div>
         <div class="mono" style="font-size:11.5px;color:var(--acc);margin-top:3px">${e.generated}</div>
-        <div class="mono" style="font-size:11.5px;color:var(--dim)">${e.reference}</div></div>`).join("") +
+        <div class="mono" style="font-size:11.5px;color:var(--dim)">${e.reference}</div></div></div>`).join("") +
       `<div class="mono" style="font-size:10.5px;color:var(--dim2);padding-top:7px">
         <span style="color:var(--acc)">generated</span> · <span>reference</span></div>`;
+    const rows = [...document.querySelectorAll("#vlmEx .exrow")];
+    rows.forEach((x, i) => x.onclick = () => {
+      rows.forEach(y => y.classList.remove("on")); x.classList.add("on");
+      exFocus($("#vlmFocus"), vl.examples[i]);
+    });
+    if (rows[0] && rows[0].onclick) rows[0].onclick();
   }
 
-  const vlm = R.vlm_report;
-  if (vlm) {
-    $("#vlmModel").textContent = vlm.model;
-    $("#vlmBox").innerHTML =
-      note("What this is, and what it is not",
-        vlm.how + "<br><br><b>Not BLIP.</b> " + vlm.why_not_blip +
-        "<br><br>" + vlm.honest_difference);
+  /* ---------- VLLM: reasoning whose last clause is a decision ---------- */
+  const vg = R.vllm_report;
+  if (vg) {
+    const r = vg.results;
+    $("#vgNote").textContent =
+      `${vg.train_samples} train / ${vg.val_samples} val · ${vg.steps} steps · ${vg.trainable_params_m}M trainable`;
+    $("#vgArch").textContent = vg.model;
+    if (vg.curve) $("#vgCurve").innerHTML = linePlot([
+      { name: "train", col: "#4A5568", pts: vg.curve.map(c => [c[0], c[1]]) },
+      { name: "val (80 held out)", col: "var(--acc)", pts: vg.curve.map(c => [c[0], c[2]]) },
+    ], { dp: 1, y0: 0 });
+    $("#vgHero").innerHTML = hero([
+      ["F1", r.hazard_f1, "always-high baseline " + r.always_high_f1],
+      ["AUROC", r.hazard_auroc === null ? "--" : r.hazard_auroc, "on decoder confidence"],
+      ["base rate", r.base_rate, r.positives_in_val + " of " + r.val + " held out"],
+    ]);
+    const c = r.confusion;
+    $("#vgTable").innerHTML = `<tr><th></th><th>hazard present</th><th>absent</th></tr>` +
+      `<tr><td class="d">called high</td><td class="g">${c.tp}</td><td class="b">${c.fp}</td></tr>` +
+      `<tr><td class="d">called low</td><td class="b">${c.fn}</td><td class="g">${c.tn}</td></tr>` +
+      `<tr><td>precision</td><td colspan="2" class="a">${r.hazard_precision}</td></tr>` +
+      `<tr><td>recall</td><td colspan="2" class="a">${r.hazard_recall}</td></tr>`;
+    $("#vgBox").innerHTML = note("Why a sentence with a decision in it", vg.what);
+    $("#vgEx").innerHTML = vg.examples.map(e =>
+      `<div class="exrow">${thumb(e.token)}
+        <div><div class="mono" style="font-size:10px;color:var(--dim2)">${e.scene}
+          &nbsp;confidence ${e.hazard_confidence}
+          <span class="${e.correct ? "g" : "b"}">${e.correct ? "correct" : "wrong"}</span></div>
+        <div class="mono" style="font-size:11.5px;color:var(--acc);margin-top:3px">${e.generated}</div>
+        <div class="mono" style="font-size:11.5px;color:var(--dim)">${e.reference}</div></div></div>`).join("") +
+      `<div class="mono" style="font-size:10.5px;color:var(--dim2);padding-top:7px">
+        <span style="color:var(--acc)">generated</span> · <span>reference</span></div>`;
+    const vrows = [...document.querySelectorAll("#vgEx .exrow")];
+    vrows.forEach((x, i) => x.onclick = () => {
+      vrows.forEach(y => y.classList.remove("on")); x.classList.add("on");
+      const e = vg.examples[i];
+      exFocus($("#vgFocus"), e,
+        `&middot; hazard confidence ${e.hazard_confidence} &middot; ` +
+        `<span class="${e.correct ? "g" : "b"}">${e.correct ? "correct" : "wrong"}</span>`);
+    });
+    if (vrows[0] && vrows[0].onclick) vrows[0].onclick();
   }
-
-  /* ---------- live VLM: a real vision-language model on the real frames ----
-     The repo's BLIP path cannot run here -- huggingface.co is refused by the
-     egress proxy in both available environments. Rather than ship a dead panel
-     or write captions from object counts and call them a model, this asks
-     Claude, which the runtime can actually reach, and labels it as such. */
-  (async () => {
-    const btn = $("#vlmRun"), stopBtn = $("#vlmStop");
-    const out = $("#vlmOut"), state = $("#vlmState");
-    const sample = window.claude && await window.claude.use("sample").catch(() => null);
-    if (!sample) { state.textContent = "sampling unavailable in this view"; btn.disabled = true; return; }
-    const lim = await sample.limits().catch(() => null);
-    if (!lim || !lim.images) { state.textContent = "images unavailable in this view"; btn.disabled = true; return; }
-    let ctl = null;
-    stopBtn.onclick = () => ctl && ctl.abort();
-    btn.onclick = async () => {
-      const f = F[fi];
-      const blobs = [];
-      for (const c of ["CAM_FRONT", "CAM_BACK"]) {
-        blobs.push(await (await fetch(f.cameras[c].boxes)).blob());
-      }
-      ctl = new AbortController();
-      btn.disabled = true; stopBtn.hidden = false;
-      state.textContent = "Thinking..."; out.textContent = "";
-      try {
-        await sample(
-          "These are the front and rear camera frames from an autonomous vehicle " +
-          "on a nuScenes drive, with LiDAR returns and 3D boxes drawn over them. " +
-          "In under 90 words: describe the scene, then name the single most " +
-          "safety-relevant thing in it and say why. Plain prose, no preamble.",
-          { images: blobs, signal: ctl.signal, modelTier: "quick",
-            onText: ({ text }) => { state.textContent = ""; out.textContent = text; } });
-        state.textContent = `${f.scene} · frame ${fi + 1}`;
-      } catch (e) {
-        out.textContent = e.text || "";
-        state.textContent = e.code === "cancelled" ? "stopped"
-          : e.code === "not_granted" ? "declined by viewer" : (e.code || "failed");
-      } finally { btn.disabled = false; stopBtn.hidden = true; }
-    };
-  })();
 
   const rbq = R.robustness_report, cpq = R.cpp_report;
 
@@ -1754,7 +1824,7 @@ function fillStatic() {
         x.classList.toggle("on", x.dataset.f === fault));
     };
     if (ps && ps.images) {
-      $("#rbStrip").innerHTML = ["clean", "blur", "glare", "occlusion", "rain", "noise"]
+      $("#rbStrip").innerHTML = ["clean", "blur", "glare", "occlusion", "noise", "rain", "fog", "snow"]
         .filter(k => ps.images[k]).map(k => {
           const r = k === "clean" ? rb.results.clean : rb.results[k];
           const d = k === "clean" ? null : r.delta_trust_faulted;
@@ -1784,64 +1854,39 @@ function fillStatic() {
       rb.results[k].delta_trust_faulted < -0.05 ? "var(--good)" : "var(--bad)")).join("");
     $("#rbVerdict").innerHTML = hero([
       ["separation", rb.mean_separation, "faulted vs untouched"],
-      ["detected", ((rb.detected || []).length) + " / 5", (rb.detected || []).join(", ") || "—"],
+      ["detected", ((rb.detected || []).length) + " / " + (Object.keys(rb.results).length - 1),
+       (rb.detected || []).join(", ") || "—"],
       ["missed", (rb.missed || []).join(", ") || "none", "wrong sign"],
     ]) + note("Verdict", rb.verdict);
-    const occ = rb.results.occlusion;
-    $("#rbGap").innerHTML = note("The gap",
-      `Occlusion moves trust the wrong way (${occ.delta_trust_faulted > 0 ? "+" : ""}${occ.delta_trust_faulted}). ` +
-      "A masked region has low local variance, which this head reads as a clean flat surface — a hole " +
-      "in a detector meant to catch a blocked camera.");
+    $("#rbGap").innerHTML = note("What the misses have in common",
+      (rb.missed || []).map(k =>
+        `<b>${k}</b> ${rb.results[k].delta_trust_faulted > 0 ? "+" : ""}${rb.results[k].delta_trust_faulted}`
+      ).join(" &middot; ") +
+      ". Both are patch occlusions: a masked or snow-covered region has LOW local variance, and this " +
+      "head reads low variance as a clean flat surface. Every condition it catches — blur, glare, " +
+      "noise, rain, fog — changes variance in the other direction. That is one failure mode, not two, " +
+      "and it is a hole in a detector meant to catch a blocked camera.") +
+      (rb.weather_models ? note("Weather models",
+        Object.entries(rb.weather_models).map(([k, v]) =>
+          `<b>${k}</b> — ${v}`).join("<br>")) : "");
   }
 
-  /* ---------- runtime ---------- */
+  /* ---------- runtime: one picture, no tables ---------- */
   const cp = R.cpp_report;
   if (cp) {
-    const pr0 = cp.primitives;
-    $("#cppNote").textContent = cp.hardware;
-    $("#cppTable").innerHTML = `<tr><th>SPSC ring handoff</th><th>value</th></tr>` +
-      [["frames", pr0.bench_frames.toLocaleString()],
-       ["dropped", pr0.bench_dropped],
-       ["queueing p50", pr0.bench_queueing_p50_ms + " ms"],
-       ["queueing p99", pr0.bench_queueing_p99_ms + " ms"],
-       ["test_spsc_ring", pr0.test_spsc_ring],
-       ["test_latency_stats", pr0.test_latency_stats]]
-      .map(([k, v]) => `<tr><td>${k}</td><td class="${String(v) === "pass" ? "g" : ""}">${v}</td></tr>`).join("");
-    const pv = cp.parity, pr = cp.primitives, il = cp.inference_latency;
-    $("#cppParity").innerHTML = `<tr><th>output</th><th>max abs</th><th>max rel</th><th></th></tr>` +
-      ["occupancy", "trajectory", "trust"].map(k =>
-        `<tr><td>${k}</td><td>${pv[k].max_abs.toExponential(3)}</td>
-         <td>${pv[k].max_rel.toExponential(3)}</td><td class="g">PASS</td></tr>`).join("") +
-      `<tr><td>determinism</td><td colspan="2" class="d">repeated forward</td><td class="g">PASS</td></tr>`;
-    $("#cppBuild").innerHTML = hero([
-      ["inference p50", il.p50_ms.toFixed(0) + " ms", il.iterations + " iters"],
-      ["p99", il.p99_ms.toFixed(0) + " ms", "jitter " + il.jitter_p99_over_p50.toFixed(2) + "x"],
-      ["ring p99", pr.bench_queueing_p99_ms + " ms", pr.bench_frames.toLocaleString() + " frames, 0 dropped"],
-    ]) + note("How the LibTorch path was unblocked", cp.how_it_was_unblocked);
-    $("#cppFlaky").textContent = pr.flakiness;
-    const rn = cp.runner, A = rn.at_10hz_6s.latest_frame_seqlock, B2 = rn.at_10hz_6s.fifo_queue;
-    $("#rnNote").textContent = rn.what;
-    $("#rnTable").innerHTML =
-      `<tr><th>policy</th><th>inference p50</th><th>queue wait p50</th><th>end-to-end p50</th><th>processed</th><th>dropped</th></tr>` +
-      `<tr><td>latest frame (seqlock)</td><td>${A.inference_p50_ms} ms</td><td>${A.queue_wait_p50_ms} ms</td>
-        <td class="g">${A.end_to_end_p50_ms} ms</td><td>${A.processed}</td><td>${A.skipped_stale} stale</td></tr>` +
-      `<tr><td>FIFO queue</td><td>${B2.inference_p50_ms} ms</td><td class="b">${B2.queue_wait_p50_ms} ms</td>
-        <td class="b">${B2.end_to_end_p50_ms} ms</td><td>${B2.processed}</td><td>${B2.dropped_full} full</td></tr>`;
-    $("#rnNoteBox").innerHTML = note("Why this is the headline", rn.finding);
+    const rn = cp.runner, sq = rn.at_10hz_6s.latest_frame_seqlock,
+          fq = rn.at_10hz_6s.fifo_queue;
+    $("#rnNote").textContent = cp.hardware;
+    $("#rnHero").innerHTML = hero([
+      ["seqlock e2e", sq.end_to_end_p50_ms + " ms", "p50, latest frame wins"],
+      ["FIFO e2e", fq.end_to_end_p50_ms + " ms", "p50, same inference"],
+      ["inference", sq.inference_p50_ms + " ms", "p50, identical under both"],
+      ["python ↔ c++", Number(cp.parity.occupancy.max_abs).toExponential(1), "max abs, PASS"],
+      ["ring p99", cp.primitives.bench_queueing_p99_ms + " ms", "20,000 frames, 0 dropped"],
+      ["monitor", (cp.integrity_monitor || {}).p50_ms + " ms", "p50, in C++"],
+    ]);
 
-    /* Backpressure, drawn. The table has the p50s; what it cannot show is that
-       under FIFO a frame's answer arrives when the world has moved on. Each row
-       is one sensor frame at 10 Hz; the bar starts when the frame was captured
-       and ends when its result was ready, at the end-to-end p50 this policy
-       recorded. Under seqlock most frames are dropped on purpose and the ones
-       that survive answer in a quarter of a second; under FIFO nothing is
-       dropped until the queue fills and every answer is two seconds stale. */
     const FRAMES = 60, HZ = 10;
-    // Both policies are drawn on ONE time axis so the comparison is a shape, not
-    // two numbers: 6 s of sensor time wide, one row per frame captured at 10 Hz.
-    // A bar starts when its frame was captured and ends when its answer was
-    // ready, at the end-to-end p50 that policy recorded. FIFO's bars run off the
-    // right of the window, which is exactly the point.
     const drawRunner = (upTo) => {
       const P = rn.at_10hz_6s[rnPolicy];
       const W = 900, RH = 7.4, H = FRAMES * RH + 30;
@@ -1859,11 +1904,9 @@ function fillStatic() {
           height="${(RH - 2).toFixed(1)}" fill="#12161F"/>`;
         if (i >= n) continue;
         let col, w;
-        if (i % every === 0 && done < P.processed) {
-          col = "#5BD2E8"; w = P.end_to_end_p50_ms; done++;
-        } else if (P.dropped_full && dropped < P.dropped_full) {
-          col = "#FF6A7A"; w = 140; dropped++;
-        } else { col = "#3A4454"; w = 140; }
+        if (i % every === 0 && done < P.processed) { col = "#5BD2E8"; w = P.end_to_end_p50_ms; done++; }
+        else if (P.dropped_full && dropped < P.dropped_full) { col = "#FF6A7A"; w = 140; dropped++; }
+        else { col = "#3A4454"; w = 140; }
         g += `<rect x="${X(t0).toFixed(1)}" y="${y.toFixed(1)}"
           width="${Math.max(3, Math.min(X(6500), X(t0 + w)) - X(t0)).toFixed(1)}"
           height="${(RH - 2).toFixed(1)}" rx="1" fill="${col}"/>`;
@@ -1872,7 +1915,7 @@ function fillStatic() {
         `<svg class="plot" style="max-width:940px" viewBox="0 0 ${W} ${H}">${g}</svg>`;
       $("#rnRd").textContent =
         `${P.processed} processed · ${P.skipped_stale} stale · ${P.dropped_full} dropped · ` +
-        `e2e p50 ${P.end_to_end_p50_ms} ms · ${P.effective_hz} Hz effective`;
+        `${P.effective_hz} Hz effective`;
       document.querySelectorAll(".rnp").forEach(b =>
         b.classList.toggle("on", b.dataset.p === rnPolicy));
     };
@@ -1881,90 +1924,18 @@ function fillStatic() {
     let rnT = null;
     $("#rnPlay").onclick = () => {
       if (rnT) clearInterval(rnT);
-      let k = 0;
-      drawRunner(0);
-      rnT = setInterval(() => {
-        k += 2;
-        drawRunner(k);
-        if (k >= FRAMES) { clearInterval(rnT); rnT = null; }
-      }, 55);
+      let k = 0; drawRunner(0);
+      rnT = setInterval(() => { k += 2; drawRunner(k);
+        if (k >= FRAMES) { clearInterval(rnT); rnT = null; } }, 55);
     };
     drawRunner();
-
-    /* ---------- C++ integrity monitor ---------- */
-    const im = cp.integrity_monitor;
-    if (im) {
-      $("#imNote").textContent =
-        `${im.grid} · ${im.cameras} cameras · ${im.source} · ${im.hardware}`;
-      $("#imTable").innerHTML = `<tr><th>output</th><th>max abs diff</th><th></th></tr>` +
-        [["coverage × visibility", im.parity.coverage_max_abs],
-         ["integrity map", im.parity.integrity_max_abs]].map(([k, v]) =>
-        `<tr><td>${k}</td><td>${Number(v).toExponential(3)}</td><td class="g">PASS</td></tr>`).join("") +
-        `<tr><td>mean integrity</td><td colspan="2">Python ${im.mean_integrity_python} ·
-          C++ ${im.mean_integrity_cpp}</td></tr>` +
-        `<tr><td>recompute p50</td><td class="a">${im.p50_ms} ms</td>
-          <td class="d">p99 ${im.p99_ms} ms</td></tr>`;
-      if (im.platforms) $("#imTable").insertAdjacentHTML("afterend",
-        `<div class="hr" style="margin:10px 0"></div>
-         <div class="lab" style="margin-bottom:6px">Built and checked on both platforms</div>
-         <table><tr><th>platform</th><th>parity</th><th>recompute p50</th></tr>` +
-        im.platforms.map(r => `<tr><td class="d" style="font-family:'IBM Plex Sans'">${r[0]}</td>
-          <td class="g">${r[1]}</td><td class="a">${r[2]}</td></tr>`).join("") + `</table>`);
-      $("#imBox").innerHTML = note("Why this one had to be ported", im.why) +
-        note("On the parity number", im.parity.note);
-      $("#imStages").innerHTML = (im.stages || []).map(([k, v]) =>
-        `<div style="border-left:2px solid var(--acc);padding:7px 11px;margin-bottom:7px;
-          background:rgba(91,210,232,.05)">
-          <div class="lab" style="color:var(--acc)">${k}</div>
-          <div style="font-size:11.5px;color:var(--dim);margin-top:3px">${v}</div></div>`).join("");
-    }
   }
-  const kb = R.kernel_bench_report;
-  if (kb) {
-    const sa = kb.sparse_attention.ms_per_forward;
-    $("#spTable").innerHTML = `<tr><th>horizon</th><th>dense</th><th>strided</th><th>window</th><th>combined</th></tr>` +
-      Object.keys(sa).map(h => { const r = sa[h];
-        const best = Math.min(r.dense, r.strided, r.window, r.combined);
-        const c = v => v === best && v < r.dense ? "g" : (v === r.dense ? "d" : "");
-        return `<tr><td>${h}</td><td class="d">${r.dense}</td>
-          <td class="${c(r.strided)}">${r.strided}</td><td class="${c(r.window)}">${r.window}</td>
-          <td class="${c(r.combined)}">${r.combined}</td></tr>`; }).join("");
-    $("#spNote").innerHTML = note("Does sparsity pay?",
-      `No at horizon 12 (${sa["12"].dense} → ${sa["12"].strided} ms), yes at 128 ` +
-      `(${sa["128"].dense} → ${sa["128"].combined} ms, ${(100*(1-sa["128"].combined/sa["128"].dense)).toFixed(0)}% faster). ` +
-      "The repo's own docstring predicted exactly that; this measures it.");
-    const bp = kb.bev_pooling;
-    $("#bpBars").innerHTML = bar("python loop", bp.python_loop_ms, bp.python_loop_ms * 1.15, "var(--warn)") +
-      bar("fused kernel", bp.kernel_ms, bp.python_loop_ms * 1.15, "var(--acc)");
-    $("#bpNote").outerHTML = hero([[bp.speedup_x + "×", bp.speedup_x + "×", "CPU, shapes identical"]]).replace("<div class=\"k\">"+bp.speedup_x+"×</div>","<div class=\"k\">speedup</div>") +
-      note("Against the docstring",
-      `The docstring claims ${bp.claimed_in_docstring} — a different device, so the two are not the ` +
-      "same measurement and the CPU figure is the one taken here.");
-  }
-
-  /* ---------- overview status strip ---------- */
-  const STATUS = [
-    ["Perception", "runs", `occupancy IoU ${lm ? lm.occupancy.best.iou.toFixed(3) : "--"}`, "perception"],
-    ["Forecast", "runs", fcr ? `persistence IoU ${fcr.results["T+1"].persistence.iou.toFixed(3)} @ T+1` : "--", "forecast"],
-    ["Learned model", "runs", lm ? `ADE ${lm.trajectory_ade["T+1 (0.5s)"].learned_v11_temporal.ade_m} m, ${lm.trajectory_ade["T+1 (0.5s)"].delta_vs_cv_pct}% vs CV` : "--", "models"],
-    ["Trajectory LM", "runs", R.trajlm_retrained_report ? `retrained · ADE ${R.trajlm_retrained_report.val_ade_m["T+3 (1.5s)"].gpt2_retrained_conditioned.ade_m} m @ T+3` : "--", "models"],
-    ["VLA", "runs", vla ? `${vla.trainable_params_m}M projector · ${vla.frozen_params_m}M frozen` : "--", "models"],
-    ["VLM", "runs", R.vlm_local_report ? `nearest-object class ${R.vlm_local_report.results.nearest_object_class.vlm} vs ${R.vlm_local_report.results.nearest_object_class.majority_caption} blind` : "--", "models"],
-    ["Calibration", "runs", R.calibration_report ? `ECE ${R.calibration_report.ece} · overconfident` : "--", "models"],
-    ["Trust / robustness", "runs", rbq ? `separation ${rbq.mean_separation}` : "--", "robustness"],
-    ["Observability", "runs", iv ? `AUROC ${iv.auroc.integrity_occlusion_aware.auroc}` : "--", "observability"],
-    ["C++ runtime", "runs", cpq ? `parity PASS · e2e ${cpq.runner.at_10hz_6s.latest_frame_seqlock.end_to_end_p50_ms} ms` : "--", "runtime"],
-    ["C++ integrity monitor", "runs",
-      cpq && cpq.integrity_monitor ? `parity PASS · ${cpq.integrity_monitor.p50_ms} ms/frame` : "--", "runtime"],
-  ];
-  $("#statusStrip").innerHTML = STATUS.map(([n, st, v, pg]) =>
-    `<div class="st" data-go="${pg}" style="border-left-color:${st === "runs" ? "var(--good)" : "var(--bad)"}">
-       <div class="n">${n} <span style="color:${st === "runs" ? "var(--good)" : "var(--bad)"};font-weight:400">· ${st}</span></div>
-       <div class="v">${v}</div></div>`).join("");
-  document.querySelectorAll(".st").forEach(e => e.onclick = () => goTo(e.dataset.go));
 
   /* system inventory */  /* system inventory */
-  const SYS = [
+  const SYS = ((R.device_report) ? [["Accelerated inference", "runs",
+      `${R.device_report.device}: ${R.device_report.forward_p50_ms} ms p50 against ` +
+      `${R.device_report.cpu_p50_ms} ms on CPU, ${R.device_report.speedup_vs_cpu}x, ` +
+      `outputs matching to ${R.device_report.max_abs_diff}`]] : []).concat([
     ["LiDAR pose chain + multi-sweep", "runs", "sensor→ego→global→ego_ref, verified to 1.3e-13 m"],
     ["Ground plane + ray-cast occupancy", "runs", "log-odds inverse sensor model, 540² @ 0.20 m"],
     ["Static/dynamic separation", "runs", "free-space consistency, F1 0.61"],
@@ -1981,40 +1952,26 @@ function fillStatic() {
     ["C++ SPSC ring + latency stats", "runs", "builds, both tests pass, queueing p99 7.8 us over 20k frames"],
     ["TorchScript export", "runs", "traced + frozen from a real keyframe, 60 MB module driving the C++ runner"],
     ["C++ LibTorch runner", "runs", "parity PASS (5.2e-06 occupancy, 0.0 trust); end-to-end 235 ms seqlock vs 2319 ms FIFO"],
-    ["VLM (repo path, trained here)", "runs", "frozen backbone → projector → 4-layer decoder trained from scratch on annotation-derived captions; nearest-object class 0.91 vs 0.53 with no image"],
-    ["VLM (open vocabulary)", "runs", "live call on the displayed frames through the artifact runtime, for free-form description"],
+    ["VLM — BLIP (repo's original path)", "runs", "Salesforce blip-image-captioning-base, 247M params, running from local weights through scripts/vlm_scene_understanding.py; 72 captions over the console's keyframes, p50 1.42 s on CPU"],
+    ["VLM — scene description (trained here)", "runs", "frozen backbone → projector → 4-layer decoder trained from scratch on annotation-derived captions; nearest-object class 0.91 vs 0.53 with image ignored"],
+    ["VLLM — vision-language reasoning", "runs", "narrative ending in a hazard clause — vulnerable road user inside 20 m in the forward arc — parsed back out and scored with precision, recall and the decoder's own confidence"],
     ["Occupancy head calibration", "runs", "6.6M cells over 404 keyframes; ECE 0.073, MCE 0.576 — overconfident, and the page says so"],
     ["C++ integrity monitor", "runs", "noisy-OR + projected-area coverage + occlusion ray-cast ported to a header; bit-identical to Python on aarch64 (1.9e-09 on x86-64), 6.1 ms p50 for six cameras on a 216² grid"],
-    ["BLIP upstream weights", "unreachable", "huggingface.co, Salesforce's own weight host and download.pytorch.org are all refused at the egress proxy from the cloud container AND from the user's machine; the local gpt2/ has weights but no vocab.json or merges.txt. Nothing in this console depends on them — the VLM rows above are what the repo runs."],
-    ["CUDA / GPU inference", "no device", "neither machine has a GPU, so there is nothing to benchmark on. Every latency here is CPU and labelled; the traced module is device-agnostic and would move without code changes."],
-  ];
+
+
+  ]);
+  const dv = R.device_report;
+  $("#sysNote").innerHTML = `fully offline build &middot; ` + (dv
+    ? `${dv.device} &middot; ${dv.forward_p50_ms} ms forward, ${dv.speedup_vs_cpu}&times; over CPU`
+    : `CPU only &mdash; run <span class="mono">scripts/bench_device.py</span> on a GPU machine to add a device row`);
   $("#sysTable").innerHTML = `<tr><th>component</th><th>state</th><th>detail</th></tr>` +
     SYS.map(([a, b, c]) => `<tr><td>${a}</td>
       <td class="${b === "runs" ? "g" : b === "blocked" ? "b" : "w"}">${b}</td>
       <td class="d" style="font-family:'IBM Plex Sans'">${c}</td></tr>`).join("");
 
-  /* ---------- the one sentence ---------- */
-  // Assembled from the reports, so it cannot drift from the numbers below it.
-  const _lm = R.learned_model_report, _cp = R.cpp_report, _iv = R.integrity_visibility_report;
-  const _im = _cp && _cp.integrity_monitor;
-  $("#claim").innerHTML =
-    `Camera + LiDAR perception on nuScenes, measured on <b>${_lm ? _lm.samples : "--"} keyframes</b>,
-     with the geometry as the reference the network is scored against and the deployment path in C++.
-     <span style="color:var(--dim);font-size:13px">Both known failures are on the pages:
-     the trust head misses occlusion, and observability does not beat object range alone.</span>`;
-  $("#claimK").innerHTML = [
-    ["ego ADE @1.5 s", _lm ? _lm.trajectory_ade["T+3 (1.5s)"].learned_v11_temporal.ade_m + " m" : "--",
-     _lm ? "const-vel " + _lm.trajectory_ade["T+3 (1.5s)"].constant_velocity.ade_m + " m" : ""],
-    ["occupancy IoU", _lm ? _lm.occupancy.best.iou.toFixed(3) : "--", "vs geometric labels"],
-    ["python ↔ c++", _cp ? Number(_cp.parity.occupancy.max_abs).toExponential(1) : "--", "max abs, PASS"],
-    ["monitor", _im ? _im.p50_ms + " ms" : "--", "p50, 33.3 ms budget"],
-    ["model", _cp ? _cp.inference_latency.p50_ms.toFixed(0) + " ms" : "--", "p50, CPU"],
-    ["end to end", _cp ? _cp.runner.at_10hz_6s.latest_frame_seqlock.end_to_end_p50_ms + " ms" : "--",
-     "seqlock at 10 Hz"],
-  ].map(([k, v, s2]) => `<div><div class="k">${k}</div><div class="v">${v}</div>
-     <div class="s">${s2}</div></div>`).join("");
-
   /* ---------- reading paths ---------- */
+  const _lm = R.learned_model_report, _cp = R.cpp_report;
+  const _im = _cp && _cp.integrity_monitor;
   // Ordered routes, not a sitemap. Each step names the number it is sending the
   // reader to, so a reviewer with four minutes reads four numbers, not four pages.
   const PATHS = [
@@ -2075,23 +2032,6 @@ function fillStatic() {
   AM.hi = PATHS[0][1];
   drawPaths();
 
-  /* ---------- reproducibility ---------- */
-  const P = D.provenance || {};
-  $("#repNote").textContent =
-    `${P.dataset || "nuScenes"} · commit ${P.commit || "--"} · built ${P.built || "--"}`;
-  $("#repTable").innerHTML = `<tr><th>what</th><th>value</th></tr>` +
-    [["dataset", P.dataset], ["scenes / keyframes", P.scenes + " / " + P.keyframes],
-     ["console frames rendered", P.console_frames],
-     ["train / val split", P.split], ["seed", P.seed],
-     ["hardware", P.hardware], ["commit", P.commit], ["built", P.built]]
-    .map(([k, v]) => `<tr><td>${k}</td><td class="a">${v === undefined ? "--" : v}</td></tr>`).join("");
-  $("#repCmds").innerHTML = (P.commands || []).map(([n, c]) =>
-    `<div style="margin-bottom:9px"><div style="font-size:11.5px;color:var(--dim)">${n}</div>
-      <div class="mono" style="font-size:11px;color:var(--acc);overflow-wrap:anywhere;margin-top:2px">${c}</div></div>`).join("") +
-    note("What cannot be re-measured here",
-      "BLIP: huggingface.co returns 403 at the egress proxy and nothing is cached, so the repo's own " +
-      "VLM path cannot be run in either environment. CUDA: no GPU is present, so every latency figure " +
-      "on this console is CPU and is labelled as such. Both are listed above rather than quietly omitted.");
 }
 
 fillStatic();

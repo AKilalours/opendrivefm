@@ -40,6 +40,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from opendrivefm.models.model import OpenDriveFM  # noqa: E402
+from fix_trust import remap_trust_keys  # noqa: E402
 
 
 class ExportWrapper(torch.nn.Module):
@@ -79,21 +80,51 @@ class ReferenceBundle(torch.nn.Module):
                 self.ref_occupancy, self.ref_trajectory, self.ref_trust)
 
 
+def _disable_mha_fastpath():
+    """Trace without nn.TransformerEncoderLayer's fused kernel.
+
+    In eval mode the layer takes a fast path that bakes
+    aten::_transformer_encoder_layer_fwd into the traced graph. That operator
+    has no MPS kernel, so the exported module runs on CPU and CUDA and dies on
+    Apple Silicon with NotImplementedError. Turning the fast path off before
+    tracing emits the ordinary matmul/softmax ops instead: identical numerics,
+    portable everywhere, and a few percent slower on CPU -- the right trade for
+    a module whose whole purpose is to be moved onto a device.
+    """
+    b = getattr(torch.backends, "mha", None)
+    if b is not None and hasattr(b, "set_fastpath_enabled"):
+        b.set_fastpath_enabled(False)
+        print("[export] nn.MHA fastpath disabled -- graph will be device-portable")
+        return True
+    print("[export] WARNING: torch.backends.mha.set_fastpath_enabled unavailable; "
+          "the traced graph may contain a fused op with no MPS kernel")
+    return False
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--ckpt", default="outputs/artifacts/checkpoints_v11_trustfix2/trust_fixed_v2.ckpt")
+    ap.add_argument("--ckpt",
+                    default="outputs/artifacts/checkpoints_v11_trustfix2/trust_fixed_v2_cal.ckpt",
+                    help="Default is the CALIBRATED trust checkpoint -- the one every "
+                         "number on the console was measured with.")
     ap.add_argument("--out", default="outputs/artifacts/opendrivefm_v11.pt")
     ap.add_argument("--reference", default="outputs/artifacts/parity_reference.pt")
     ap.add_argument("--bev", type=int, default=128)
     ap.add_argument("--batch", type=int, default=1)
     ap.add_argument("--views", type=int, default=6)
-    ap.add_argument("--frames", type=int, default=1)
+    ap.add_argument("--frames", type=int, default=4,
+                    help="Temporal window. v11_temporal consumes FOUR frames and every metric on "
+                         "the console was measured with four; exporting with 1 traces a quarter of "
+                         "the work and produces a model that is not the validated one.")
     ap.add_argument("--image_hw", default="90,160")
     ap.add_argument("--seed", type=int, default=42,
                     help="Seeds the reference input so the bundle is reproducible.")
     args = ap.parse_args()
 
+    if args.frames != 4:
+        print(f"[export] WARNING: tracing a {args.frames}-frame window. The validated model is "
+              f"four-frame; latency from this module is NOT comparable to any figure measured on it.")
     H, W = [int(v) for v in args.image_hw.split(",")]
     torch.manual_seed(args.seed)
 
@@ -103,6 +134,19 @@ def main() -> None:
              for k, v in ckpt.get("state_dict", ckpt).items()}
 
     model = OpenDriveFM(bev_h=args.bev, bev_w=args.bev)
+    # The checkpoint stores CameraTrustScorer as one flat Sequential named `cnn`;
+    # the current class splits it into trunk / pool / cnn_head. Without this
+    # rename 18 of 171 tensors miss and the guard below refuses the export --
+    # correctly, because a partially loaded graph is not the validated model.
+    # The evaluation path has always applied this; the exporter did not, which
+    # is why the two could disagree about what "the model" means.
+    state, renamed, rejected = remap_trust_keys(state, model.state_dict(), prefix="backbone.trust_scorer.")
+    if renamed:
+        print(f"  trust-scorer keys remapped: {len(renamed)} "
+              f"({', '.join(a + ' -> ' + b for a, b in renamed[:2])}, ...)")
+    if rejected:
+        raise SystemExit(f"Refusing to export: {len(rejected)} trust keys have mismatched shapes "
+                         f"and were not renamed: {rejected}")
     result = model.load_state_dict(state, strict=False)
     n_exp = len(model.state_dict())
     matched = n_exp - len(result.missing_keys)
@@ -120,8 +164,10 @@ def main() -> None:
     x = torch.randn(args.batch, args.views, args.frames, 3, H, W)
     vel = torch.randn(args.batch, 2)
 
-    print(f"Tracing with x={tuple(x.shape)} velocity={tuple(vel.shape)}")
+    print(f"Tracing with x={tuple(x.shape)} velocity={tuple(vel.shape)}"
+          f"  [{args.frames}-frame window]")
     with torch.no_grad():
+        _disable_mha_fastpath()
         traced = torch.jit.trace(wrapper, (x, vel), strict=False)
         traced = torch.jit.freeze(traced)   # inline params: what actually ships
 

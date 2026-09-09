@@ -1,0 +1,25 @@
+{
+  "status": "MEASURED",
+  "device": "mps \u2014 Apple Silicon GPU (Metal)",
+  "torch": "2.11.0",
+  "module": "outputs/artifacts/opendrivefm_v11.pt (TorchScript, traced + frozen)",
+  "iterations": 60,
+  "warmup": 10,
+  "cpu_p50_ms": 154.87,
+  "forward_p50_ms": 17.73,
+  "forward_p50_blocks_ms": [
+    16.69,
+    17.75,
+    17.73
+  ],
+  "forward_spread_pct": 6.0,
+  "traced_input_shape": "(1, 6, 4, 3, 90, 160)",
+  "speedup_vs_cpu": 8.74,
+  "max_abs_diff": 1.05e-05,
+  "note": "The same traced module, moved with .to(device) and nothing else. The output difference is the accelerator's arithmetic, not a different graph.",
+  "caveats": [
+    "Batch 1, the shape the runner actually uses. Throughput on larger batches is a different measurement and is not claimed here.",
+    "Includes the host-to-device copy, because a deployed runner pays it too.",
+    "Median of three measurement blocks; the spread between them is reported, because Metal compiles shaders lazily and a single block reports whichever warm-up state the machine was in."
+  ]
+}
