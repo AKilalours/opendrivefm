@@ -15,13 +15,31 @@ frozen encoder and nothing else.
 """
 import json, time, numpy as np, torch, torch.nn as nn
 from transformers import GPT2LMHeadModel, GPT2Config
-torch.manual_seed(0); np.random.seed(0); torch.set_num_threads(2)
+# --- split / seed / paths: configured by environment, never hardcoded --------
+import os as _os, sys as _sys
+_ODFM_ROOT  = _os.environ.get("ODFM_ROOT", _os.path.dirname(_os.path.abspath(__file__)))
+_ODFM_SPLIT = _os.environ.get("ODFM_SPLIT", "standard")
+_ODFM_SEED  = int(_os.environ.get("ODFM_SEED", "0"))
+_LABELS     = _os.environ.get(
+    "ODFM_LABELS",
+    _os.path.join(_ODFM_ROOT, "outputs", "artifacts", "scene_labels.json"))
+if not _os.path.exists(_LABELS):
+    _alt = _os.path.join(_ODFM_ROOT, "artifacts", "scene_labels.json")
+    if _os.path.exists(_alt): _LABELS = _alt
+for _p in (_os.path.join(_ODFM_ROOT, "src"), _ODFM_ROOT):
+    if _p not in _sys.path: _sys.path.insert(0, _p)
+try:
+    from opendrivefm.data import splits as _splits
+except ImportError:
+    import splits as _splits
+# -----------------------------------------------------------------------------
+torch.manual_seed(_ODFM_SEED); np.random.seed(_ODFM_SEED); torch.set_num_threads(2)
 
 LAB = {r["token"]: r for r in json.load(
-    open('/mnt/user-data/uploads/Projects/opendrivefm/outputs/artifacts/scene_labels.json'))}
-D = np.load('all_frames.npz', allow_pickle=True)
+    open(_LABELS))}
+D = np.load(_os.environ.get('ODFM_FEATURES_DIR', _ODFM_ROOT) + '/all_frames.npz', allow_pickle=True)
 TOK = [str(t) for t in D['tokens']]; MO = D['motion']
-Z = np.load('z_all404.npy')
+Z = np.load(_os.environ.get('ODFM_FEATURES_DIR', _ODFM_ROOT) + '/z_all404.npy')
 
 FWD = {"ahead", "front-left", "front-right"}
 VRU = {"human", "vehicle.bicycle", "vehicle.motorcycle"}
@@ -62,7 +80,12 @@ for i, c in enumerate(caps):
 seq = torch.from_numpy(seq)
 print(f"vocab {V} | length {L} | e.g. {' '.join(caps[int(np.argmax(haz_y))])}")
 
-idx = np.random.permutation(len(caps)); tr, va = idx[:324], idx[324:]
+# Scene-level split. A random keyframe permutation put keyframes 0.5 s
+# apart on both sides of the boundary, so val scored recall, not
+# generalisation. Whole scenes are held out instead.
+tr, va = _splits.split_indices(TOK, split=_ODFM_SPLIT, labels_path=_LABELS)
+print(_splits.describe(_ODFM_SPLIT, _LABELS))
+print(f'train {len(tr)} | val {len(va)} keyframes, disjoint by scene')
 Zt = torch.from_numpy(Z).float()
 E, K = 256, 4
 proj = nn.Sequential(nn.Linear(384, 512), nn.GELU(), nn.Linear(512, K * E))
@@ -146,6 +169,10 @@ ex = [{"scene": LAB[TOK[va[i]]]["scene"], "token": TOK[va[i]], "generated": " ".
        "reference": " ".join(caps[va[i]]), "hazard_confidence": round(float(conf[i]), 3),
        "correct": bool(hz(pred[i]) == yt[i])} for i in np.argsort(-conf)[:3].tolist() + np.argsort(conf)[:3].tolist()]
 json.dump({
+  'split': _ODFM_SPLIT,
+  'split_scenes': {k: list(v) for k, v in _splits.SPLITS[_ODFM_SPLIT].items()},
+  'seed': _ODFM_SEED,
+  'split_method': 'scene-level holdout; no scene appears in both train and val',
  "status": "RUNS — trained here",
  "model": f"frozen OpenDriveFM backbone -> z(384) -> trainable projector -> {K} prefix embeddings -> "
           f"4-layer transformer decoder ({E} embd, vocab {V}), trained from scratch",
@@ -160,5 +187,5 @@ json.dump({
              "model sees only the camera latent.",
              "A word-level vocabulary induced from the corpus: this model can only say what the corpus "
              "can say, and is not a general-purpose captioner."]},
- open('vllm_report.json', 'w'), indent=2)
-print("\nwrote vllm_report.json")
+ open(_os.environ.get('ODFM_OUT', '.') + f'/vllm_report_{_ODFM_SPLIT}_seed{_ODFM_SEED}.json', 'w'), indent=2)
+print(f"\nwrote vllm_report_{_ODFM_SPLIT}_seed{_ODFM_SEED}.json")

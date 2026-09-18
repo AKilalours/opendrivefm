@@ -319,7 +319,7 @@ BODY = r"""
   <div class="grp"><span class="lab">Camera</span>
     <button class="pill ov" data-ov="plain">Camera only</button>
     <button class="pill ov" data-ov="lidar">LiDAR depth</button>
-    <button class="pill ov on" data-ov="boxes">Objects + LiDAR</button></div>
+    <button class="pill ov on" data-ov="boxes">GT boxes + LiDAR</button></div>
   <div class="grp"><span class="lab">World</span>
     <button class="pill wl on" data-wl="bev">BEV</button>
     <button class="pill wl" data-wl="bev_nodyn">Static only</button>
@@ -333,6 +333,11 @@ BODY = r"""
     <!-- ============ OVERVIEW ============ -->
     <section class="page on" data-p="overview">
       <div class="sec"><h2>Sensor input</h2><span class="note" id="ovNote"></span></div>
+      <div class="warnbox" style="margin-bottom:9px">
+        <b>What the model produces:</b> BEV occupancy, ego trajectory, per-camera trust,
+        depth. <b>What is read from labels:</b> every object box, class and track id shown
+        here. This system does not contain a detector; object annotations are inputs to the
+        observability analysis, never outputs of the network.</div>
       <div class="cams" id="cams"></div>
 
       <div class="sec" style="margin-top:18px"><h2>World state</h2></div>
@@ -395,8 +400,8 @@ BODY = r"""
           <div id="pcMoBox" style="margin-top:10px"></div></div>
       </div>
       <div class="hr"></div>
-      <div class="sec"><h2>Objects in frame</h2>
-        <span class="note">click to trace</span></div>
+      <div class="sec"><h2>Ground-truth objects</h2>
+        <span class="note">nuScenes annotations, not model output &middot; click to trace</span></div>
       <div class="objlist" id="objTable" style="max-height:420px"></div>
     </section>
 
@@ -483,60 +488,6 @@ BODY = r"""
         <div class="card pad"><div id="calPlot"></div></div>
         <div class="card pad"><div id="calBox"></div></div>
       </div>
-
-      <div class="hr"></div>
-      <div class="sec"><h2>VLM &mdash; BLIP captioning</h2>
-        <span class="note" id="blipNote"></span></div>
-      <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
-           id="blipArch"></div>
-      <div class="grid2">
-        <div class="card pad" style="grid-column:1/-1">
-          <div class="sec"><h2>This frame, all six cameras</h2>
-            <span class="note" id="blipFrame"></span></div>
-          <div id="blipNow"></div>
-          <div id="blipFocus" style="margin-top:12px"></div></div>
-        <div class="card pad" style="grid-column:1/-1"><div id="blipBox"></div></div>
-      </div>
-
-      <div class="hr"></div>
-      <div class="sec"><h2>VLM &mdash; scene description, trained here</h2>
-        <span class="note" id="vlmLocalNote"></span></div>
-      <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
-           id="vlmArch"></div>
-      <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>Training loss</h2></div>
-          <div id="vlmCurve"></div></div>
-        <div class="card pad"><div class="sec"><h2>Scored against the labels</h2>
-          <span class="note">vs ignoring the image</span></div>
-          <table id="vlmScore"></table>
-          <div id="vlmWhy" style="margin-top:10px"></div></div>
-      </div>
-      <div class="card pad" style="margin-top:10px">
-        <div class="sec"><h2>Generated vs reference</h2>
-          <span class="note">click a row</span></div>
-        <div id="vlmEx"></div>
-        <div id="vlmFocus" style="margin-top:12px"></div></div>
-
-      <div class="hr"></div>
-      <div class="hr"></div>
-      <div class="sec"><h2>VLLM &mdash; vision-language reasoning</h2>
-        <span class="note" id="vgNote"></span></div>
-      <div class="mono" style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:10px"
-           id="vgArch"></div>
-      <div class="grid2">
-        <div class="card pad"><div class="sec"><h2>Training loss</h2></div>
-          <div id="vgCurve"></div></div>
-        <div class="card pad"><div class="sec"><h2>Hazard clause, scored</h2>
-          <span class="note">vulnerable road user within 20 m ahead</span></div>
-          <div id="vgHero"></div>
-          <table id="vgTable"></table>
-          <div id="vgBox" style="margin-top:10px"></div></div>
-      </div>
-      <div class="card pad" style="margin-top:10px">
-        <div class="sec"><h2>Most and least confident frames</h2>
-          <span class="note">click a row</span></div>
-        <div id="vgEx"></div>
-        <div id="vgFocus" style="margin-top:12px"></div></div>
     </section>
 
     <!-- ============ OBSERVABILITY ============ -->
@@ -641,7 +592,7 @@ BODY = r"""
   </div>
   <div id="iKv" style="margin-top:10px"></div>
   <div class="hr"></div>
-  <div class="lab" style="margin-bottom:6px">Objects in frame</div>
+  <div class="lab" style="margin-bottom:6px">Ground-truth objects &middot; nuScenes annotations</div>
   <div class="objlist" id="iList"></div>
 </aside>
 """
@@ -655,7 +606,7 @@ const PAGES = ["overview","architecture","perception","forecast","models","obser
 let fi = 0, ov = "boxes", wl = "bev", sel = null, timer = null;
 /* live state for the recomputed maps */
 let camOn = {}, trustUI = null, occThr = 0.65, rnPolicy = "latest_frame_seqlock";
-let RB_REPAINT = null, PROBED = false, BLIP_CAM = "CAM_FRONT";
+let RB_REPAINT = null, PROBED = false;
 
 const scenes = [...new Set(F.map(f => f.scene))];
 // Null-safe. A missing element used to throw on `.innerHTML =`, which aborted
@@ -933,9 +884,8 @@ function archData() {
       "IoU " + fx(g(g(lm.occupancy, "best", {}), "iou"), 3) + " · " + ade("T+1 (0.5s)"), "models"],
     ["l3", 476, 196, 128, ["Trajectory LM", "GPT-2 4.9M"], "--",
       g(g(g(tl.val_ade_m, "T+3 (1.5s)", {}), "gpt2_retrained_conditioned", {}), "ade_m", "--") + " m @T+3", "models"],
-    ["l4", 612, 196, 128, ["VLA · VLM", "projectors"],  "--",
-      (R.vlm_local_report ? "class " + R.vlm_local_report.results.nearest_object_class.vlm
-        : g(g(vla.val_ade_m, "6.0s", {}), "vla_gpt2_projector", "--") + " m"), "models"],
+    ["l4", 612, 196, 128, ["VLA", "projector"],        "--",
+      g(g(vla.val_ade_m, "6.0s", {}), "vla_gpt2_projector", "--") + " m", "models"],
     ["d1", 792, 196, 124, ["TorchScript"],              "--", "traced + frozen",        "runtime"],
     ["d2", 928, 196, 152, ["LibTorch", "runner"],
       (g(cp.inference_latency, "p50_ms", 0)).toFixed ? g(cp.inference_latency, "p50_ms", 0).toFixed(0) + " ms p50" : "--",
@@ -1278,7 +1228,7 @@ function draw() {
   $("#ovBevN").textContent = `${s.returns.toLocaleString()} returns · ${s.dynamic} dynamic`;
   $("#pcBevN").textContent = `${s.returns.toLocaleString()} returns · 10 sweeps · ${s.dynamic} dynamic`;
   $("#pcOccN").textContent = `${(F[fi].grids.occ_res).toFixed(2)} m cells · rendered live`;
-  $("#ovNote").textContent = `${s.boxes_observed} of ${s.boxes} annotated objects have LiDAR returns`;
+  $("#ovNote").textContent = `${s.boxes_observed} of ${s.boxes} ground-truth annotated objects have LiDAR returns`;
   $("#pcNote").textContent = `10 sweeps, ego-motion compensated to the current pose · ground plane tilt ${s.plane_tilt_deg}° · ${pc(s.ground_frac)} of returns are ground`;
 
   /* The hint bar. It reports the live selection instead of repeating a static
@@ -1400,35 +1350,6 @@ function draw() {
   objRows($("#iList"), f.objects, true);
   objRows($("#objTable"), f.objects, false);
 
-  /* BLIP's real captions for this keyframe, all six cameras. Generated offline
-     by scripts/vlm_scene_understanding.py against the weights on disk, so the
-     panel is never empty and never depends on the network. */
-  const bl = R.vlm_blip_report;
-  if (bl) {
-    const rec = bl.results.find(r => r.token === f.token);
-    $("#blipFrame").textContent = `${f.scene} · frame ${fi + 1} of ${F.length}`;
-    $("#blipNow").innerHTML = rec
-      ? `<div class="capgrid">` + CAMS.map(c =>
-          `<figure data-c="${c}"><img src="${f.cameras[c].plain}" alt="${c}">
-            <figcaption><div class="cam">${c.replace("CAM_", "")}</div>
-              <div class="txt">${rec.captions[c]}</div></figcaption></figure>`).join("") + `</div>`
-      : `<div class="d">no caption for this keyframe</div>`;
-    if (rec) {
-      const showCam = c => {
-        document.querySelectorAll("#blipNow figure").forEach(x =>
-          x.classList.toggle("on", x.dataset.c === c));
-        $("#blipFocus").innerHTML = `<div class="focus">
-          <img src="${f.cameras[c].plain}" alt="${c}">
-          <div><div class="lab">${c.replace("CAM_", "").replace("_", " ")}</div>
-            <div style="font-size:15px;line-height:1.5;margin-top:8px">${rec.captions[c]}</div>
-            <div class="mono" style="font-size:10.5px;color:var(--dim2);margin-top:10px">
-              generated by BLIP from this image alone &middot; ${f.scene}</div></div></div>`;
-      };
-      document.querySelectorAll("#blipNow figure").forEach(x =>
-        x.onclick = () => { BLIP_CAM = x.dataset.c; showCam(BLIP_CAM); });
-      showCam(BLIP_CAM);
-    }
-  }
 
   /* Per-camera: how much of what this camera's frustum covers is not occluded
      by something the LiDAR sees. Frame-dependent, so it lives in draw(). */
@@ -1658,97 +1579,6 @@ function fillStatic() {
       "scale it before trusting the number.");
   }
 
-  /* ---------- BLIP ---------- */
-  const blq = R.vlm_blip_report;
-  if (blq) {
-    $("#blipNote").textContent =
-      `${blq.captions} captions over ${blq.frames} keyframes · ${blq.device} · p50 ${blq.latency_ms.p50} ms`;
-    $("#blipArch").textContent = blq.model;
-    $("#blipBox").innerHTML = hero([
-      ["captions", blq.captions, blq.frames + " keyframes, 6 cameras"],
-      ["latency", blq.latency_ms.p50 + " ms", "per caption, " + blq.device],
-      ["parameters", "224M", "ViT-B/16 + text decoder"],
-    ]) + note("What BLIP is not", blq.what_it_is_not);
-  }
-
-  /* ---------- the repo's VLM path, trained locally ---------- */
-  const vl = R.vlm_local_report;
-  if (vl) {
-    $("#vlmLocalNote").textContent =
-      `${vl.train_samples} train / ${vl.val_samples} val · ${vl.steps} steps · ${vl.trainable_params_m}M trainable · vocab ${vl.vocab}`;
-    $("#vlmArch").textContent = vl.model;
-    if (vl.curve) $("#vlmCurve").innerHTML = linePlot([
-      { name: "train", col: "#4A5568", pts: vl.curve.map(c => [c[0], c[1]]) },
-      { name: "val (80 held out)", col: "var(--acc)", pts: vl.curve.map(c => [c[0], c[2]]) },
-    ], { dp: 1, y0: 0 });
-    const r = vl.results;
-    $("#vlmScore").innerHTML =
-      `<tr><th>claim</th><th>VLM</th><th>image ignored</th></tr>` +
-      [["nearest-object class", r.nearest_object_class.vlm, r.nearest_object_class.majority_caption, 1],
-       ["bearing", r.nearest_object_bearing.vlm, r.nearest_object_bearing.majority_caption, 1],
-       ["range (MAE, m)", r.nearest_object_range_mae_m.vlm, r.nearest_object_range_mae_m.majority_caption, 0],
-       ["object count (MAE)", r.object_count_mae.vlm, r.object_count_mae.majority_caption, 0]]
-      .map(([k, a, b, hi]) => `<tr><td>${k}</td>
-        <td class="${(hi ? a > b : a < b) ? "g" : "b"}">${a}</td>
-        <td class="d">${b}</td></tr>`).join("");
-    $("#vlmWhy").innerHTML = note("Why not BLIP", vl.why_not_blip);
-    $("#vlmEx").innerHTML = vl.examples.slice(0, 4).map(e =>
-      `<div class="exrow">${thumb(e.token)}
-        <div><div class="mono" style="font-size:10px;color:var(--dim2)">${e.scene}</div>
-        <div class="mono" style="font-size:11.5px;color:var(--acc);margin-top:3px">${e.generated}</div>
-        <div class="mono" style="font-size:11.5px;color:var(--dim)">${e.reference}</div></div></div>`).join("") +
-      `<div class="mono" style="font-size:10.5px;color:var(--dim2);padding-top:7px">
-        <span style="color:var(--acc)">generated</span> · <span>reference</span></div>`;
-    const rows = [...document.querySelectorAll("#vlmEx .exrow")];
-    rows.forEach((x, i) => x.onclick = () => {
-      rows.forEach(y => y.classList.remove("on")); x.classList.add("on");
-      exFocus($("#vlmFocus"), vl.examples[i]);
-    });
-    if (rows[0] && rows[0].onclick) rows[0].onclick();
-  }
-
-  /* ---------- VLLM: reasoning whose last clause is a decision ---------- */
-  const vg = R.vllm_report;
-  if (vg) {
-    const r = vg.results;
-    $("#vgNote").textContent =
-      `${vg.train_samples} train / ${vg.val_samples} val · ${vg.steps} steps · ${vg.trainable_params_m}M trainable`;
-    $("#vgArch").textContent = vg.model;
-    if (vg.curve) $("#vgCurve").innerHTML = linePlot([
-      { name: "train", col: "#4A5568", pts: vg.curve.map(c => [c[0], c[1]]) },
-      { name: "val (80 held out)", col: "var(--acc)", pts: vg.curve.map(c => [c[0], c[2]]) },
-    ], { dp: 1, y0: 0 });
-    $("#vgHero").innerHTML = hero([
-      ["F1", r.hazard_f1, "always-high baseline " + r.always_high_f1],
-      ["AUROC", r.hazard_auroc === null ? "--" : r.hazard_auroc, "on decoder confidence"],
-      ["base rate", r.base_rate, r.positives_in_val + " of " + r.val + " held out"],
-    ]);
-    const c = r.confusion;
-    $("#vgTable").innerHTML = `<tr><th></th><th>hazard present</th><th>absent</th></tr>` +
-      `<tr><td class="d">called high</td><td class="g">${c.tp}</td><td class="b">${c.fp}</td></tr>` +
-      `<tr><td class="d">called low</td><td class="b">${c.fn}</td><td class="g">${c.tn}</td></tr>` +
-      `<tr><td>precision</td><td colspan="2" class="a">${r.hazard_precision}</td></tr>` +
-      `<tr><td>recall</td><td colspan="2" class="a">${r.hazard_recall}</td></tr>`;
-    $("#vgBox").innerHTML = note("Why a sentence with a decision in it", vg.what);
-    $("#vgEx").innerHTML = vg.examples.map(e =>
-      `<div class="exrow">${thumb(e.token)}
-        <div><div class="mono" style="font-size:10px;color:var(--dim2)">${e.scene}
-          &nbsp;confidence ${e.hazard_confidence}
-          <span class="${e.correct ? "g" : "b"}">${e.correct ? "correct" : "wrong"}</span></div>
-        <div class="mono" style="font-size:11.5px;color:var(--acc);margin-top:3px">${e.generated}</div>
-        <div class="mono" style="font-size:11.5px;color:var(--dim)">${e.reference}</div></div></div>`).join("") +
-      `<div class="mono" style="font-size:10.5px;color:var(--dim2);padding-top:7px">
-        <span style="color:var(--acc)">generated</span> · <span>reference</span></div>`;
-    const vrows = [...document.querySelectorAll("#vgEx .exrow")];
-    vrows.forEach((x, i) => x.onclick = () => {
-      vrows.forEach(y => y.classList.remove("on")); x.classList.add("on");
-      const e = vg.examples[i];
-      exFocus($("#vgFocus"), e,
-        `&middot; hazard confidence ${e.hazard_confidence} &middot; ` +
-        `<span class="${e.correct ? "g" : "b"}">${e.correct ? "correct" : "wrong"}</span>`);
-    });
-    if (vrows[0] && vrows[0].onclick) vrows[0].onclick();
-  }
 
   const rbq = R.robustness_report, cpq = R.cpp_report;
 

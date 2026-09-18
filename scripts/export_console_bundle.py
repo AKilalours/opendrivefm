@@ -316,8 +316,7 @@ def main():
                  "vla_report", "robustness_report",
                  "trajlm_retrained_report", "kernel_bench_report",
                  "cpp_report", "perturbation_shots",
-                 "vlm_local_report", "calibration_report", "vllm_report",
-                 "vlm_blip_report", "device_report"):
+                 "calibration_report", "device_report"):
         p = ROOT / f"outputs/artifacts/{name}.json"
         if p.exists():
             d = json.loads(p.read_text())
@@ -331,7 +330,7 @@ def main():
     # image it came from is an assertion.
     rendered = {f["token"] for f in frames}
     want = set()
-    for name in ("vlm_local_report", "vllm_report", "vla_report"):
+    for name in ("vla_report",):
         for e in reports.get(name, {}).get("val_examples", []) or \
                  reports.get(name, {}).get("examples", []):
             t = e.get("token")

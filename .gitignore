@@ -107,3 +107,4 @@ cpp/integrity_case.bin
 cpp/build*/
 .tmp/
 !outputs/artifacts/device_report.json
+outputs/viz
