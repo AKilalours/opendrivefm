@@ -1861,3 +1861,124 @@ object-occluder ordering, which depends on solid angle rather than sampling.
 This is A10's lesson in a new costume: in a voxel world, a grazing surface
 looks like an occluder. It was caught here because 47.8% for the road was too
 large to be geometry.
+
+---
+
+## A30 -- the safety envelope. Can the cameras see far enough to stop? (19 Sep 2026)
+
+Decided **after** seeing data. Exploratory, deployment-facing.
+`scripts/eval/safety_envelope.py`. Full split, 5,869 frames with a measurable
+speed. No ground truth used at all.
+
+A benchmark asks how much of the scene was labelled correctly. A safety case
+asks how far ahead the stack has POSITIVELY VERIFIED the road is clear, and
+whether that is further than the distance it needs to stop. "Verified" means
+both halves: predicted free AND carrying camera evidence. A cell the model calls
+free with no camera on it is a guess, and a guess is not a clearance.
+
+Corridor 2.8 m wide, envelope 0.6 to 3.4 m above ground, obs >= 0.15 counts as
+observed, braking 4.0 m/s^2, d_stop = v^2 / 2a.
+
+    quantity                             p10    median     p90
+    near field unverifiable (m)          1.2       1.2     12.8
+    verified-free reach (m)             10.8      26.4     36.8
+    speed (m/s)                          0.0       5.6      9.8
+    stopping distance needed (m)         0.0       4.0     11.9
+
+    frames where reach < d_stop            2.7%   (160 of 5,869)
+    frames with no verified corridor       0.3%
+    corridor ends on an obstacle            95%
+    corridor ends on missing evidence        5%
+
+    by speed          frames   med reach   med d_stop   flagged
+    0-2 m/s            1,371        25.6          0.0      0.0%
+    2-5 m/s            1,197        20.8          1.8      0.1%
+    5-10 m/s           2,804        29.6          6.8      3.4%
+    10-15 m/s            497        31.2         14.8     13.1%
+
+**13.1% of frames above 10 m/s have less camera-verified clear road ahead than
+the distance the vehicle needs to stop.** One number, trackable per release,
+computable with no labels.
+
+### Two bugs found on the way, both from tuning discipline rather than luck
+
+**1. The envelope started inside the road.** `clear_from = 0.4 m` puts the first
+z level at k=3, and the measured height profile shows k=0,1,2 are 100% occupied
+(that is the road) and k=3 is still 54% road bleed. So the test was asking the
+ROAD to be free and reported **no verified corridor in 51.5% of frames**. The
+envelope now runs k=4..10, z = +0.6 to +3.4 m: above the surface, below
+overhead structure. Fixed after measuring the profile, not by sweeping the
+parameter until the answer improved.
+
+**2. First run instead of longest run.** With the envelope fixed, the median
+reach was still only 2.4 m while the corridor is ~95% verified out to 22 m.
+Cause: the run was taken from the first verified cell, which sits in the
+near-field band where coverage is marginal, so it broke immediately and never
+restarted. `render_hd.py` had already made this exact correction and it was not
+carried across. Longest run gives median 26.4 m.
+
+Both were caught by asking why a number was implausible, which is the rule this
+document exists to enforce. Neither was caught by a gate.
+
+### Limit, stated with the headline
+
+The corridor ends on an obstacle 95% of the time, which is correct behaviour --
+you stop before the vehicle in front. So `reach < d_stop` is a **screening**
+statistic, not a violation count: many flagged frames are ordinary car
+following at a legal gap. What it is good for is tracking the tail across
+releases, and for finding the frames where the ego is closing on something it
+cannot positively see past.
+
+---
+
+## A31 -- time to visibility. Occlusion with a clock on it. (19 Sep 2026)
+
+Decided **after** seeing data. Exploratory. New axis, camera-only, no
+re-inference. `scripts/eval/time_to_visibility.py`.
+
+Every occlusion number so far is a snapshot. A planner cannot act on "this cell
+is unseen"; it can act on how long that lasts, because the ego's own motion
+resolves most occlusions without anyone doing anything. Future observability
+maps are warped into the current ego frame through the recorded poses, so the
+question is about a place in the world, not an index in a grid. 8 keyframes of
+look-ahead = 4.0 s at 2 Hz. 600 frames, 260,954,085 blind voxels.
+
+Crucially the "on the ego's path" set is computed from the **actual future
+trajectory**, not from a straight-ahead assumption: a blind cell counts if a
+future ego pose puts the vehicle box on it.
+
+    time to visibility        all blind   share    on ego path   share
+    within 0.5 s             15,552,480    6.0%         86,747   17.6%
+    by 1.0 s                 10,352,880    4.0%        106,770   21.7%
+    by 2.0 s                 13,281,949    5.1%         93,744   19.0%
+    by 3.0 s                  8,434,347    3.2%         31,369    6.4%
+    by 4.0 s                  5,983,825    2.3%         18,177    3.7%
+    STILL BLIND after 4 s   207,348,604   79.5%        155,628   31.6%
+
+    per-frame median: 4.50 s over all blind cells
+                      1.90 s over cells the ego drives through
+
+### The finding
+
+**The blind volume splits cleanly by whether the ego is going there.** 79.5% of
+everything unseen is still unseen four seconds later -- that is building
+interiors, the far side of walls, space behind parked cars the ego never
+enters, and it does not matter. Restricted to cells the ego's own trajectory
+passes through, the picture inverts: **58.3% is revealed within two seconds**
+and the median is 1.90 s.
+
+But **31.6% of the ego's own path that is blind now is still blind four seconds
+later.** That is the number worth reporting. It is not resolved by driving; it
+is space the vehicle enters without ever having seen it.
+
+That sentence is a planning input, not a perception metric, and it is the form
+in which an occlusion measure becomes usable in a safety case: not "x% of the
+scene is occluded" but "x% of where I am about to be, I will never have seen".
+
+### Limits
+
+600 frames of 6,019. 4 s horizon is set by the 8-keyframe look-ahead at 2 Hz;
+sub-500 ms resolution is not available. tau = 0.10 was fixed before the run and
+not tuned. The ego box test is a 4.8 x 2.8 x 2.5 m volume around each future
+pose, which is the vehicle's own footprint and not a planned corridor with
+margin.
