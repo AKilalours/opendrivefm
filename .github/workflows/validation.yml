@@ -109,3 +109,21 @@ jobs:
           else
             echo "Gates correctly reject the known-bad baseline."
           fi
+
+  observability-gates:
+    name: Release gates on the observability artifacts (A12-A28)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Gates must pass on the committed artifacts
+        run: python scripts/ci/check_observability_gates.py
+      - name: Gates must REJECT a broken artifact
+        # Same principle as the release-gates job above. Each gate is fed a
+        # deliberately broken version of its own artifact and is required to
+        # fail on it. This caught a real overclaim: A23 stated the TRUST
+        # constant was "exactly" inert at 0.0000 when the stored value is 5e-6,
+        # a uint8 quantisation residual. The gate found it, not a human.
+        run: python scripts/ci/check_observability_gates.py --self-test

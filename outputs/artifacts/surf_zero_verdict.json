@@ -1,0 +1,435 @@
+{
+ "summary": {
+  "zeroed": 750022,
+  "out_of_fov": 14389,
+  "occluded": 276331,
+  "unexplained": 177,
+  "tested": 290897,
+  "pct_unexplained": 0.06084627892346776
+ },
+ "frames": [
+  {
+   "token": "4786b3c0d0a24c8b86b0676d32dd5919",
+   "tested": 5000,
+   "out": 160,
+   "occl": 4835,
+   "unexp": 5
+  },
+  {
+   "token": "938d0ee9763d44b6a01b7dbbe2240c85",
+   "tested": 5000,
+   "out": 160,
+   "occl": 4836,
+   "unexp": 4
+  },
+  {
+   "token": "a669c657a1f54e6a9a776003aeb66a72",
+   "tested": 5000,
+   "out": 449,
+   "occl": 4548,
+   "unexp": 3
+  },
+  {
+   "token": "5406def86e684bd5b01b2499c6e8670f",
+   "tested": 5000,
+   "out": 259,
+   "occl": 4738,
+   "unexp": 3
+  },
+  {
+   "token": "1ee6726a7f75445b8603980cb2bc20df",
+   "tested": 5000,
+   "out": 253,
+   "occl": 4741,
+   "unexp": 6
+  },
+  {
+   "token": "8b5a0e34f7644c9f88da061fbf85f3ea",
+   "tested": 5000,
+   "out": 193,
+   "occl": 4798,
+   "unexp": 9
+  },
+  {
+   "token": "a42bac399b4b4ee6ab8e6db527460646",
+   "tested": 5000,
+   "out": 190,
+   "occl": 4810,
+   "unexp": 0
+  },
+  {
+   "token": "b1b330a6fc98407eb43f9034f2095b63",
+   "tested": 5000,
+   "out": 205,
+   "occl": 4793,
+   "unexp": 2
+  },
+  {
+   "token": "a6711744e6774baabc4c50d0f8bc81be",
+   "tested": 5000,
+   "out": 414,
+   "occl": 4586,
+   "unexp": 0
+  },
+  {
+   "token": "37f843af00b54e36b5f57c9c93943c8d",
+   "tested": 5000,
+   "out": 144,
+   "occl": 4855,
+   "unexp": 1
+  },
+  {
+   "token": "dcbe451d383e450786aaad04ab9d3790",
+   "tested": 1934,
+   "out": 218,
+   "occl": 1714,
+   "unexp": 2
+  },
+  {
+   "token": "ed52e131d60e4e309cb0e9830ba337b7",
+   "tested": 5000,
+   "out": 266,
+   "occl": 4730,
+   "unexp": 4
+  },
+  {
+   "token": "97f6b5ff188c4efda270b04d93b953e5",
+   "tested": 5000,
+   "out": 223,
+   "occl": 4777,
+   "unexp": 0
+  },
+  {
+   "token": "371ea4a12b5d4785a1b0c95f288ffed4",
+   "tested": 5000,
+   "out": 187,
+   "occl": 4811,
+   "unexp": 2
+  },
+  {
+   "token": "4f8243ae6cbe4793aac0e0c96a1ae46a",
+   "tested": 5000,
+   "out": 214,
+   "occl": 4781,
+   "unexp": 5
+  },
+  {
+   "token": "e6bfcdee43b4427cbc511f3d9ab0b94d",
+   "tested": 5000,
+   "out": 253,
+   "occl": 4747,
+   "unexp": 0
+  },
+  {
+   "token": "fad2408ec620496882c5eac75d7226af",
+   "tested": 5000,
+   "out": 189,
+   "occl": 4810,
+   "unexp": 1
+  },
+  {
+   "token": "4b4c3bc538e64867a9712470e04d61cf",
+   "tested": 5000,
+   "out": 232,
+   "occl": 4762,
+   "unexp": 6
+  },
+  {
+   "token": "77f6617716654cfb8e313f0cd69e04a6",
+   "tested": 5000,
+   "out": 164,
+   "occl": 4830,
+   "unexp": 6
+  },
+  {
+   "token": "5c6c12c50bce465b983194d0ebe5a801",
+   "tested": 5000,
+   "out": 203,
+   "occl": 4797,
+   "unexp": 0
+  },
+  {
+   "token": "aca5ebf7f3c940dd91c2fab7d0e0f2f2",
+   "tested": 5000,
+   "out": 253,
+   "occl": 4737,
+   "unexp": 10
+  },
+  {
+   "token": "ae239c877672435abcdd6b538ab68b37",
+   "tested": 5000,
+   "out": 214,
+   "occl": 4782,
+   "unexp": 4
+  },
+  {
+   "token": "2f5de0aeca704127925cf8490ff5a21d",
+   "tested": 5000,
+   "out": 207,
+   "occl": 4791,
+   "unexp": 2
+  },
+  {
+   "token": "225aa2795d63442ebc496cd0c49d3bdb",
+   "tested": 5000,
+   "out": 242,
+   "occl": 4757,
+   "unexp": 1
+  },
+  {
+   "token": "a6f13e65dcd141bca7ffb425d7c6c8be",
+   "tested": 5000,
+   "out": 271,
+   "occl": 4723,
+   "unexp": 6
+  },
+  {
+   "token": "7e351605549547f8af19432917f23b73",
+   "tested": 5000,
+   "out": 204,
+   "occl": 4796,
+   "unexp": 0
+  },
+  {
+   "token": "29560e3766b241d281b8b85cdcd790e8",
+   "tested": 5000,
+   "out": 235,
+   "occl": 4760,
+   "unexp": 5
+  },
+  {
+   "token": "0dd58808673f401b8e1d54bc92f8f148",
+   "tested": 5000,
+   "out": 253,
+   "occl": 4746,
+   "unexp": 1
+  },
+  {
+   "token": "23cc2b1341714461966e86698c5e0194",
+   "tested": 5000,
+   "out": 180,
+   "occl": 4816,
+   "unexp": 4
+  },
+  {
+   "token": "8d265c91cc944ba790c09e74d2811d08",
+   "tested": 5000,
+   "out": 159,
+   "occl": 4836,
+   "unexp": 5
+  },
+  {
+   "token": "34dbd470ea9f457c974baa0bc2fc6173",
+   "tested": 5000,
+   "out": 261,
+   "occl": 4739,
+   "unexp": 0
+  },
+  {
+   "token": "c7a8c96025e346579d4149d27e232e20",
+   "tested": 5000,
+   "out": 275,
+   "occl": 4720,
+   "unexp": 5
+  },
+  {
+   "token": "4f0f533c84c4493599f2eb3a60882b16",
+   "tested": 5000,
+   "out": 537,
+   "occl": 4460,
+   "unexp": 3
+  },
+  {
+   "token": "954a8657284e48488048a7ca32e4d9e3",
+   "tested": 5000,
+   "out": 178,
+   "occl": 4816,
+   "unexp": 6
+  },
+  {
+   "token": "888402b3595e425fa2398eb3b650f010",
+   "tested": 5000,
+   "out": 168,
+   "occl": 4829,
+   "unexp": 3
+  },
+  {
+   "token": "392894fdef614dd99b3e8a46b7483b17",
+   "tested": 5000,
+   "out": 264,
+   "occl": 4735,
+   "unexp": 1
+  },
+  {
+   "token": "e0c4e822835f4a2e925dec94a835d5ab",
+   "tested": 5000,
+   "out": 360,
+   "occl": 4639,
+   "unexp": 1
+  },
+  {
+   "token": "48ba767f9b8248a5b6f6921182e053b4",
+   "tested": 5000,
+   "out": 105,
+   "occl": 4891,
+   "unexp": 4
+  },
+  {
+   "token": "dca60e243d2d423daf320e3f6593ed96",
+   "tested": 5000,
+   "out": 273,
+   "occl": 4727,
+   "unexp": 0
+  },
+  {
+   "token": "c2ce54c63d3c4460b0fe76857f1993d1",
+   "tested": 5000,
+   "out": 160,
+   "occl": 4839,
+   "unexp": 1
+  },
+  {
+   "token": "15fa345fae4c4cc1b387b0b27cfed9c2",
+   "tested": 5000,
+   "out": 244,
+   "occl": 4755,
+   "unexp": 1
+  },
+  {
+   "token": "925af658789c478eabee8e04ed1a04b9",
+   "tested": 5000,
+   "out": 252,
+   "occl": 4738,
+   "unexp": 10
+  },
+  {
+   "token": "745713b3baae4ea18de5c74eb4d06bb8",
+   "tested": 5000,
+   "out": 232,
+   "occl": 4767,
+   "unexp": 1
+  },
+  {
+   "token": "9851e24eeb8e40cf962e45b1975aff53",
+   "tested": 5000,
+   "out": 212,
+   "occl": 4783,
+   "unexp": 5
+  },
+  {
+   "token": "2beac07fddfa49f38f5380f1ae761d6d",
+   "tested": 5000,
+   "out": 232,
+   "occl": 4765,
+   "unexp": 3
+  },
+  {
+   "token": "b5cbf927fe0d47c39a9c1d1b05279c55",
+   "tested": 5000,
+   "out": 280,
+   "occl": 4720,
+   "unexp": 0
+  },
+  {
+   "token": "a860c02c06e54d9dbe83ce7b694f6c17",
+   "tested": 3631,
+   "out": 217,
+   "occl": 3410,
+   "unexp": 4
+  },
+  {
+   "token": "b211206072a8491dab37ca3965137daf",
+   "tested": 5000,
+   "out": 223,
+   "occl": 4774,
+   "unexp": 3
+  },
+  {
+   "token": "2ef0e6bf9db64ea9a824b147e3fd5ae8",
+   "tested": 5000,
+   "out": 335,
+   "occl": 4664,
+   "unexp": 1
+  },
+  {
+   "token": "e019f3b906734b6db807756748a4da2d",
+   "tested": 2642,
+   "out": 302,
+   "occl": 2338,
+   "unexp": 2
+  },
+  {
+   "token": "f10350b3e5fc46c2affd08a0cf8265c6",
+   "tested": 2690,
+   "out": 304,
+   "occl": 2380,
+   "unexp": 6
+  },
+  {
+   "token": "885aeed2512341ccbf84ca64d4e58ded",
+   "tested": 5000,
+   "out": 267,
+   "occl": 4729,
+   "unexp": 4
+  },
+  {
+   "token": "822fba03dd684437850a2f969a7fbfab",
+   "tested": 5000,
+   "out": 253,
+   "occl": 4745,
+   "unexp": 2
+  },
+  {
+   "token": "42bcae21690d4c27b3a0250c65d4dfbf",
+   "tested": 5000,
+   "out": 254,
+   "occl": 4743,
+   "unexp": 3
+  },
+  {
+   "token": "f25fac13b265470aa70b69a7ed8013cc",
+   "tested": 5000,
+   "out": 158,
+   "occl": 4839,
+   "unexp": 3
+  },
+  {
+   "token": "c752fd12565d48d598a8bfce5b0530ad",
+   "tested": 5000,
+   "out": 273,
+   "occl": 4726,
+   "unexp": 1
+  },
+  {
+   "token": "1ddf411ed34c4ea98f38ea96c792de67",
+   "tested": 5000,
+   "out": 304,
+   "occl": 4694,
+   "unexp": 2
+  },
+  {
+   "token": "a36ddb26940e4863bc8df270c2678b57",
+   "tested": 5000,
+   "out": 239,
+   "occl": 4758,
+   "unexp": 3
+  },
+  {
+   "token": "9e7b51a7c620418f9f37f0522e426410",
+   "tested": 5000,
+   "out": 284,
+   "occl": 4716,
+   "unexp": 0
+  },
+  {
+   "token": "3beeafdd56444e169d0eb3f10b029eb7",
+   "tested": 5000,
+   "out": 149,
+   "occl": 4849,
+   "unexp": 2
+  }
+ ],
+ "nstep": 420,
+ "seed": 0,
+ "per_frame_cap": 5000
+}

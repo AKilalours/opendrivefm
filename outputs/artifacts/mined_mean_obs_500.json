@@ -1,0 +1,3009 @@
+{
+ "signal": "mean_obs",
+ "description": "mean observability over predicted-occupied (low = suspect)",
+ "min_obstacle_columns": 200,
+ "n": 500,
+ "note": "ranked without ground truth; reproducible from mine.sqlite",
+ "frames": [
+  {
+   "token": "6472a43205b04837bdec2337e4f50100",
+   "scene": "scene-0921",
+   "value": 0.010956769809126854,
+   "obstacles": 1081
+  },
+  {
+   "token": "f4692d3fbdfc4d16b1f02590ad832b10",
+   "scene": "scene-0921",
+   "value": 0.013859047554433346,
+   "obstacles": 1065
+  },
+  {
+   "token": "617f64ebe44e429e8c3cc1036c2fb0ef",
+   "scene": "scene-0921",
+   "value": 0.014733120799064636,
+   "obstacles": 1108
+  },
+  {
+   "token": "39eacd4116b3499baf1bb28898064f3e",
+   "scene": "scene-0924",
+   "value": 0.016095537692308426,
+   "obstacles": 249
+  },
+  {
+   "token": "3be45164a35e465cbfbc3c20ef060718",
+   "scene": "scene-0003",
+   "value": 0.01679062470793724,
+   "obstacles": 1759
+  },
+  {
+   "token": "82d9b1119e244445a04d50dca994ed8c",
+   "scene": "scene-0924",
+   "value": 0.016912654042243958,
+   "obstacles": 248
+  },
+  {
+   "token": "3eada6f4b3e84f94866e87b8afabf26f",
+   "scene": "scene-1061",
+   "value": 0.0174097940325737,
+   "obstacles": 442
+  },
+  {
+   "token": "6713ca52f7c147d49176c1f24f74aade",
+   "scene": "scene-0931",
+   "value": 0.017517302185297012,
+   "obstacles": 517
+  },
+  {
+   "token": "aa08bd8260bd4cb5a342c2efb1afde0a",
+   "scene": "scene-0931",
+   "value": 0.01753818616271019,
+   "obstacles": 889
+  },
+  {
+   "token": "852e22dbdbbf422e99224c488d7618bf",
+   "scene": "scene-0921",
+   "value": 0.01813146471977234,
+   "obstacles": 984
+  },
+  {
+   "token": "331fa27d969c420597348566ae423e15",
+   "scene": "scene-1061",
+   "value": 0.01819736324250698,
+   "obstacles": 1331
+  },
+  {
+   "token": "4dc80584b51344059d5e333cb40f1762",
+   "scene": "scene-0924",
+   "value": 0.018926696851849556,
+   "obstacles": 926
+  },
+  {
+   "token": "a7458ca326894472972232431a4dec04",
+   "scene": "scene-0920",
+   "value": 0.019401848316192627,
+   "obstacles": 785
+  },
+  {
+   "token": "baf74406530343b3938586c496916614",
+   "scene": "scene-1061",
+   "value": 0.019458431750535965,
+   "obstacles": 619
+  },
+  {
+   "token": "6de811cd200e4e45b04f69a8924a377a",
+   "scene": "scene-0924",
+   "value": 0.01955488696694374,
+   "obstacles": 532
+  },
+  {
+   "token": "e4db4d536fc04863ac4edf48464bd80e",
+   "scene": "scene-0931",
+   "value": 0.019731780514121056,
+   "obstacles": 1567
+  },
+  {
+   "token": "5737334b9fb44d73966de08d87d34309",
+   "scene": "scene-0921",
+   "value": 0.019816076382994652,
+   "obstacles": 1210
+  },
+  {
+   "token": "f1b7b463072e4630b2c1d5ba8b6cd50b",
+   "scene": "scene-0104",
+   "value": 0.019910302013158798,
+   "obstacles": 1698
+  },
+  {
+   "token": "b67e66fd6b5540c8aa73ed2129af12c4",
+   "scene": "scene-1061",
+   "value": 0.019938519224524498,
+   "obstacles": 848
+  },
+  {
+   "token": "eae829edd807467f99fb077384bfc9c2",
+   "scene": "scene-0920",
+   "value": 0.019947007298469543,
+   "obstacles": 732
+  },
+  {
+   "token": "de18907d85164692bafbb4916484b9b9",
+   "scene": "scene-1073",
+   "value": 0.019985424354672432,
+   "obstacles": 873
+  },
+  {
+   "token": "093439cd1eb54b7d8091effef292386a",
+   "scene": "scene-0924",
+   "value": 0.019986994564533234,
+   "obstacles": 281
+  },
+  {
+   "token": "dd1015f9ccd8470690b405f7dd0bd021",
+   "scene": "scene-0920",
+   "value": 0.019988032057881355,
+   "obstacles": 410
+  },
+  {
+   "token": "2b7d769dbb254adba7274534d0b262ec",
+   "scene": "scene-0104",
+   "value": 0.020354706794023514,
+   "obstacles": 1675
+  },
+  {
+   "token": "eda45e041045428a90be43f94abbcbda",
+   "scene": "scene-0798",
+   "value": 0.020833391696214676,
+   "obstacles": 958
+  },
+  {
+   "token": "6de71c9651024035831674a178e65de9",
+   "scene": "scene-0915",
+   "value": 0.02093113213777542,
+   "obstacles": 963
+  },
+  {
+   "token": "52ee039a8a97433987bba833d15396ab",
+   "scene": "scene-1059",
+   "value": 0.02106180414557457,
+   "obstacles": 223
+  },
+  {
+   "token": "bcb4f1b8e8af4cbd855f89096d822e69",
+   "scene": "scene-0971",
+   "value": 0.02115785889327526,
+   "obstacles": 2797
+  },
+  {
+   "token": "b0415129874746caa11b0985a4a65dc6",
+   "scene": "scene-1073",
+   "value": 0.02119699865579605,
+   "obstacles": 746
+  },
+  {
+   "token": "15dc560680ac404fa5bb2705da1f131b",
+   "scene": "scene-0917",
+   "value": 0.021382231265306473,
+   "obstacles": 769
+  },
+  {
+   "token": "deeb650a84054a07917eb84e21a358de",
+   "scene": "scene-0907",
+   "value": 0.021384716033935547,
+   "obstacles": 1185
+  },
+  {
+   "token": "643644c758904260b1f840cc82e669bb",
+   "scene": "scene-1073",
+   "value": 0.0213885810226202,
+   "obstacles": 925
+  },
+  {
+   "token": "e9e1871dddf94ba7ba46a76dcf027bab",
+   "scene": "scene-0907",
+   "value": 0.021586177870631218,
+   "obstacles": 1285
+  },
+  {
+   "token": "29ac0fcfafd84f309c87aadf3115c950",
+   "scene": "scene-1073",
+   "value": 0.021729523316025734,
+   "obstacles": 1046
+  },
+  {
+   "token": "cbd9af2921154c46bf9a5da785624d5f",
+   "scene": "scene-0915",
+   "value": 0.021843690425157547,
+   "obstacles": 1026
+  },
+  {
+   "token": "0369bccd1def49f19ac972aaba5c3228",
+   "scene": "scene-0931",
+   "value": 0.021851228550076485,
+   "obstacles": 1315
+  },
+  {
+   "token": "9fc32f878bfc48e7917b5f24db487cc9",
+   "scene": "scene-0931",
+   "value": 0.02189743146300316,
+   "obstacles": 588
+  },
+  {
+   "token": "c2ca0236b2994dd8973b0aa94b126df6",
+   "scene": "scene-0966",
+   "value": 0.021900370717048645,
+   "obstacles": 1954
+  },
+  {
+   "token": "ca68f0367d7749bba32868d90d1288cd",
+   "scene": "scene-1073",
+   "value": 0.021909231320023537,
+   "obstacles": 1011
+  },
+  {
+   "token": "34212679eebc468588142146837da4fe",
+   "scene": "scene-0907",
+   "value": 0.021958431228995323,
+   "obstacles": 998
+  },
+  {
+   "token": "4f7763e7f02e49d59f70e8fab4691d91",
+   "scene": "scene-0920",
+   "value": 0.021990923210978508,
+   "obstacles": 606
+  },
+  {
+   "token": "8f96ab01c9ee4e088cff0e50c294ed05",
+   "scene": "scene-1073",
+   "value": 0.02200140617787838,
+   "obstacles": 868
+  },
+  {
+   "token": "bd608be2ea8d4d0bac3a691bdcb20f08",
+   "scene": "scene-0907",
+   "value": 0.022066988050937653,
+   "obstacles": 1248
+  },
+  {
+   "token": "35fc331288cb4cd4aa8728034bac094f",
+   "scene": "scene-0931",
+   "value": 0.022111807018518448,
+   "obstacles": 398
+  },
+  {
+   "token": "9f545f2c3235455294cb98e22a39e831",
+   "scene": "scene-1073",
+   "value": 0.02220415137708187,
+   "obstacles": 1003
+  },
+  {
+   "token": "25b4e002a244407ea170d9c8e615261d",
+   "scene": "scene-0798",
+   "value": 0.02240961417555809,
+   "obstacles": 980
+  },
+  {
+   "token": "f4b1ff821cd14167982fba7851838bd5",
+   "scene": "scene-0917",
+   "value": 0.02243337221443653,
+   "obstacles": 1123
+  },
+  {
+   "token": "bedc3f80d8884ae6a0acda354cd795a1",
+   "scene": "scene-0907",
+   "value": 0.022447625175118446,
+   "obstacles": 1179
+  },
+  {
+   "token": "c5c737b50cf84feb97cba50280fee645",
+   "scene": "scene-0915",
+   "value": 0.022450745105743408,
+   "obstacles": 1272
+  },
+  {
+   "token": "ce89081ab6de4d0c92c33f910c0db5f1",
+   "scene": "scene-1073",
+   "value": 0.022474588826298714,
+   "obstacles": 823
+  },
+  {
+   "token": "42060e0081f249d7bcb5d2a0aa4e980a",
+   "scene": "scene-1061",
+   "value": 0.022501539438962936,
+   "obstacles": 222
+  },
+  {
+   "token": "d20f18baff6d46ad9bff2783474d2cf2",
+   "scene": "scene-0907",
+   "value": 0.022663485258817673,
+   "obstacles": 1033
+  },
+  {
+   "token": "6ca201edb2ec4a49aa6dee2502640f30",
+   "scene": "scene-0798",
+   "value": 0.022771600633859634,
+   "obstacles": 870
+  },
+  {
+   "token": "01963bcec49d4fceb084713049217422",
+   "scene": "scene-0778",
+   "value": 0.02284953184425831,
+   "obstacles": 296
+  },
+  {
+   "token": "5622886f3e7e427fbcb0243cf664afe9",
+   "scene": "scene-1072",
+   "value": 0.022881727665662766,
+   "obstacles": 335
+  },
+  {
+   "token": "b79c1cac9b7a4dc6a7e08e298be2e18a",
+   "scene": "scene-0971",
+   "value": 0.022961242124438286,
+   "obstacles": 2853
+  },
+  {
+   "token": "99df68e72fe14d91b11c4ba652c55214",
+   "scene": "scene-0907",
+   "value": 0.022962801158428192,
+   "obstacles": 848
+  },
+  {
+   "token": "caa701c185b94d9f948883bd65be2cd3",
+   "scene": "scene-1061",
+   "value": 0.023007195442914963,
+   "obstacles": 560
+  },
+  {
+   "token": "2c167c0154954b56aefd7e0eceaa72a0",
+   "scene": "scene-0971",
+   "value": 0.023036768659949303,
+   "obstacles": 3217
+  },
+  {
+   "token": "57a79294b87e4b55a7bcf58f7f8c6326",
+   "scene": "scene-0003",
+   "value": 0.023194411769509315,
+   "obstacles": 2133
+  },
+  {
+   "token": "0f1d636d7dc84c90b69d039dac4404f6",
+   "scene": "scene-0907",
+   "value": 0.02345084957778454,
+   "obstacles": 1444
+  },
+  {
+   "token": "a1109d0a808d499bad37e7a777ff4ac8",
+   "scene": "scene-0908",
+   "value": 0.023548603057861328,
+   "obstacles": 965
+  },
+  {
+   "token": "cfd0153634544510862f7430ff3ee89d",
+   "scene": "scene-0908",
+   "value": 0.023577386513352394,
+   "obstacles": 925
+  },
+  {
+   "token": "7ff89b70dc764d9b98b84e5e2a3e5d44",
+   "scene": "scene-0778",
+   "value": 0.023593781515955925,
+   "obstacles": 342
+  },
+  {
+   "token": "4518c3b25dc5423cb72619bcad0d7091",
+   "scene": "scene-1073",
+   "value": 0.02361697144806385,
+   "obstacles": 783
+  },
+  {
+   "token": "127c5ddf95e947ef96888e56d5a355f6",
+   "scene": "scene-1073",
+   "value": 0.02363271825015545,
+   "obstacles": 683
+  },
+  {
+   "token": "93013c31a7504147a9396583a40d545a",
+   "scene": "scene-0778",
+   "value": 0.023635128512978554,
+   "obstacles": 303
+  },
+  {
+   "token": "cee883729e3545c28aff734573ebc672",
+   "scene": "scene-0778",
+   "value": 0.023643972352147102,
+   "obstacles": 313
+  },
+  {
+   "token": "cef359e1c05b416caaa25c7153269bad",
+   "scene": "scene-0924",
+   "value": 0.023679791018366814,
+   "obstacles": 931
+  },
+  {
+   "token": "c69a8d12362d408eba32a41821cecc30",
+   "scene": "scene-0778",
+   "value": 0.02368994615972042,
+   "obstacles": 386
+  },
+  {
+   "token": "9bccf886ed0e4f0cb18a557f0104b024",
+   "scene": "scene-1073",
+   "value": 0.023704487830400467,
+   "obstacles": 740
+  },
+  {
+   "token": "485c78dbfed04fd5a6aad2a88b116fe9",
+   "scene": "scene-0778",
+   "value": 0.02374604158103466,
+   "obstacles": 300
+  },
+  {
+   "token": "ebd128c8164943538f360f11c10e26d5",
+   "scene": "scene-0907",
+   "value": 0.0237948689609766,
+   "obstacles": 1257
+  },
+  {
+   "token": "604687c178ca4b6c898a34f8099db469",
+   "scene": "scene-0924",
+   "value": 0.023858193308115005,
+   "obstacles": 1416
+  },
+  {
+   "token": "f540699e07cf47d8bddeb1f0227a7417",
+   "scene": "scene-0018",
+   "value": 0.023866787552833557,
+   "obstacles": 2140
+  },
+  {
+   "token": "10103847ab7d4b1db6c1c046c9e38097",
+   "scene": "scene-0908",
+   "value": 0.023917164653539658,
+   "obstacles": 959
+  },
+  {
+   "token": "8eb1acd378fb46638ab0b5c1e7e2f6b4",
+   "scene": "scene-0908",
+   "value": 0.02393048070371151,
+   "obstacles": 911
+  },
+  {
+   "token": "2dd792df5d5b4a6582ca375721c8b1f9",
+   "scene": "scene-0775",
+   "value": 0.023938901722431183,
+   "obstacles": 526
+  },
+  {
+   "token": "3894f0cc4ccb4530ad440951da061b97",
+   "scene": "scene-0908",
+   "value": 0.024002159014344215,
+   "obstacles": 708
+  },
+  {
+   "token": "6a6524079ac745b18acdb79283e454e6",
+   "scene": "scene-0798",
+   "value": 0.024006212130188942,
+   "obstacles": 698
+  },
+  {
+   "token": "913104aa7a4f4917a651fdc062c7fc30",
+   "scene": "scene-1059",
+   "value": 0.024033712223172188,
+   "obstacles": 235
+  },
+  {
+   "token": "2c5f99c59c044c589d103464a24214d9",
+   "scene": "scene-0775",
+   "value": 0.024121031165122986,
+   "obstacles": 542
+  },
+  {
+   "token": "7d9d76585f0d4af98e44a09f71ca6c0a",
+   "scene": "scene-1072",
+   "value": 0.02413909323513508,
+   "obstacles": 351
+  },
+  {
+   "token": "c282419dd0d94aefab995f18ff0e179d",
+   "scene": "scene-1059",
+   "value": 0.024146191775798798,
+   "obstacles": 379
+  },
+  {
+   "token": "3b13fe046aa44c4da7fef27ff28312c6",
+   "scene": "scene-0908",
+   "value": 0.024247467517852783,
+   "obstacles": 862
+  },
+  {
+   "token": "50f3fb5000ae4f6cbbe9cf0bc83d3bc5",
+   "scene": "scene-0966",
+   "value": 0.024304809048771858,
+   "obstacles": 1371
+  },
+  {
+   "token": "a4782f7ade234010b5b50553403f6e79",
+   "scene": "scene-0908",
+   "value": 0.024309368804097176,
+   "obstacles": 925
+  },
+  {
+   "token": "ed10780136f34011b35e1aaa1d8fb1e5",
+   "scene": "scene-0907",
+   "value": 0.024317942559719086,
+   "obstacles": 1301
+  },
+  {
+   "token": "bc5bcc4d1ff549858613e15e46ffd76b",
+   "scene": "scene-1072",
+   "value": 0.02433137223124504,
+   "obstacles": 354
+  },
+  {
+   "token": "3de1d789fd004720bcef0a42d47c1159",
+   "scene": "scene-0908",
+   "value": 0.02436830848455429,
+   "obstacles": 901
+  },
+  {
+   "token": "f224f2685d184030bb959faeba154abe",
+   "scene": "scene-0907",
+   "value": 0.024372225627303123,
+   "obstacles": 915
+  },
+  {
+   "token": "fe335dcb8626478598c55129548ee552",
+   "scene": "scene-0907",
+   "value": 0.02441275864839554,
+   "obstacles": 859
+  },
+  {
+   "token": "f0481221263c4f9cb7045c36723a09ea",
+   "scene": "scene-0907",
+   "value": 0.02445082738995552,
+   "obstacles": 1297
+  },
+  {
+   "token": "dce96ecc45f84501bb97475861516f1e",
+   "scene": "scene-0921",
+   "value": 0.024580614641308784,
+   "obstacles": 1124
+  },
+  {
+   "token": "6fa648b737424bb3bfbbc61a4793b93f",
+   "scene": "scene-0907",
+   "value": 0.024622881785035133,
+   "obstacles": 883
+  },
+  {
+   "token": "3a6813d02e3140e490af5b68903f494e",
+   "scene": "scene-0908",
+   "value": 0.02463635988533497,
+   "obstacles": 921
+  },
+  {
+   "token": "018ef7dd170d41788a969e5b7213a058",
+   "scene": "scene-0917",
+   "value": 0.02468443103134632,
+   "obstacles": 1173
+  },
+  {
+   "token": "415d154bbb1347919b340b21903e603e",
+   "scene": "scene-0971",
+   "value": 0.024694738909602165,
+   "obstacles": 3165
+  },
+  {
+   "token": "fb33aa6627c141dc92906f774e75c711",
+   "scene": "scene-0924",
+   "value": 0.02470606565475464,
+   "obstacles": 948
+  },
+  {
+   "token": "d527bdde872340a383de3a7cf3979e7d",
+   "scene": "scene-1073",
+   "value": 0.024855805560946465,
+   "obstacles": 799
+  },
+  {
+   "token": "c1484411d42c4c069003e547b7f22eb5",
+   "scene": "scene-0907",
+   "value": 0.024913661181926727,
+   "obstacles": 872
+  },
+  {
+   "token": "f8ac246e0b284f7b8c9f17c9649a95e9",
+   "scene": "scene-1059",
+   "value": 0.024919332936406136,
+   "obstacles": 438
+  },
+  {
+   "token": "107ac5a9705f400f8e7bcc61a068d546",
+   "scene": "scene-0924",
+   "value": 0.024921661242842674,
+   "obstacles": 1190
+  },
+  {
+   "token": "73ac66237c854ee69fc29e9b24860e41",
+   "scene": "scene-0018",
+   "value": 0.0249309204518795,
+   "obstacles": 1757
+  },
+  {
+   "token": "0a4e46a98e424bf1a9b79800a6114868",
+   "scene": "scene-0908",
+   "value": 0.025040801614522934,
+   "obstacles": 808
+  },
+  {
+   "token": "08431948b9ab44978a5034708dd8337d",
+   "scene": "scene-1073",
+   "value": 0.02513468824326992,
+   "obstacles": 845
+  },
+  {
+   "token": "1557b3d3016249b79891e2992c06390d",
+   "scene": "scene-0907",
+   "value": 0.025189222767949104,
+   "obstacles": 844
+  },
+  {
+   "token": "d5173a8c31584f1b87d4ad15cbe1530a",
+   "scene": "scene-1059",
+   "value": 0.025247396901249886,
+   "obstacles": 335
+  },
+  {
+   "token": "b742d3b3d971467d9d87705ca5abb3f4",
+   "scene": "scene-0908",
+   "value": 0.025279022753238678,
+   "obstacles": 748
+  },
+  {
+   "token": "4d8eef668db34741b42f8ec4c9a95354",
+   "scene": "scene-0924",
+   "value": 0.025363506749272346,
+   "obstacles": 1053
+  },
+  {
+   "token": "00185acff6094c4da3858d78bf462b94",
+   "scene": "scene-0524",
+   "value": 0.025391319766640663,
+   "obstacles": 3617
+  },
+  {
+   "token": "4f6e4231ae104454aa005da358b77fd6",
+   "scene": "scene-1073",
+   "value": 0.025408783927559853,
+   "obstacles": 903
+  },
+  {
+   "token": "c3cbd08daa714dc4922236d8e224e562",
+   "scene": "scene-1059",
+   "value": 0.025415584444999695,
+   "obstacles": 1451
+  },
+  {
+   "token": "ba22ee94c0b04c69aca0a5171a8e9863",
+   "scene": "scene-0018",
+   "value": 0.025489626452326775,
+   "obstacles": 1858
+  },
+  {
+   "token": "a0edf6edd121431785948038c54e036e",
+   "scene": "scene-0003",
+   "value": 0.02557920478284359,
+   "obstacles": 2014
+  },
+  {
+   "token": "7368f9a60ca84a549ef52deaa0b2196e",
+   "scene": "scene-0907",
+   "value": 0.02558528631925583,
+   "obstacles": 840
+  },
+  {
+   "token": "dbffcc96729b420380ace0e08ad587d5",
+   "scene": "scene-0018",
+   "value": 0.02561618573963642,
+   "obstacles": 2139
+  },
+  {
+   "token": "586f3a3fa01f47cfbb9fb38e84622aa3",
+   "scene": "scene-0966",
+   "value": 0.025621499866247177,
+   "obstacles": 1530
+  },
+  {
+   "token": "9fbcde13d96b43a8aee0f76aee3bfc65",
+   "scene": "scene-0018",
+   "value": 0.02568606100976467,
+   "obstacles": 1367
+  },
+  {
+   "token": "87eb02bfe23642bb9004c086587749b8",
+   "scene": "scene-0915",
+   "value": 0.025716546922922134,
+   "obstacles": 1212
+  },
+  {
+   "token": "cce9a0212eb1444696e2decbc95a015e",
+   "scene": "scene-0915",
+   "value": 0.02574344165623188,
+   "obstacles": 1185
+  },
+  {
+   "token": "30507c7761c048c896dc0185e855fd62",
+   "scene": "scene-0907",
+   "value": 0.025821536779403687,
+   "obstacles": 828
+  },
+  {
+   "token": "c6d18bda94224330b898c3c2ff32fa74",
+   "scene": "scene-1062",
+   "value": 0.02585098333656788,
+   "obstacles": 751
+  },
+  {
+   "token": "a1f3ed12220f4c10995f180ba3a34d21",
+   "scene": "scene-1065",
+   "value": 0.025911970064044,
+   "obstacles": 323
+  },
+  {
+   "token": "05a52b4458b84a9e8b66bfc7939ec5a1",
+   "scene": "scene-0638",
+   "value": 0.025943947955965996,
+   "obstacles": 1296
+  },
+  {
+   "token": "824c67e0689942f78236a783e2364506",
+   "scene": "scene-0924",
+   "value": 0.02597537450492382,
+   "obstacles": 1131
+  },
+  {
+   "token": "07bcc61f6ab14d0bb77d5b99ea44d4e7",
+   "scene": "scene-1073",
+   "value": 0.02599375508725643,
+   "obstacles": 901
+  },
+  {
+   "token": "e44d74c628fb409a80ea47d93da771d4",
+   "scene": "scene-1073",
+   "value": 0.02600601501762867,
+   "obstacles": 797
+  },
+  {
+   "token": "b85450b2361b42ce8ef41708ab5e3e45",
+   "scene": "scene-1073",
+   "value": 0.026094716042280197,
+   "obstacles": 764
+  },
+  {
+   "token": "171a761e6314498b90360e2c4685cfd0",
+   "scene": "scene-0638",
+   "value": 0.026105623692274094,
+   "obstacles": 1196
+  },
+  {
+   "token": "15e3c606ce914cb9a30c3ea7747a1779",
+   "scene": "scene-1068",
+   "value": 0.02613161690533161,
+   "obstacles": 288
+  },
+  {
+   "token": "0c9156e58a364388873e4628496c1a21",
+   "scene": "scene-0924",
+   "value": 0.02617991529405117,
+   "obstacles": 1007
+  },
+  {
+   "token": "90162f90eceb4ada9e595bc1adb71b5f",
+   "scene": "scene-0104",
+   "value": 0.026445362716913223,
+   "obstacles": 1602
+  },
+  {
+   "token": "b660b9573c9e46b086245e5c23ccf7fe",
+   "scene": "scene-0092",
+   "value": 0.02645905874669552,
+   "obstacles": 1262
+  },
+  {
+   "token": "c11fe9bca8244a36b2749a7627d2addb",
+   "scene": "scene-0908",
+   "value": 0.026531977578997612,
+   "obstacles": 752
+  },
+  {
+   "token": "2b2c6baf12644756925596ebe2a9af2c",
+   "scene": "scene-0798",
+   "value": 0.026581143960356712,
+   "obstacles": 840
+  },
+  {
+   "token": "a669c657a1f54e6a9a776003aeb66a72",
+   "scene": "scene-1073",
+   "value": 0.026633255183696747,
+   "obstacles": 1067
+  },
+  {
+   "token": "8c5e199766d04d86a16e4fb9e64f44e1",
+   "scene": "scene-0907",
+   "value": 0.026695217937231064,
+   "obstacles": 1180
+  },
+  {
+   "token": "4dad239b9fc048f7a6e69e2ba45b35b1",
+   "scene": "scene-1073",
+   "value": 0.026701737195253372,
+   "obstacles": 1108
+  },
+  {
+   "token": "b4924d5006054417b5edbe886cb2c5a1",
+   "scene": "scene-0924",
+   "value": 0.02676975354552269,
+   "obstacles": 892
+  },
+  {
+   "token": "4b9c69d6449a4274bd955f769fa6f400",
+   "scene": "scene-0917",
+   "value": 0.026844879612326622,
+   "obstacles": 1484
+  },
+  {
+   "token": "bb963264d4ef4e6fa80d4f10bb8b2dfa",
+   "scene": "scene-0915",
+   "value": 0.026862485334277153,
+   "obstacles": 1346
+  },
+  {
+   "token": "fa0391dcc3dd4dbbaa29cbafbea7bbf0",
+   "scene": "scene-0907",
+   "value": 0.026873640716075897,
+   "obstacles": 1223
+  },
+  {
+   "token": "be34a4c97cbd48a0a841bc6176b7f3b0",
+   "scene": "scene-0925",
+   "value": 0.02690584398806095,
+   "obstacles": 706
+  },
+  {
+   "token": "c867c2092b554a5fb7a7db226dd7926a",
+   "scene": "scene-1059",
+   "value": 0.026925602927803993,
+   "obstacles": 348
+  },
+  {
+   "token": "70fef2d1874f4a4197bcc6ce86fe9845",
+   "scene": "scene-0966",
+   "value": 0.02702276222407818,
+   "obstacles": 1906
+  },
+  {
+   "token": "5a1272e987804ae4b2f521669bb60fa8",
+   "scene": "scene-0907",
+   "value": 0.02707584574818611,
+   "obstacles": 823
+  },
+  {
+   "token": "6b2940c61a9840fe85adff941ad9830f",
+   "scene": "scene-1065",
+   "value": 0.027101587504148483,
+   "obstacles": 272
+  },
+  {
+   "token": "0dc3d1fb0dcd4e19a2b8f6a32c9ebdcc",
+   "scene": "scene-0907",
+   "value": 0.027208253741264343,
+   "obstacles": 798
+  },
+  {
+   "token": "2b78a8099c93418097ce1f2807e23618",
+   "scene": "scene-0917",
+   "value": 0.027289865538477898,
+   "obstacles": 484
+  },
+  {
+   "token": "f5e6b52a7d734e6cb9a8a31cc4da0342",
+   "scene": "scene-0924",
+   "value": 0.027308102697134018,
+   "obstacles": 1390
+  },
+  {
+   "token": "9f5cb220fe7e4702a9b8033347a03755",
+   "scene": "scene-0798",
+   "value": 0.027365537360310555,
+   "obstacles": 855
+  },
+  {
+   "token": "c54d5bb693884c459e245a0abd3e4952",
+   "scene": "scene-0908",
+   "value": 0.0274184737354517,
+   "obstacles": 759
+  },
+  {
+   "token": "261e4db3a18c4c23944f61bd6e51cf0c",
+   "scene": "scene-0012",
+   "value": 0.02749532088637352,
+   "obstacles": 232
+  },
+  {
+   "token": "dff6bea8d6b443548193449a5982f11d",
+   "scene": "scene-0921",
+   "value": 0.02753572165966034,
+   "obstacles": 1162
+  },
+  {
+   "token": "82f21b3a1e094ab3bfaced9fc03c422c",
+   "scene": "scene-1059",
+   "value": 0.027566291391849518,
+   "obstacles": 343
+  },
+  {
+   "token": "5448c4ae531944f3af9ac5d78154ed8d",
+   "scene": "scene-0775",
+   "value": 0.0275729913264513,
+   "obstacles": 649
+  },
+  {
+   "token": "d5bb04067c2a4291ae9e4be38c093427",
+   "scene": "scene-1059",
+   "value": 0.0276542566716671,
+   "obstacles": 296
+  },
+  {
+   "token": "f9e3162f45db4bf5bc7f9360a831d2e4",
+   "scene": "scene-0092",
+   "value": 0.027687372639775276,
+   "obstacles": 899
+  },
+  {
+   "token": "b9507f86eb3547bd9a5c387b42f156cc",
+   "scene": "scene-1064",
+   "value": 0.027733847498893738,
+   "obstacles": 418
+  },
+  {
+   "token": "40fb1386a6374d769fcb591bf8f6bf42",
+   "scene": "scene-1073",
+   "value": 0.02775162272155285,
+   "obstacles": 934
+  },
+  {
+   "token": "37d315c9932449ac8eeb9180c7be0f47",
+   "scene": "scene-1062",
+   "value": 0.02777760662138462,
+   "obstacles": 299
+  },
+  {
+   "token": "1c8ec6c1dd614d3fb8b8849dc8756a9a",
+   "scene": "scene-0003",
+   "value": 0.027819916605949402,
+   "obstacles": 2309
+  },
+  {
+   "token": "0818e13a198143d3aef3b769a2e3136d",
+   "scene": "scene-0915",
+   "value": 0.027832772582769394,
+   "obstacles": 1451
+  },
+  {
+   "token": "005cfc5e77bc4b60a28499a1fed536c5",
+   "scene": "scene-0915",
+   "value": 0.027858775109052658,
+   "obstacles": 1418
+  },
+  {
+   "token": "6621ea99f14447fdab044d69eac8062a",
+   "scene": "scene-0924",
+   "value": 0.027879027649760246,
+   "obstacles": 1029
+  },
+  {
+   "token": "cee03d13cb99494b9fdadc0eaa118b61",
+   "scene": "scene-0798",
+   "value": 0.02788003720343113,
+   "obstacles": 426
+  },
+  {
+   "token": "7c05d013f2eb41d38ce85f4d2ec94e07",
+   "scene": "scene-0931",
+   "value": 0.027896519750356674,
+   "obstacles": 1934
+  },
+  {
+   "token": "049cb10452884d49a9ed95336af17edf",
+   "scene": "scene-0971",
+   "value": 0.0279178936034441,
+   "obstacles": 2746
+  },
+  {
+   "token": "9944b1650c314ad795338f01da85afce",
+   "scene": "scene-0778",
+   "value": 0.027918480336666107,
+   "obstacles": 373
+  },
+  {
+   "token": "c9f335e714c843ac8110c6ce5910adec",
+   "scene": "scene-0924",
+   "value": 0.02794465608894825,
+   "obstacles": 944
+  },
+  {
+   "token": "cabb6f0c0dbc43bab5cd624bfd6714ef",
+   "scene": "scene-0638",
+   "value": 0.027948061004281044,
+   "obstacles": 1116
+  },
+  {
+   "token": "35afe50d131847739f3221c6ffb88d42",
+   "scene": "scene-0915",
+   "value": 0.02796008624136448,
+   "obstacles": 2381
+  },
+  {
+   "token": "cce6922361124fd0b4c5f28acf78d65d",
+   "scene": "scene-1064",
+   "value": 0.027966680005192757,
+   "obstacles": 680
+  },
+  {
+   "token": "d7b4858ce9444b188b376f09e3ad418a",
+   "scene": "scene-0920",
+   "value": 0.02801840752363205,
+   "obstacles": 501
+  },
+  {
+   "token": "3fa66f73ad3b4e719b1e929c3e8a1db7",
+   "scene": "scene-1073",
+   "value": 0.028038011863827705,
+   "obstacles": 872
+  },
+  {
+   "token": "75023dda46de40c3953a0a67a31de816",
+   "scene": "scene-0092",
+   "value": 0.028082922101020813,
+   "obstacles": 1211
+  },
+  {
+   "token": "6918d5fada954962ba530eab9373afea",
+   "scene": "scene-0638",
+   "value": 0.028091438114643097,
+   "obstacles": 1069
+  },
+  {
+   "token": "35e0c40a65f947c886ed3585d72a37f3",
+   "scene": "scene-0931",
+   "value": 0.028110967949032784,
+   "obstacles": 1021
+  },
+  {
+   "token": "86a69236763d42bf9da6247b8bcd88bb",
+   "scene": "scene-0907",
+   "value": 0.02811560034751892,
+   "obstacles": 1241
+  },
+  {
+   "token": "ac6670acd3054a0cb075fa248f036cbc",
+   "scene": "scene-0972",
+   "value": 0.028117889538407326,
+   "obstacles": 1741
+  },
+  {
+   "token": "093cfa9fb2a04b5d8193cd406e096419",
+   "scene": "scene-0966",
+   "value": 0.028133684769272804,
+   "obstacles": 1949
+  },
+  {
+   "token": "f67d8dc5ac8449b99ae694ae66bab314",
+   "scene": "scene-0972",
+   "value": 0.028154008090496063,
+   "obstacles": 923
+  },
+  {
+   "token": "d26d9906b5c6444dafee326c90ce2785",
+   "scene": "scene-0798",
+   "value": 0.028200548142194748,
+   "obstacles": 682
+  },
+  {
+   "token": "8346c21f66184282a123955ee44b12ca",
+   "scene": "scene-0638",
+   "value": 0.028238555416464806,
+   "obstacles": 1206
+  },
+  {
+   "token": "2633bccdf64b40d7be34af01670de69a",
+   "scene": "scene-1072",
+   "value": 0.028239481151103973,
+   "obstacles": 400
+  },
+  {
+   "token": "6b9af38cbf654171870cb14b4ae89fd6",
+   "scene": "scene-0003",
+   "value": 0.02829235978424549,
+   "obstacles": 1845
+  },
+  {
+   "token": "457185e7311943ec97c79aea2a45df79",
+   "scene": "scene-0638",
+   "value": 0.028309384360909462,
+   "obstacles": 1188
+  },
+  {
+   "token": "dcdbe65647744796a3f574ecd69158ba",
+   "scene": "scene-0920",
+   "value": 0.028327764943242073,
+   "obstacles": 799
+  },
+  {
+   "token": "b1b4b2f5893d47d88c3e3504ad616139",
+   "scene": "scene-1064",
+   "value": 0.028371751308441162,
+   "obstacles": 588
+  },
+  {
+   "token": "d3c067cedbb041f48b3b6034c691b21f",
+   "scene": "scene-1059",
+   "value": 0.02840590849518776,
+   "obstacles": 314
+  },
+  {
+   "token": "eb82a835419149aeae82c5e8ea64377b",
+   "scene": "scene-1059",
+   "value": 0.028458978980779648,
+   "obstacles": 361
+  },
+  {
+   "token": "7d905b84e07c4493a249467e86b088b7",
+   "scene": "scene-0798",
+   "value": 0.0284755639731884,
+   "obstacles": 445
+  },
+  {
+   "token": "05e5176b77bb44ed85e6df6ad3aba980",
+   "scene": "scene-0971",
+   "value": 0.02858573943376541,
+   "obstacles": 3318
+  },
+  {
+   "token": "610ba6b2dbef474fa902fc950798d55f",
+   "scene": "scene-1064",
+   "value": 0.028653325513005257,
+   "obstacles": 701
+  },
+  {
+   "token": "37b3d16060b442d5b6175cbebefd09a7",
+   "scene": "scene-0003",
+   "value": 0.02865849994122982,
+   "obstacles": 1807
+  },
+  {
+   "token": "a2d8604904294c2fb73648830a2604aa",
+   "scene": "scene-0012",
+   "value": 0.028768280521035194,
+   "obstacles": 293
+  },
+  {
+   "token": "f4d77b3cccc14f4faeb64b82efa9510f",
+   "scene": "scene-0925",
+   "value": 0.028824733570218086,
+   "obstacles": 349
+  },
+  {
+   "token": "08ec4b7fcdb5494c8da174770c1d9245",
+   "scene": "scene-0104",
+   "value": 0.02885591983795166,
+   "obstacles": 3024
+  },
+  {
+   "token": "6d1c615ee4694f68996b1b40d2302aaf",
+   "scene": "scene-0914",
+   "value": 0.028860855847597122,
+   "obstacles": 1542
+  },
+  {
+   "token": "805f3923fbef40c28d3a2c21b0f4dd1b",
+   "scene": "scene-1064",
+   "value": 0.02889799140393734,
+   "obstacles": 855
+  },
+  {
+   "token": "f0c5f2e39613434ab3062df609f6a46a",
+   "scene": "scene-1068",
+   "value": 0.02895515039563179,
+   "obstacles": 244
+  },
+  {
+   "token": "9281ea172d9e43528e65fca81e2006d4",
+   "scene": "scene-0003",
+   "value": 0.028973985463380814,
+   "obstacles": 1753
+  },
+  {
+   "token": "0354524ee674423bbc37b986a342713f",
+   "scene": "scene-0972",
+   "value": 0.029011676087975502,
+   "obstacles": 1908
+  },
+  {
+   "token": "5bdc6f6d074b4749a5dae9ed57f0eba7",
+   "scene": "scene-0966",
+   "value": 0.029048847034573555,
+   "obstacles": 2038
+  },
+  {
+   "token": "eb0ce46bfeb943e6bbd3c81ba6a76712",
+   "scene": "scene-0924",
+   "value": 0.029146861284971237,
+   "obstacles": 972
+  },
+  {
+   "token": "154dbc8467d64780a1acffda0193d46b",
+   "scene": "scene-0798",
+   "value": 0.02916870266199112,
+   "obstacles": 596
+  },
+  {
+   "token": "5254163f8fcd4362b6019bbb88dc13ec",
+   "scene": "scene-0012",
+   "value": 0.029215648770332336,
+   "obstacles": 222
+  },
+  {
+   "token": "979ebe32c3154795bd17e6e5765d83ea",
+   "scene": "scene-1062",
+   "value": 0.029241511598229408,
+   "obstacles": 492
+  },
+  {
+   "token": "0b356d1230cc4cf9b50580c6b432576f",
+   "scene": "scene-1065",
+   "value": 0.029263515025377274,
+   "obstacles": 313
+  },
+  {
+   "token": "ac2609508d664565b41cb88a5815360a",
+   "scene": "scene-1063",
+   "value": 0.029271261766552925,
+   "obstacles": 272
+  },
+  {
+   "token": "49e0e239c3f048418bb250ef9376120e",
+   "scene": "scene-1059",
+   "value": 0.02927287481725216,
+   "obstacles": 343
+  },
+  {
+   "token": "03d01b47ef714213b94aae1b95d5b44e",
+   "scene": "scene-1059",
+   "value": 0.029282115399837494,
+   "obstacles": 1195
+  },
+  {
+   "token": "bbac20f166b44c03a7a00148c666126c",
+   "scene": "scene-0778",
+   "value": 0.02929118648171425,
+   "obstacles": 382
+  },
+  {
+   "token": "e5a370b735c14373843d8a220867bacf",
+   "scene": "scene-1068",
+   "value": 0.02931089699268341,
+   "obstacles": 520
+  },
+  {
+   "token": "70780c59069a47cb8a9332aa6e739712",
+   "scene": "scene-0924",
+   "value": 0.02931717038154602,
+   "obstacles": 1056
+  },
+  {
+   "token": "9ed40a1cea7943128d8d21d64f951023",
+   "scene": "scene-0924",
+   "value": 0.029322246089577675,
+   "obstacles": 923
+  },
+  {
+   "token": "4094ae4656fb4b8fb1906192b24a34cb",
+   "scene": "scene-0268",
+   "value": 0.02933906763792038,
+   "obstacles": 2249
+  },
+  {
+   "token": "3b4edc8d32f544259b6f57fef83de5cd",
+   "scene": "scene-0931",
+   "value": 0.02935974858701229,
+   "obstacles": 1974
+  },
+  {
+   "token": "6b179cb7a1374b368ac1b46102552d7a",
+   "scene": "scene-0972",
+   "value": 0.029364783316850662,
+   "obstacles": 1421
+  },
+  {
+   "token": "2920a3315ccd4fefb30fb0468ebb2351",
+   "scene": "scene-1068",
+   "value": 0.02938794530928135,
+   "obstacles": 225
+  },
+  {
+   "token": "8d67c4024af6470faada45dc41ba9a16",
+   "scene": "scene-0556",
+   "value": 0.029401451349258423,
+   "obstacles": 951
+  },
+  {
+   "token": "935ddd79f2cc4b6a81395cde46290fff",
+   "scene": "scene-1065",
+   "value": 0.02945944108068943,
+   "obstacles": 441
+  },
+  {
+   "token": "49d971253fcf461db80e7c30f85e3005",
+   "scene": "scene-1063",
+   "value": 0.02947886660695076,
+   "obstacles": 307
+  },
+  {
+   "token": "016a779289694d1e9b22d9d716c50275",
+   "scene": "scene-1064",
+   "value": 0.029486635699868202,
+   "obstacles": 561
+  },
+  {
+   "token": "79a10e4d9e5b49e980a8897d6f09f450",
+   "scene": "scene-1063",
+   "value": 0.029550369828939438,
+   "obstacles": 384
+  },
+  {
+   "token": "63d63422c5084474b9fa89876b5210e4",
+   "scene": "scene-0924",
+   "value": 0.02955649048089981,
+   "obstacles": 831
+  },
+  {
+   "token": "a25762e4bbb8445d9d80a7d2a49f8530",
+   "scene": "scene-0925",
+   "value": 0.029582899063825607,
+   "obstacles": 684
+  },
+  {
+   "token": "4c1be72a4c89421eb18a303c284828df",
+   "scene": "scene-1063",
+   "value": 0.029677176848053932,
+   "obstacles": 463
+  },
+  {
+   "token": "114d8a1f9c4a46a5b4fec1e552027213",
+   "scene": "scene-0012",
+   "value": 0.02968098782002926,
+   "obstacles": 286
+  },
+  {
+   "token": "7b173aed71f84d58bd218628ea584190",
+   "scene": "scene-0908",
+   "value": 0.029737288132309914,
+   "obstacles": 737
+  },
+  {
+   "token": "1835a3f7c52240c2b779b6ee8b48c6f7",
+   "scene": "scene-1068",
+   "value": 0.029741035774350166,
+   "obstacles": 275
+  },
+  {
+   "token": "ef183f507ce945519cc458276a8ae6e2",
+   "scene": "scene-0798",
+   "value": 0.029760688543319702,
+   "obstacles": 439
+  },
+  {
+   "token": "17d84afea74b48c3b81ee85db30b0208",
+   "scene": "scene-0104",
+   "value": 0.02976291999220848,
+   "obstacles": 1835
+  },
+  {
+   "token": "7115cfb231ab46edb37692f015cd3140",
+   "scene": "scene-1068",
+   "value": 0.029824737459421158,
+   "obstacles": 481
+  },
+  {
+   "token": "10629cdea90242be94821898540d79be",
+   "scene": "scene-0907",
+   "value": 0.029831580817699432,
+   "obstacles": 1247
+  },
+  {
+   "token": "1cebe66c60b74120904a4e5b6b3bb152",
+   "scene": "scene-0908",
+   "value": 0.02985929138958454,
+   "obstacles": 736
+  },
+  {
+   "token": "24d36d6c526646499d4610990f715255",
+   "scene": "scene-0972",
+   "value": 0.029871638864278793,
+   "obstacles": 1213
+  },
+  {
+   "token": "38c0c7b30e1142e4bc0833c2d489c493",
+   "scene": "scene-0092",
+   "value": 0.029946254566311836,
+   "obstacles": 1412
+  },
+  {
+   "token": "c773e8f2af7a4f8bb88543d4fb1d51b0",
+   "scene": "scene-0925",
+   "value": 0.029984181746840477,
+   "obstacles": 381
+  },
+  {
+   "token": "52e0fc73e08b43d88848a37baeace700",
+   "scene": "scene-0798",
+   "value": 0.029998214915394783,
+   "obstacles": 483
+  },
+  {
+   "token": "0a8dee95c4ac4ac59a43af56da6e589f",
+   "scene": "scene-0915",
+   "value": 0.03006007894873619,
+   "obstacles": 2107
+  },
+  {
+   "token": "b1b386f4a6d04987975d36525ff9f772",
+   "scene": "scene-0931",
+   "value": 0.030070710927248,
+   "obstacles": 2655
+  },
+  {
+   "token": "4ebb2db9e3a048aeaad17d954b7a3d37",
+   "scene": "scene-0917",
+   "value": 0.03014387935400009,
+   "obstacles": 1391
+  },
+  {
+   "token": "34dc0f073e864d70b6e2b09c5b3ed032",
+   "scene": "scene-0099",
+   "value": 0.030175240710377693,
+   "obstacles": 2382
+  },
+  {
+   "token": "3064a6b9b3f04e5d8e51eefb4be8506a",
+   "scene": "scene-0003",
+   "value": 0.030209435150027275,
+   "obstacles": 2273
+  },
+  {
+   "token": "23529e9ba7ec409185a315f007455400",
+   "scene": "scene-1068",
+   "value": 0.030223743990063667,
+   "obstacles": 767
+  },
+  {
+   "token": "b82c2ddc3e8c4bbcab981ae3fd38adff",
+   "scene": "scene-0908",
+   "value": 0.03025815449655056,
+   "obstacles": 773
+  },
+  {
+   "token": "68d1a32884e745aea83ecace65a55628",
+   "scene": "scene-0972",
+   "value": 0.03033342957496643,
+   "obstacles": 1260
+  },
+  {
+   "token": "56ef03aa336a4760a14c87a9a752e639",
+   "scene": "scene-0924",
+   "value": 0.03034871071577072,
+   "obstacles": 1054
+  },
+  {
+   "token": "ad61033aa6e44659966bb4065f50abbc",
+   "scene": "scene-0092",
+   "value": 0.030370857566595078,
+   "obstacles": 1064
+  },
+  {
+   "token": "2ff6e2f9910b483ab578f0e162ee7c64",
+   "scene": "scene-1059",
+   "value": 0.03037538193166256,
+   "obstacles": 388
+  },
+  {
+   "token": "1eabb4f61d144fd6ba73bd69b9633981",
+   "scene": "scene-0798",
+   "value": 0.03040546178817749,
+   "obstacles": 492
+  },
+  {
+   "token": "4200ee42070b4614a74d9621d926e248",
+   "scene": "scene-0775",
+   "value": 0.030441241338849068,
+   "obstacles": 598
+  },
+  {
+   "token": "b8849fcd11d14e499aea2ee258d8b581",
+   "scene": "scene-1063",
+   "value": 0.03044159524142742,
+   "obstacles": 735
+  },
+  {
+   "token": "5aa5555debb94e988b4eb8d8ff26c8da",
+   "scene": "scene-0276",
+   "value": 0.03045821562409401,
+   "obstacles": 1734
+  },
+  {
+   "token": "0fb4fd80495946268853f2a9183240a0",
+   "scene": "scene-0915",
+   "value": 0.03046281635761261,
+   "obstacles": 1382
+  },
+  {
+   "token": "6c662b1258e34752be332dcc1eccb7a8",
+   "scene": "scene-0276",
+   "value": 0.03049384243786335,
+   "obstacles": 1737
+  },
+  {
+   "token": "5fcbd73f4fdb4b0faaf55256bb03cdaf",
+   "scene": "scene-0971",
+   "value": 0.03050052374601364,
+   "obstacles": 2618
+  },
+  {
+   "token": "48c925efa9084287ba628933921b4f1c",
+   "scene": "scene-1068",
+   "value": 0.030503490939736366,
+   "obstacles": 397
+  },
+  {
+   "token": "aac566f9f38d43ac9f612b9f39cf8df3",
+   "scene": "scene-0638",
+   "value": 0.030520733445882797,
+   "obstacles": 931
+  },
+  {
+   "token": "dab412ea42444abb80c43836bf399203",
+   "scene": "scene-0967",
+   "value": 0.030565360561013222,
+   "obstacles": 650
+  },
+  {
+   "token": "f634fd065ee24e3f9524e44b8853d67e",
+   "scene": "scene-1068",
+   "value": 0.03057449869811535,
+   "obstacles": 344
+  },
+  {
+   "token": "d20d151ade9c4229806e9664c1bda422",
+   "scene": "scene-1068",
+   "value": 0.030620386824011803,
+   "obstacles": 1423
+  },
+  {
+   "token": "31c4135dd79c4d75b8ca0511345be76c",
+   "scene": "scene-1059",
+   "value": 0.030645504593849182,
+   "obstacles": 302
+  },
+  {
+   "token": "9ea848e5af8b4f8090f9ee8fa1db74e4",
+   "scene": "scene-0966",
+   "value": 0.030668994411826134,
+   "obstacles": 1727
+  },
+  {
+   "token": "97d92ade9a3b44ae8fbfb1132ac18b0e",
+   "scene": "scene-1059",
+   "value": 0.030669480562210083,
+   "obstacles": 742
+  },
+  {
+   "token": "b92936f399d5405fb98d6f8a2298a504",
+   "scene": "scene-0099",
+   "value": 0.0306799728423357,
+   "obstacles": 2612
+  },
+  {
+   "token": "372725a4b00e49c78d6d0b1c4a38b6e0",
+   "scene": "scene-0916",
+   "value": 0.030688049271702766,
+   "obstacles": 2995
+  },
+  {
+   "token": "ea55d8b565a54b8785b97c5610952ef0",
+   "scene": "scene-1068",
+   "value": 0.030695457011461258,
+   "obstacles": 1362
+  },
+  {
+   "token": "eec42a16e60d4161919ca507526be264",
+   "scene": "scene-0798",
+   "value": 0.030740290880203247,
+   "obstacles": 612
+  },
+  {
+   "token": "2e4c526a088741c28f8ea25d97e1c8fb",
+   "scene": "scene-1063",
+   "value": 0.030759820714592934,
+   "obstacles": 315
+  },
+  {
+   "token": "d536032be01140afb6faa25b33de5487",
+   "scene": "scene-0268",
+   "value": 0.030760634690523148,
+   "obstacles": 2571
+  },
+  {
+   "token": "78d7c6d89c424c7a91a88d13c648fb4e",
+   "scene": "scene-1062",
+   "value": 0.030802877619862556,
+   "obstacles": 439
+  },
+  {
+   "token": "47f40eb09dcb40b9888d81fb4b872ac4",
+   "scene": "scene-0092",
+   "value": 0.030846111476421356,
+   "obstacles": 1384
+  },
+  {
+   "token": "f3fc850f424f44ae866df4abf31f8061",
+   "scene": "scene-1065",
+   "value": 0.030856145545840263,
+   "obstacles": 649
+  },
+  {
+   "token": "07294f69a7564afe926cc3d343c3599a",
+   "scene": "scene-0907",
+   "value": 0.03085899166762829,
+   "obstacles": 1198
+  },
+  {
+   "token": "26e594c412e84bdda76e344933fe305a",
+   "scene": "scene-0796",
+   "value": 0.030937694013118744,
+   "obstacles": 1047
+  },
+  {
+   "token": "8b95c9f201034aedb14454f4e2869abe",
+   "scene": "scene-0967",
+   "value": 0.030988290905952454,
+   "obstacles": 649
+  },
+  {
+   "token": "a16e29084602482e892e608f505c6285",
+   "scene": "scene-0798",
+   "value": 0.03100161999464035,
+   "obstacles": 824
+  },
+  {
+   "token": "fa51f1910942494cbe396640010fea64",
+   "scene": "scene-0796",
+   "value": 0.031002428382635117,
+   "obstacles": 1083
+  },
+  {
+   "token": "949d5c6f5ebf4f88a5f63498eab9d953",
+   "scene": "scene-1059",
+   "value": 0.03101392649114132,
+   "obstacles": 579
+  },
+  {
+   "token": "5e4e25f87ec84942ac459a55fe064330",
+   "scene": "scene-0003",
+   "value": 0.031036481261253357,
+   "obstacles": 2083
+  },
+  {
+   "token": "1f73768be216451fa02caa38b04a62b3",
+   "scene": "scene-1064",
+   "value": 0.03108580969274044,
+   "obstacles": 530
+  },
+  {
+   "token": "205a77495c02441193752562fab8d06e",
+   "scene": "scene-1067",
+   "value": 0.031095296144485474,
+   "obstacles": 695
+  },
+  {
+   "token": "6180726fc8744ea2b129ebaad6f79cee",
+   "scene": "scene-0003",
+   "value": 0.031116055324673653,
+   "obstacles": 1886
+  },
+  {
+   "token": "9e7b51a7c620418f9f37f0522e426410",
+   "scene": "scene-0556",
+   "value": 0.031125804409384727,
+   "obstacles": 548
+  },
+  {
+   "token": "26ff943010a54658b8a9471ff433c3b0",
+   "scene": "scene-0914",
+   "value": 0.031136443838477135,
+   "obstacles": 1384
+  },
+  {
+   "token": "7d1d71e3ce5745f7b49b9c2e5991a45b",
+   "scene": "scene-0003",
+   "value": 0.031144171953201294,
+   "obstacles": 1262
+  },
+  {
+   "token": "a4ea60cc43244ddd82996667dab822f9",
+   "scene": "scene-0907",
+   "value": 0.031172286719083786,
+   "obstacles": 1380
+  },
+  {
+   "token": "89c5cbebc84446fd8352e518c704ed54",
+   "scene": "scene-0560",
+   "value": 0.031185079365968704,
+   "obstacles": 1888
+  },
+  {
+   "token": "4d3f8452348c4e76810fcda058abd4af",
+   "scene": "scene-0967",
+   "value": 0.031227242201566696,
+   "obstacles": 1488
+  },
+  {
+   "token": "a460d7665ac3476b85f72a3fb7b978dd",
+   "scene": "scene-0104",
+   "value": 0.031278345733881,
+   "obstacles": 1588
+  },
+  {
+   "token": "b1c6966bd3a547ed82273d837490e63a",
+   "scene": "scene-0018",
+   "value": 0.0313229002058506,
+   "obstacles": 1162
+  },
+  {
+   "token": "190ad8d6769c4f32ae1a5292d2e5a408",
+   "scene": "scene-0798",
+   "value": 0.031342726200819016,
+   "obstacles": 556
+  },
+  {
+   "token": "e353030f3b82412d9619cab425e59985",
+   "scene": "scene-1073",
+   "value": 0.03138979151844978,
+   "obstacles": 1836
+  },
+  {
+   "token": "bc33d196405a4afaa430a93b7a4d3ca7",
+   "scene": "scene-0931",
+   "value": 0.03145071491599083,
+   "obstacles": 1501
+  },
+  {
+   "token": "14365b2597de4b66a0b42e12e907292b",
+   "scene": "scene-0929",
+   "value": 0.03150280565023422,
+   "obstacles": 425
+  },
+  {
+   "token": "93400955e1214d3daf3dca428e345777",
+   "scene": "scene-0969",
+   "value": 0.0315084382891655,
+   "obstacles": 2208
+  },
+  {
+   "token": "419069c2cc8f42269ffe622eca310155",
+   "scene": "scene-1068",
+   "value": 0.031525611877441406,
+   "obstacles": 1076
+  },
+  {
+   "token": "1ceaf1c4fc4b48e49f1399ad1423a00d",
+   "scene": "scene-0915",
+   "value": 0.03153989836573601,
+   "obstacles": 2093
+  },
+  {
+   "token": "a542b5d6a76c42a49ee3cf4f7130553c",
+   "scene": "scene-1071",
+   "value": 0.03157881274819374,
+   "obstacles": 644
+  },
+  {
+   "token": "9c75ddb5976343c3b7b33e8148d3eeb0",
+   "scene": "scene-0003",
+   "value": 0.031579919159412384,
+   "obstacles": 2018
+  },
+  {
+   "token": "ea235f4cd8404fb99a2fc72d0a049a19",
+   "scene": "scene-0967",
+   "value": 0.031582534313201904,
+   "obstacles": 554
+  },
+  {
+   "token": "cefdde031bf04d2e8ef237d8b6373bbe",
+   "scene": "scene-0561",
+   "value": 0.03162394091486931,
+   "obstacles": 2402
+  },
+  {
+   "token": "c44adb5b12df471e8173293014f09e0a",
+   "scene": "scene-1064",
+   "value": 0.03163239732384682,
+   "obstacles": 788
+  },
+  {
+   "token": "184dbf3020b04b1a9971afc7332a5760",
+   "scene": "scene-1059",
+   "value": 0.031653404235839844,
+   "obstacles": 328
+  },
+  {
+   "token": "e63daf8508994046ac113057d0ebf6ba",
+   "scene": "scene-0971",
+   "value": 0.031759727746248245,
+   "obstacles": 2485
+  },
+  {
+   "token": "4523fb98c35940f1a47555072262965d",
+   "scene": "scene-0275",
+   "value": 0.03176414966583252,
+   "obstacles": 1439
+  },
+  {
+   "token": "a6be1b51213443ba9991585f56a30c71",
+   "scene": "scene-0018",
+   "value": 0.03178113326430321,
+   "obstacles": 1903
+  },
+  {
+   "token": "2b8ba65cddf94fb9a8efd21e44d7cc97",
+   "scene": "scene-0969",
+   "value": 0.03178500756621361,
+   "obstacles": 2029
+  },
+  {
+   "token": "e9c5186ee7bc4e5385f87dd4b9bf0032",
+   "scene": "scene-0915",
+   "value": 0.031789228320121765,
+   "obstacles": 2301
+  },
+  {
+   "token": "d2db7e12be3741f9894b16fd07e032e2",
+   "scene": "scene-0966",
+   "value": 0.031803056597709656,
+   "obstacles": 1753
+  },
+  {
+   "token": "b9ac916091a2417a87126eb9ddd22474",
+   "scene": "scene-0925",
+   "value": 0.031806472688913345,
+   "obstacles": 513
+  },
+  {
+   "token": "dbaed05362384292b62080dbf03eb0c8",
+   "scene": "scene-0972",
+   "value": 0.03182937577366829,
+   "obstacles": 1135
+  },
+  {
+   "token": "b44e59e4a1e345b89940db8801b7e9d4",
+   "scene": "scene-1063",
+   "value": 0.031880609691143036,
+   "obstacles": 328
+  },
+  {
+   "token": "bbe84595bbe64a95bf17ffc995ede36b",
+   "scene": "scene-0925",
+   "value": 0.031893350183963776,
+   "obstacles": 318
+  },
+  {
+   "token": "dc8b650ad7344c82946e7195d734dc79",
+   "scene": "scene-0632",
+   "value": 0.03191891685128212,
+   "obstacles": 939
+  },
+  {
+   "token": "16767ec4463a4d8e80e7ec9be2d29103",
+   "scene": "scene-0914",
+   "value": 0.03199106082320213,
+   "obstacles": 1403
+  },
+  {
+   "token": "a1bbde13230e4493a2bacce82acf9456",
+   "scene": "scene-1072",
+   "value": 0.03201045095920563,
+   "obstacles": 471
+  },
+  {
+   "token": "0ee2e970ef9140d7b440c93a06d4c633",
+   "scene": "scene-0972",
+   "value": 0.0320315845310688,
+   "obstacles": 1054
+  },
+  {
+   "token": "6a1f2ebe1ef8437c87a5a742362b09b4",
+   "scene": "scene-0775",
+   "value": 0.03204171359539032,
+   "obstacles": 694
+  },
+  {
+   "token": "d8cc7ad7ebc44bca98de21543ae2ad09",
+   "scene": "scene-0966",
+   "value": 0.03211146220564842,
+   "obstacles": 1542
+  },
+  {
+   "token": "88bbcc1cfea447b2a3d6ca38f5c12174",
+   "scene": "scene-0915",
+   "value": 0.032131627202034,
+   "obstacles": 1849
+  },
+  {
+   "token": "c6cebadf8a424dbb8931d5747a1af9b2",
+   "scene": "scene-0915",
+   "value": 0.03214545175433159,
+   "obstacles": 2082
+  },
+  {
+   "token": "d902ed887b474c61b87e50a7503fa9ac",
+   "scene": "scene-0556",
+   "value": 0.03214627131819725,
+   "obstacles": 804
+  },
+  {
+   "token": "89df9e54c0d24433a93ad5d45adc05c4",
+   "scene": "scene-0972",
+   "value": 0.03220217674970627,
+   "obstacles": 1683
+  },
+  {
+   "token": "47d74378d3e04fa6bb3132928c0f9fa4",
+   "scene": "scene-0092",
+   "value": 0.03222619742155075,
+   "obstacles": 1390
+  },
+  {
+   "token": "b62a484b94a04ae4b1b2729fb2064696",
+   "scene": "scene-1064",
+   "value": 0.032249815762043,
+   "obstacles": 265
+  },
+  {
+   "token": "5cea96ab7d324d958bb1db9da621b43c",
+   "scene": "scene-1059",
+   "value": 0.03226787596940994,
+   "obstacles": 565
+  },
+  {
+   "token": "90337a0b69b1439590f68f4999d6f091",
+   "scene": "scene-0926",
+   "value": 0.032287005335092545,
+   "obstacles": 451
+  },
+  {
+   "token": "697cc6a77d9841209fdea6458fe3be51",
+   "scene": "scene-0560",
+   "value": 0.03238203376531601,
+   "obstacles": 2262
+  },
+  {
+   "token": "ea69963e431145e383f0c05cd30116c7",
+   "scene": "scene-0798",
+   "value": 0.032393284142017365,
+   "obstacles": 421
+  },
+  {
+   "token": "cd908fdce67249f3a8a14b987f00592e",
+   "scene": "scene-0003",
+   "value": 0.03245941922068596,
+   "obstacles": 1677
+  },
+  {
+   "token": "91586f8ae0584fecb7b1ecf9a2bc8046",
+   "scene": "scene-0632",
+   "value": 0.03247793763875961,
+   "obstacles": 1236
+  },
+  {
+   "token": "bdea805e042d412c92ad5c6e4ca7385b",
+   "scene": "scene-1059",
+   "value": 0.032503366470336914,
+   "obstacles": 577
+  },
+  {
+   "token": "1ecb668fec5d4f27bdcd6832ac687dce",
+   "scene": "scene-0092",
+   "value": 0.032533083111047745,
+   "obstacles": 1319
+  },
+  {
+   "token": "e0ae88ccc11e405895e15ebe43000a8e",
+   "scene": "scene-0556",
+   "value": 0.0325772762298584,
+   "obstacles": 667
+  },
+  {
+   "token": "c2102371cbcf4d8f9eb66069a3d5b350",
+   "scene": "scene-0036",
+   "value": 0.032606467604637146,
+   "obstacles": 1291
+  },
+  {
+   "token": "23dc1b528c734082b8b3bfd9757f0eb3",
+   "scene": "scene-0003",
+   "value": 0.032613929361104965,
+   "obstacles": 2340
+  },
+  {
+   "token": "feeb907eb1134b1480fd276a5b1ed6c8",
+   "scene": "scene-0967",
+   "value": 0.032637134194374084,
+   "obstacles": 824
+  },
+  {
+   "token": "b39f4a387bfb416789997e070446663e",
+   "scene": "scene-0632",
+   "value": 0.03266536816954613,
+   "obstacles": 736
+  },
+  {
+   "token": "70f8b28210d64799a4f664bcb221b6fc",
+   "scene": "scene-0798",
+   "value": 0.03267000988125801,
+   "obstacles": 795
+  },
+  {
+   "token": "9d62dd246bb8441198dd4cbf1f5a7a22",
+   "scene": "scene-0967",
+   "value": 0.03267401456832886,
+   "obstacles": 650
+  },
+  {
+   "token": "c1ab33c3994041ceae32b0fe1b51e611",
+   "scene": "scene-0003",
+   "value": 0.03269775211811066,
+   "obstacles": 2004
+  },
+  {
+   "token": "e6b2fa4514b54a7ab4335026d8e13b91",
+   "scene": "scene-0925",
+   "value": 0.032709136605262756,
+   "obstacles": 583
+  },
+  {
+   "token": "0072eb21de8e4f18bbe20e7b91037b6b",
+   "scene": "scene-0800",
+   "value": 0.032737236469984055,
+   "obstacles": 218
+  },
+  {
+   "token": "e47f3fd631fb41d69932f13be883640c",
+   "scene": "scene-0967",
+   "value": 0.03274799883365631,
+   "obstacles": 683
+  },
+  {
+   "token": "25f8552be635425aafa5d14150fc5ce1",
+   "scene": "scene-0561",
+   "value": 0.032769862562417984,
+   "obstacles": 1532
+  },
+  {
+   "token": "82c379e1de1245e4b18822e277d2a0eb",
+   "scene": "scene-0972",
+   "value": 0.03279028460383415,
+   "obstacles": 1184
+  },
+  {
+   "token": "4fbc81383e0244f898fdb5dc1ea6cd6e",
+   "scene": "scene-1061",
+   "value": 0.032807812094688416,
+   "obstacles": 352
+  },
+  {
+   "token": "ed52e131d60e4e309cb0e9830ba337b7",
+   "scene": "scene-1063",
+   "value": 0.03280820697546005,
+   "obstacles": 417
+  },
+  {
+   "token": "73e7a058423243e49848fd0b9b259ce9",
+   "scene": "scene-0036",
+   "value": 0.03282518312335014,
+   "obstacles": 1361
+  },
+  {
+   "token": "0f858d033faf4aa487501a8e570eb951",
+   "scene": "scene-0564",
+   "value": 0.03285123407840729,
+   "obstacles": 1625
+  },
+  {
+   "token": "9eebbe06762c47aa8c671008df5fb474",
+   "scene": "scene-0561",
+   "value": 0.03288210928440094,
+   "obstacles": 1195
+  },
+  {
+   "token": "9bb6116e8f194294bf5c2107c42acc1a",
+   "scene": "scene-0907",
+   "value": 0.032967619597911835,
+   "obstacles": 1438
+  },
+  {
+   "token": "9ef5515f50b6451682146893962ae618",
+   "scene": "scene-0561",
+   "value": 0.033024370670318604,
+   "obstacles": 1343
+  },
+  {
+   "token": "282c9a7666364d0ea079beec830e951c",
+   "scene": "scene-0915",
+   "value": 0.03303731977939606,
+   "obstacles": 2357
+  },
+  {
+   "token": "9faf87fc638c492d87ccbdb48388450c",
+   "scene": "scene-0099",
+   "value": 0.033038269728422165,
+   "obstacles": 2376
+  },
+  {
+   "token": "f542a7d55b5c4e97bf42eee1f442356c",
+   "scene": "scene-0638",
+   "value": 0.033045653253793716,
+   "obstacles": 796
+  },
+  {
+   "token": "9b43b7af1fe3467b931b03df4ab7de82",
+   "scene": "scene-0967",
+   "value": 0.03305144980549812,
+   "obstacles": 634
+  },
+  {
+   "token": "fbbdca28bed1419a87dd2f0b1ced635f",
+   "scene": "scene-0966",
+   "value": 0.03307965770363808,
+   "obstacles": 1512
+  },
+  {
+   "token": "d3fc0ca6f9394d8190774bb2ab7dd718",
+   "scene": "scene-0969",
+   "value": 0.033094633370637894,
+   "obstacles": 1876
+  },
+  {
+   "token": "5c60bb1dd0b4423b9e619fc21d523b16",
+   "scene": "scene-0556",
+   "value": 0.033118847757577896,
+   "obstacles": 944
+  },
+  {
+   "token": "a29674e62b0b4cdbb20ae86eca8d3356",
+   "scene": "scene-1067",
+   "value": 0.03312830999493599,
+   "obstacles": 446
+  },
+  {
+   "token": "fb64e7f0e4ba4957a1aea9dcc7b259ed",
+   "scene": "scene-0775",
+   "value": 0.03314156085252762,
+   "obstacles": 664
+  },
+  {
+   "token": "9851e24eeb8e40cf962e45b1975aff53",
+   "scene": "scene-0276",
+   "value": 0.03317717835307121,
+   "obstacles": 1943
+  },
+  {
+   "token": "246b21c5bf164950aa0bbcb44d34d717",
+   "scene": "scene-0915",
+   "value": 0.03319836035370827,
+   "obstacles": 2160
+  },
+  {
+   "token": "007c057cac8b490fa8b67e72e630b18a",
+   "scene": "scene-0564",
+   "value": 0.033199939876794815,
+   "obstacles": 1666
+  },
+  {
+   "token": "c1682fd7aaea47189d8820dd0abe8a32",
+   "scene": "scene-0972",
+   "value": 0.033204663544893265,
+   "obstacles": 3945
+  },
+  {
+   "token": "e5130afff03e42ed87313704f10d5269",
+   "scene": "scene-0638",
+   "value": 0.03321218118071556,
+   "obstacles": 769
+  },
+  {
+   "token": "6a147ca886954584aad7eb68b15db56d",
+   "scene": "scene-1071",
+   "value": 0.03322149068117142,
+   "obstacles": 928
+  },
+  {
+   "token": "81f15cced544486daa6aa4d6b6bf17d9",
+   "scene": "scene-0018",
+   "value": 0.03322373703122139,
+   "obstacles": 1963
+  },
+  {
+   "token": "458b0a25e52c42d7b581259bb164d952",
+   "scene": "scene-0564",
+   "value": 0.033226657658815384,
+   "obstacles": 1636
+  },
+  {
+   "token": "d84b2c6b3fc0431980aac6fce922b811",
+   "scene": "scene-0925",
+   "value": 0.03322666510939598,
+   "obstacles": 529
+  },
+  {
+   "token": "6b9a36508b994d95927d7b2af790db05",
+   "scene": "scene-1062",
+   "value": 0.03322926163673401,
+   "obstacles": 601
+  },
+  {
+   "token": "87091b64b814472f8d4dbac04de8d3fc",
+   "scene": "scene-0925",
+   "value": 0.033240046352148056,
+   "obstacles": 294
+  },
+  {
+   "token": "c5fc747cb34f44d78820ae649d183e93",
+   "scene": "scene-0275",
+   "value": 0.03326787054538727,
+   "obstacles": 1504
+  },
+  {
+   "token": "6742957ced7b491c939169eaccaf3e64",
+   "scene": "scene-0926",
+   "value": 0.033271968364715576,
+   "obstacles": 526
+  },
+  {
+   "token": "308526aaea2943df901f9c905d00a4f2",
+   "scene": "scene-1063",
+   "value": 0.033292509615421295,
+   "obstacles": 660
+  },
+  {
+   "token": "d3087b20caea4aa384df7afded4e139f",
+   "scene": "scene-0561",
+   "value": 0.033321529626846313,
+   "obstacles": 1545
+  },
+  {
+   "token": "cd7259ef235c4425999c4bb3f0e5925c",
+   "scene": "scene-0798",
+   "value": 0.033334121108055115,
+   "obstacles": 631
+  },
+  {
+   "token": "f29123ffd0e348f5955b057fbf80698a",
+   "scene": "scene-0778",
+   "value": 0.03333789110183716,
+   "obstacles": 3089
+  },
+  {
+   "token": "27ec9f21f0c546c297687857b7f2fe57",
+   "scene": "scene-0561",
+   "value": 0.03335930407047272,
+   "obstacles": 2802
+  },
+  {
+   "token": "077128a4309a49aca94390baf1c05cfc",
+   "scene": "scene-1063",
+   "value": 0.03336896374821663,
+   "obstacles": 459
+  },
+  {
+   "token": "ba0f5725ccc141f692bcf26d28af5e3b",
+   "scene": "scene-0104",
+   "value": 0.03337334468960762,
+   "obstacles": 2505
+  },
+  {
+   "token": "fcb5d6987a9e4deb80551d2a85e60e20",
+   "scene": "scene-0972",
+   "value": 0.03345339000225067,
+   "obstacles": 1531
+  },
+  {
+   "token": "dc8936290d114aa99f5dee6942bc14cb",
+   "scene": "scene-0920",
+   "value": 0.0334707647562027,
+   "obstacles": 212
+  },
+  {
+   "token": "96a776bb61084fa49cf37bd44e5b0b8d",
+   "scene": "scene-0560",
+   "value": 0.03350500762462616,
+   "obstacles": 1795
+  },
+  {
+   "token": "39dabe21fb704cbfbef605dc5730275a",
+   "scene": "scene-0915",
+   "value": 0.033536069095134735,
+   "obstacles": 1989
+  },
+  {
+   "token": "9d0e1d796b20401a862602bb02d613b4",
+   "scene": "scene-0099",
+   "value": 0.0335606187582016,
+   "obstacles": 4548
+  },
+  {
+   "token": "58ac8c22238e43efa70279ddaba46180",
+   "scene": "scene-1071",
+   "value": 0.03357311338186264,
+   "obstacles": 751
+  },
+  {
+   "token": "fdec95ed6b3b4cdcb114c13bc64f78ef",
+   "scene": "scene-0925",
+   "value": 0.033575285226106644,
+   "obstacles": 230
+  },
+  {
+   "token": "99d384fef2ea463ebb660d9f5e1955eb",
+   "scene": "scene-0560",
+   "value": 0.03358139097690582,
+   "obstacles": 2252
+  },
+  {
+   "token": "d11f99c71cc44264a994fb0a14494b55",
+   "scene": "scene-0972",
+   "value": 0.033581871539354324,
+   "obstacles": 1121
+  },
+  {
+   "token": "d85a67be06ad49b188285eb1a09632b2",
+   "scene": "scene-0915",
+   "value": 0.03358913213014603,
+   "obstacles": 2076
+  },
+  {
+   "token": "43cdc169284546798f3a66b131ac7c91",
+   "scene": "scene-0926",
+   "value": 0.033598437905311584,
+   "obstacles": 806
+  },
+  {
+   "token": "903a1118996f4c9681ccbbea93ecbf1f",
+   "scene": "scene-0920",
+   "value": 0.03360695391893387,
+   "obstacles": 357
+  },
+  {
+   "token": "d34eaf150e834b70b8ed70ff736992db",
+   "scene": "scene-0561",
+   "value": 0.033614419400691986,
+   "obstacles": 1309
+  },
+  {
+   "token": "a95743c4001c4482bc251003c0fb20d0",
+   "scene": "scene-0778",
+   "value": 0.03363082930445671,
+   "obstacles": 264
+  },
+  {
+   "token": "0a6754bbd15c4a99a0df920e42cb8353",
+   "scene": "scene-0926",
+   "value": 0.033636998385190964,
+   "obstacles": 502
+  },
+  {
+   "token": "50ae7fb951484633a80c3eccc13291c1",
+   "scene": "scene-0925",
+   "value": 0.033644840121269226,
+   "obstacles": 294
+  },
+  {
+   "token": "3e99c5888afd432c8f5cd24fb7eebe02",
+   "scene": "scene-0798",
+   "value": 0.033652711659669876,
+   "obstacles": 893
+  },
+  {
+   "token": "781696f733bf458ca2a588fdec64a1b0",
+   "scene": "scene-0561",
+   "value": 0.0336584635078907,
+   "obstacles": 2950
+  },
+  {
+   "token": "9ec1f5b804234e15a1ceb2484201b689",
+   "scene": "scene-0015",
+   "value": 0.033686500042676926,
+   "obstacles": 828
+  },
+  {
+   "token": "7af2a84ed5664aaa8015a5352670c982",
+   "scene": "scene-0919",
+   "value": 0.033700503408908844,
+   "obstacles": 267
+  },
+  {
+   "token": "cc646e760f544fc9b34a4f47a2283ee6",
+   "scene": "scene-0925",
+   "value": 0.03371838480234146,
+   "obstacles": 653
+  },
+  {
+   "token": "c393232463364bb1ab3f264b12f6694a",
+   "scene": "scene-0012",
+   "value": 0.0337291918694973,
+   "obstacles": 259
+  },
+  {
+   "token": "c3b6f3e44ed64fbcac4ada82bb6c7bd8",
+   "scene": "scene-0972",
+   "value": 0.03373610973358154,
+   "obstacles": 1829
+  },
+  {
+   "token": "9c2cb01fe74e49e1b9d3b8ae3fa72299",
+   "scene": "scene-0092",
+   "value": 0.033769167959690094,
+   "obstacles": 1290
+  },
+  {
+   "token": "7b0c6e14258946f9aa3b81f39a5e0816",
+   "scene": "scene-1068",
+   "value": 0.03377339243888855,
+   "obstacles": 480
+  },
+  {
+   "token": "e1f394c2b75a476a9738bae64f0040b3",
+   "scene": "scene-0926",
+   "value": 0.03378074988722801,
+   "obstacles": 729
+  },
+  {
+   "token": "c46eb104a507490b8407246ef8b47a63",
+   "scene": "scene-0931",
+   "value": 0.03379642218351364,
+   "obstacles": 2186
+  },
+  {
+   "token": "a771effa2a2648d78096c3e92b95b129",
+   "scene": "scene-0103",
+   "value": 0.03380686044692993,
+   "obstacles": 5723
+  },
+  {
+   "token": "28e33ad25c0943b49b57f8f1346d5bd2",
+   "scene": "scene-1067",
+   "value": 0.03380749002099037,
+   "obstacles": 694
+  },
+  {
+   "token": "0924dd818c3e44eb9563984a253d51a6",
+   "scene": "scene-0561",
+   "value": 0.03381664305925369,
+   "obstacles": 2973
+  },
+  {
+   "token": "1f7bbb7aa80e4f21a106c80392af97b9",
+   "scene": "scene-1061",
+   "value": 0.03384080156683922,
+   "obstacles": 425
+  },
+  {
+   "token": "4d046c67eb2c42238b48e2fa5ed2fe0a",
+   "scene": "scene-0524",
+   "value": 0.03384759649634361,
+   "obstacles": 4022
+  },
+  {
+   "token": "3b86f8218554493f928b39824655872a",
+   "scene": "scene-0564",
+   "value": 0.03386632353067398,
+   "obstacles": 1638
+  },
+  {
+   "token": "1a776100d0974c0b9edc9bb80a842b54",
+   "scene": "scene-1062",
+   "value": 0.03391997516155243,
+   "obstacles": 477
+  },
+  {
+   "token": "b76ef036cbaa450fab76e2b42f97d1d6",
+   "scene": "scene-0012",
+   "value": 0.03394067659974098,
+   "obstacles": 231
+  },
+  {
+   "token": "7b816a5f4f5a4bffa13370b726e93f57",
+   "scene": "scene-0966",
+   "value": 0.03397895023226738,
+   "obstacles": 1448
+  },
+  {
+   "token": "e7dde70429914491af56d7aad3d9aaf1",
+   "scene": "scene-0775",
+   "value": 0.03398207575082779,
+   "obstacles": 650
+  },
+  {
+   "token": "0b8e2d1a950d4f45b9110118e3497763",
+   "scene": "scene-0561",
+   "value": 0.03402841463685036,
+   "obstacles": 1242
+  },
+  {
+   "token": "6ada9478bb09410c9bccaedb6d557215",
+   "scene": "scene-0561",
+   "value": 0.03404250741004944,
+   "obstacles": 1614
+  },
+  {
+   "token": "b9c1ea3e21174a5ca1c0b9b7a24e3813",
+   "scene": "scene-0561",
+   "value": 0.03404401242733002,
+   "obstacles": 3001
+  },
+  {
+   "token": "fc5f2295a1f648e5adfbee155413abf0",
+   "scene": "scene-0800",
+   "value": 0.03409188240766525,
+   "obstacles": 229
+  },
+  {
+   "token": "5fe961cfd2b444b0898c3abb7c969e77",
+   "scene": "scene-0092",
+   "value": 0.03409234434366226,
+   "obstacles": 1181
+  },
+  {
+   "token": "77fdd30224794079a35c460e3328c8d2",
+   "scene": "scene-0561",
+   "value": 0.03410396724939346,
+   "obstacles": 1982
+  },
+  {
+   "token": "02651ca22b08484294d473d9c26cd9af",
+   "scene": "scene-0003",
+   "value": 0.034114137291908264,
+   "obstacles": 1673
+  },
+  {
+   "token": "e438f78547964043a1542d2eedfae584",
+   "scene": "scene-0931",
+   "value": 0.0341213084757328,
+   "obstacles": 1416
+  },
+  {
+   "token": "6eb8a3ff0abf4f3a9380a48f2a0b87ef",
+   "scene": "scene-0003",
+   "value": 0.034160103648900986,
+   "obstacles": 1937
+  },
+  {
+   "token": "a945d7d02c7a4ef98f1b5aaa1557f546",
+   "scene": "scene-1059",
+   "value": 0.03416388854384422,
+   "obstacles": 563
+  },
+  {
+   "token": "9d9ea50f930e416c89e118f1123d45a8",
+   "scene": "scene-0972",
+   "value": 0.03416752815246582,
+   "obstacles": 1753
+  },
+  {
+   "token": "d58ef648436446b59653b0c805451f1e",
+   "scene": "scene-0104",
+   "value": 0.03419771417975426,
+   "obstacles": 1903
+  },
+  {
+   "token": "41f853f718d94b99b1453da875659661",
+   "scene": "scene-0967",
+   "value": 0.0342024490237236,
+   "obstacles": 534
+  },
+  {
+   "token": "be1a07f716794bd5b4fa374e08b5e724",
+   "scene": "scene-0560",
+   "value": 0.03426064923405647,
+   "obstacles": 1452
+  },
+  {
+   "token": "2f5de0aeca704127925cf8490ff5a21d",
+   "scene": "scene-0003",
+   "value": 0.034263331443071365,
+   "obstacles": 1659
+  },
+  {
+   "token": "f3730479b67b4a3db407852deafe0c0e",
+   "scene": "scene-0775",
+   "value": 0.034267865121364594,
+   "obstacles": 507
+  },
+  {
+   "token": "a8d8bbbbd39d4cc4a9aa402c5f7b8bcc",
+   "scene": "scene-0931",
+   "value": 0.03432496264576912,
+   "obstacles": 1626
+  },
+  {
+   "token": "7ff6ab92e1c443209f8268fcfb214925",
+   "scene": "scene-0276",
+   "value": 0.03434326499700546,
+   "obstacles": 1935
+  },
+  {
+   "token": "18ad5b3aea22454398cc279f33b9a799",
+   "scene": "scene-0015",
+   "value": 0.03436518833041191,
+   "obstacles": 1035
+  },
+  {
+   "token": "79aff65b2bac421da7744d43b2de7bb3",
+   "scene": "scene-0917",
+   "value": 0.034367885440588,
+   "obstacles": 1505
+  },
+  {
+   "token": "5d28835555eb46969fb96b6dbe682868",
+   "scene": "scene-0561",
+   "value": 0.03443238511681557,
+   "obstacles": 1690
+  },
+  {
+   "token": "52c1b263f03f49e5bb5b8ceb8083b4a1",
+   "scene": "scene-0797",
+   "value": 0.034435901790857315,
+   "obstacles": 349
+  },
+  {
+   "token": "6269703390624957869e9bc071f16e17",
+   "scene": "scene-0012",
+   "value": 0.03445332124829292,
+   "obstacles": 278
+  },
+  {
+   "token": "e0233c48f9714711b8fa97ee05b4a8a2",
+   "scene": "scene-1062",
+   "value": 0.034501656889915466,
+   "obstacles": 750
+  },
+  {
+   "token": "fd8420396768425eabec9bdddf7e64b6",
+   "scene": "scene-0003",
+   "value": 0.034522898495197296,
+   "obstacles": 1890
+  },
+  {
+   "token": "e366b4bc78ed467abede70f90dcdaa8f",
+   "scene": "scene-0915",
+   "value": 0.034532710909843445,
+   "obstacles": 1787
+  },
+  {
+   "token": "4e66585f4bf34260b99d4a8ed26940fa",
+   "scene": "scene-0920",
+   "value": 0.03453346714377403,
+   "obstacles": 396
+  },
+  {
+   "token": "ff16d788ac4244e98f9bf8097cf6267c",
+   "scene": "scene-0931",
+   "value": 0.03455935791134834,
+   "obstacles": 1792
+  },
+  {
+   "token": "4eb8a27a2b2f4ed4b5b6a6cc2f8801eb",
+   "scene": "scene-0931",
+   "value": 0.03456099331378937,
+   "obstacles": 1707
+  },
+  {
+   "token": "863d4849fa1349739b081c338a407815",
+   "scene": "scene-0969",
+   "value": 0.034569643437862396,
+   "obstacles": 2081
+  },
+  {
+   "token": "21b99febc5c14f7385e787fe81e96670",
+   "scene": "scene-0003",
+   "value": 0.03461910039186478,
+   "obstacles": 2027
+  },
+  {
+   "token": "ace2c4ce1a524b1f956d379baf10b82d",
+   "scene": "scene-0969",
+   "value": 0.034630127251148224,
+   "obstacles": 2322
+  },
+  {
+   "token": "e2024bdcef0f47f98735a0811cb3b17b",
+   "scene": "scene-0967",
+   "value": 0.03463844582438469,
+   "obstacles": 620
+  },
+  {
+   "token": "b8057780366942b1a2649b502effc975",
+   "scene": "scene-1064",
+   "value": 0.034640051424503326,
+   "obstacles": 537
+  },
+  {
+   "token": "0d59bd91a1bc4098aa0d40b657641f4e",
+   "scene": "scene-1061",
+   "value": 0.03466071933507919,
+   "obstacles": 435
+  },
+  {
+   "token": "b2f43ac0111945a3b3b08af102d2a8ab",
+   "scene": "scene-1061",
+   "value": 0.034663476049900055,
+   "obstacles": 363
+  },
+  {
+   "token": "1ac0914c98b8488cb3521efeba354496",
+   "scene": "scene-0003",
+   "value": 0.03466532751917839,
+   "obstacles": 1803
+  },
+  {
+   "token": "12f0d5cf6f3f43618d022d54b3004756",
+   "scene": "scene-0561",
+   "value": 0.034676529467105865,
+   "obstacles": 2227
+  },
+  {
+   "token": "85196a976749449a86c0327924712e5f",
+   "scene": "scene-0561",
+   "value": 0.034722860902547836,
+   "obstacles": 3313
+  },
+  {
+   "token": "cf86af90b622499b8214df0024a6ea29",
+   "scene": "scene-0101",
+   "value": 0.03472873568534851,
+   "obstacles": 2546
+  },
+  {
+   "token": "7c976cd4bd81403b8294e51b81d52f4d",
+   "scene": "scene-0561",
+   "value": 0.03473207354545593,
+   "obstacles": 2647
+  },
+  {
+   "token": "353a0ef8f00847f98a1540b086b4d018",
+   "scene": "scene-0929",
+   "value": 0.034737590700387955,
+   "obstacles": 678
+  },
+  {
+   "token": "1a18bb13ad6444f0a036b0d33f41a83e",
+   "scene": "scene-0931",
+   "value": 0.034740909934043884,
+   "obstacles": 1951
+  },
+  {
+   "token": "7636f7b3286245cc95a2bd7ac01a64eb",
+   "scene": "scene-0561",
+   "value": 0.03474847972393036,
+   "obstacles": 2508
+  },
+  {
+   "token": "e0798ceaab2e4b67b0a530ca96337943",
+   "scene": "scene-0638",
+   "value": 0.034777507185935974,
+   "obstacles": 1160
+  },
+  {
+   "token": "5c9d217c4af14c608c7b5f9469dd488b",
+   "scene": "scene-0101",
+   "value": 0.03479950502514839,
+   "obstacles": 2499
+  },
+  {
+   "token": "c2289c7fcb7d4b82ad7ea2d0fcad479a",
+   "scene": "scene-0561",
+   "value": 0.03480016067624092,
+   "obstacles": 3357
+  },
+  {
+   "token": "ccaa343a0cb64f5fb1be6820528c44ab",
+   "scene": "scene-1061",
+   "value": 0.03480125963687897,
+   "obstacles": 437
+  },
+  {
+   "token": "8a51ed0367034945927c7c70eda2fd59",
+   "scene": "scene-0561",
+   "value": 0.03482680395245552,
+   "obstacles": 3179
+  },
+  {
+   "token": "901cfd30cb2a4fdba55095f9ec0fed34",
+   "scene": "scene-0101",
+   "value": 0.034830596297979355,
+   "obstacles": 2577
+  },
+  {
+   "token": "8e2f2524e68341c0a48af23b113c1a1e",
+   "scene": "scene-0931",
+   "value": 0.03483780100941658,
+   "obstacles": 1187
+  },
+  {
+   "token": "35631dcce7344b718daeb946b5f93885",
+   "scene": "scene-1065",
+   "value": 0.03483795374631882,
+   "obstacles": 558
+  },
+  {
+   "token": "caf5bbd3211f4fef8697c367d87108a2",
+   "scene": "scene-0797",
+   "value": 0.03484027832746506,
+   "obstacles": 465
+  },
+  {
+   "token": "77909180ce9c4243b9ea97a9ffadc682",
+   "scene": "scene-0924",
+   "value": 0.03485617786645889,
+   "obstacles": 1372
+  },
+  {
+   "token": "6b282c1c40c1454bad559e58b5fcecb0",
+   "scene": "scene-0275",
+   "value": 0.03487876430153847,
+   "obstacles": 1050
+  },
+  {
+   "token": "56f30b8972084492bbe742d423fc00ff",
+   "scene": "scene-0268",
+   "value": 0.03491969034075737,
+   "obstacles": 2550
+  },
+  {
+   "token": "163b70e627854893b88575caf85a56ea",
+   "scene": "scene-0003",
+   "value": 0.0349339060485363,
+   "obstacles": 1933
+  },
+  {
+   "token": "da74550a10a8408299d7e6b1735963ae",
+   "scene": "scene-0101",
+   "value": 0.03493555262684822,
+   "obstacles": 2582
+  },
+  {
+   "token": "ae3d3b5cb4424e7ab501a5d6f0a4980a",
+   "scene": "scene-0101",
+   "value": 0.03495412319898605,
+   "obstacles": 2433
+  },
+  {
+   "token": "6511c90bc39c44eca66399af754393eb",
+   "scene": "scene-0920",
+   "value": 0.0349571667611599,
+   "obstacles": 310
+  },
+  {
+   "token": "dc878ebb5b1e43eb9442d9361854613e",
+   "scene": "scene-0003",
+   "value": 0.03498878329992294,
+   "obstacles": 1918
+  },
+  {
+   "token": "9b20ac04b6c24948b4658246d6fe9e97",
+   "scene": "scene-0966",
+   "value": 0.034993726760149,
+   "obstacles": 1592
+  },
+  {
+   "token": "538bf42677d74c568c25ba4a4fb7a7ee",
+   "scene": "scene-0561",
+   "value": 0.03500525280833244,
+   "obstacles": 3018
+  },
+  {
+   "token": "4cea46b8001846c29eb66c92f827d97f",
+   "scene": "scene-0966",
+   "value": 0.035040151327848434,
+   "obstacles": 1560
+  },
+  {
+   "token": "d924bad2bf534582aefe0ea816bddc5b",
+   "scene": "scene-0966",
+   "value": 0.035067107528448105,
+   "obstacles": 1454
+  },
+  {
+   "token": "dcfd47c0dab94cf79e49221da90564b9",
+   "scene": "scene-0966",
+   "value": 0.03507547825574875,
+   "obstacles": 1961
+  },
+  {
+   "token": "79f6489272c24d3ebc5e225ce6ff2aea",
+   "scene": "scene-1061",
+   "value": 0.03509833291172981,
+   "obstacles": 596
+  },
+  {
+   "token": "99d907c5351b4016b1f8315ef9a0651e",
+   "scene": "scene-0917",
+   "value": 0.035098638385534286,
+   "obstacles": 1187
+  },
+  {
+   "token": "0172553716964bab85e05a5a58b37ee4",
+   "scene": "scene-0967",
+   "value": 0.03509993478655815,
+   "obstacles": 496
+  },
+  {
+   "token": "2f2b214cc4b94a47b53f09b76f8717a6",
+   "scene": "scene-0775",
+   "value": 0.035106685012578964,
+   "obstacles": 606
+  },
+  {
+   "token": "7c0aa537b98344bea85226ba8148ae98",
+   "scene": "scene-0003",
+   "value": 0.035110071301460266,
+   "obstacles": 2124
+  },
+  {
+   "token": "0cd1a04cf7524e95b793b48cd42fc190",
+   "scene": "scene-0971",
+   "value": 0.03511996194720268,
+   "obstacles": 2845
+  },
+  {
+   "token": "6c5e35398a96427790130956fab4ade0",
+   "scene": "scene-0966",
+   "value": 0.035120438784360886,
+   "obstacles": 1616
+  },
+  {
+   "token": "265e1434d8124c0db8d9811073367374",
+   "scene": "scene-0929",
+   "value": 0.03512141853570938,
+   "obstacles": 249
+  },
+  {
+   "token": "00bb84f140c943059a9a1e8e372ddabe",
+   "scene": "scene-0561",
+   "value": 0.03512714430689812,
+   "obstacles": 3368
+  },
+  {
+   "token": "5dd5ed25020f44bc8d6a2afe6eecadca",
+   "scene": "scene-0775",
+   "value": 0.03514399006962776,
+   "obstacles": 675
+  },
+  {
+   "token": "27611379b79c419e9ea1d354bf600e80",
+   "scene": "scene-1068",
+   "value": 0.035149116069078445,
+   "obstacles": 247
+  }
+ ]
+}

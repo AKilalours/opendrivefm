@@ -1687,3 +1687,109 @@ boundary of the contribution, and it should be stated as one:
 WRONG the model says it is.** Ranking and calibration are different tasks; this
 measure wins the first and does not win the second. Claiming both would be
 false, and a reviewer who runs the calibration check would find it.
+
+---
+
+## A28 -- hard-case mining. Two signals work, four are ANTI-correlated. (19 Sep 2026)
+
+Decided **after** seeing data. Exploratory. `scripts/mining/mine.py`.
+
+The question a data engine answers is not "where was the model wrong" -- that
+needs labels, and fleet data has none. It is whether an UNLABELLED signal,
+computable from geometry and the model's own output, finds the frames where the
+model is wrong. So the tool is built in two halves that never touch:
+
+    MINING SIGNALS   predictions + observability only. No ground truth.
+    VALIDATION       per-frame error and calibration gap from Occ3D, used ONLY
+                     to score the signals. Never an input to one.
+
+6,019 frames indexed into SQLite plus an 84-dimension descriptor per frame
+(class histogram, observability histogram, obstacle range and azimuth profile,
+height profile, confidence profile). Retrieval is an exact inner product:
+6,019 x 84 floats is 2 MB and sub-millisecond. An ANN index would take longer
+to build than to skip; FAISS earns its place at millions of vectors, not
+thousands, and adding it here would be resume-driven engineering.
+
+### Result. 5,817 frames with >= 200 obstacle columns.
+
+Target: the worst 10% of frames. Two targets, because they are not the same
+question -- A14 established that error rate and calibration gap differ.
+
+    signal              AUROC(wrong)  AUROC(overconfident)   lift@100
+    mean_margin               0.8618              0.8150       7.6x / 6.9x
+    low_margin_rate           0.8192              0.7709       2.5x / 2.2x
+    low_margin                0.8118              0.7495       4.2x / 3.0x
+    mean_obs                  0.8066              0.7807       5.9x / 6.0x
+    blind_commit              0.5322              0.5002       0.2x / 0.5x
+    obst_dark_rate            0.4293              0.4489       2.4x / 2.7x
+    blind_commit_rate         0.3753              0.3997       0.0x / 0.1x
+    obst_dark                 0.1964              0.2201       0.0x / 0.0x
+    dim_commit                0.1921              0.2136       0.0x / 0.3x
+    obst_n                    0.1864              0.2104       0.0x / 0.0x
+    dim_commit_rate           0.1698              0.2065       0.0x / 0.3x
+    random                    0.5000              0.5000       1.0x
+
+**Two signals work.** Mean top1-top2 margin (inverted) and mean observability.
+Best precision@100 is 69% against a 10% base rate, a 6.9x lift.
+
+### TWO PREDICTIONS OF MINE FAILED. Both are recorded.
+
+**Prediction 1: counts are confounded by scene density; normalising will fix
+them.** FALSE. `blind_commit_rate` 0.3753 and `dim_commit_rate` 0.1698 are no
+better than the raw counts. Normalisation was not the problem.
+
+**Prediction 2: `dim_commit` will win on the OVERCONFIDENT target, because A14
+showed barely-seen voxels carry the largest calibration gap.** FALSE. It scores
+0.2136 there -- still strongly anti-correlated.
+
+### What the failures mean, stated as a limit and not as a save
+
+**A per-voxel finding does not become a frame-level signal by summing it.**
+A14 is about the calibration of individual voxels and it holds. Aggregating it
+into a per-frame count produces something that tracks how much confident
+occupied volume a scene contains, and dense confident scenes are the ones the
+model handles well. Four signals built that way select EASY frames, reliably
+enough to be useful inverted.
+
+The signals that survive are intensive and per-voxel-averaged, not extensive.
+That is the transferable lesson and it is the one to state in the paper: the
+danger-zone result is a statement about voxels and must not be quoted as a
+frame-selection rule.
+
+### Retrieval works across scenes, which is the point
+
+Nearest neighbours of the worst-observed frame (scene-0921, err 52.7%) are
+scene-0921 at 61.5%, then **scene-0272** at 39.9%, **scene-0272** 38.8%,
+**scene-0920** 37.0%, **scene-0015** 47.4% -- all well above the 10% base rate
+and drawn from four different scenes. The descriptor finds analogous
+situations across the fleet rather than adjacent frames in time.
+
+### Committed
+
+`mining_validation.json` and `mined_mean_obs_500.json`. The SQLite store and the
+descriptor matrix are 2.1 MB each, rebuildable in four minutes, and stay out of
+git -- derived state does not belong there.
+
+---
+
+## A23 CORRECTION -- "exactly inert" was an overclaim. (19 Sep 2026)
+
+A23 stated that removing the TRUST constant under a max is **exactly** free,
+quoting `max_noT - max_cam = +0.0000` with a bootstrap interval of
+`[0.0000, 0.0000]`.
+
+The stored value is **5e-6**, not 0. The printed table rounded to four decimals
+and the amendment repeated the rounded figure as if it were exact.
+
+The reasoning was still right: under a max, a positive constant is a monotone
+rescale and cannot change a ranking. The residual is a **uint8 quantisation
+artefact** -- the AUROC is computed on a 256-bin histogram, and rescaling moves
+a handful of values across bin edges.
+
+**Corrected wording:** TRUST is inert to within the measure's quantisation,
+5e-6, which is four orders of magnitude below the effect being measured. Not
+"exactly zero".
+
+Found by the CI gate in `scripts/ci/check_observability_gates.py`, which asserts
+the value is below 1e-4, on its first run. Recorded because a gate that catches
+the author is the only evidence that the gate is not decoration.

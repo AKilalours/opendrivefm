@@ -108,3 +108,26 @@ cpp/build*/
 .tmp/
 !outputs/artifacts/device_report.json
 outputs/viz
+
+# Observability line of work (A12-A28). Same rule as above: name every file, so
+# a new artifact is a deliberate commit and never an accident. CI gates these,
+# and a gate cannot run on a file that was never committed -- which is exactly
+# what happened between A20 and A28 and is what this block fixes.
+!outputs/artifacts/h2_max.json
+!outputs/artifacts/h2_ray_full.json
+!outputs/artifacts/killgate_max_nonfree.json
+!outputs/artifacts/surf_zero_verdict.json
+!outputs/artifacts/camera_dropout.json
+!outputs/artifacts/missed_detection.json
+!outputs/artifacts/formula_decision.json
+!outputs/artifacts/root_cause_h1.json
+!outputs/artifacts/temporal_observability.json
+!outputs/artifacts/recalibrate_v2.json
+!outputs/artifacts/mining_validation.json
+!outputs/artifacts/mined_mean_obs_500.json
+# The mining store and descriptor matrix are 2.1 MB each and are REBUILDABLE
+# from the packed data in four minutes (scripts/mining/mine.py build).
+# Derived state does not belong in git; the JSON summaries above do.
+outputs/artifacts/mine*.sqlite
+outputs/artifacts/mine*.sqlite.bak
+outputs/artifacts/mine_vectors.npz
