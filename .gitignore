@@ -131,3 +131,4 @@ outputs/viz
 outputs/artifacts/mine*.sqlite
 outputs/artifacts/mine*.sqlite.bak
 outputs/artifacts/mine_vectors.npz
+!outputs/artifacts/blind_attribution.json

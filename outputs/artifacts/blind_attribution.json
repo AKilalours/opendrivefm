@@ -1,0 +1,83 @@
+{
+ "frames": 400,
+ "total_occluded": 169468739,
+ "by_class": [
+  {
+   "cls": "manmade",
+   "vol": 74320658,
+   "vol_share": 0.4385508409311997,
+   "road_m2_per_frame": 93.06040000000002,
+   "road_share": 0.14311964418634696
+  },
+  {
+   "cls": "vegetation",
+   "vol": 47200523,
+   "vol_share": 0.2785205299721974,
+   "road_m2_per_frame": 34.9184,
+   "road_share": 0.053701778453096455
+  },
+  {
+   "cls": "car",
+   "vol": 17606247,
+   "vol_share": 0.10389082437203949,
+   "road_m2_per_frame": 106.62120000000003,
+   "road_share": 0.16397509796563667
+  },
+  {
+   "cls": "driveable",
+   "vol": 7205441,
+   "vol_share": 0.042517817991198956,
+   "road_m2_per_frame": 310.5292,
+   "road_share": 0.4775697140080095
+  },
+  {
+   "cls": "truck",
+   "vol": 5951473,
+   "vol_share": 0.035118412015799565,
+   "road_m2_per_frame": 18.536,
+   "road_share": 0.028506923725216387
+  },
+  {
+   "cls": "terrain",
+   "vol": 5319026,
+   "vol_share": 0.031386472994290704,
+   "road_m2_per_frame": 22.402800000000003,
+   "road_share": 0.03445376083466107
+  },
+  {
+   "cls": "sidewalk",
+   "vol": 2834963,
+   "vol_share": 0.016728530681992034,
+   "road_m2_per_frame": 13.546800000000003,
+   "road_share": 0.020833922870131708
+  },
+  {
+   "cls": "pedestrian",
+   "vol": 2647132,
+   "vol_share": 0.01562017877527253,
+   "road_m2_per_frame": 8.474800000000002,
+   "road_share": 0.013033582066598179
+  },
+  {
+   "cls": "bus",
+   "vol": 2026584,
+   "vol_share": 0.011958453293264901,
+   "road_m2_per_frame": 2.9516000000000004,
+   "road_share": 0.004539330819343369
+  },
+  {
+   "cls": "barrier",
+   "vol": 1166753,
+   "vol_share": 0.006884768287560103,
+   "road_m2_per_frame": 6.667200000000001,
+   "road_share": 0.010253634109881457
+  }
+ ],
+ "vehicle_vol_share": 0.15728043506596223,
+ "vehicle_road_share": 0.20120080956218434,
+ "vehicle_road_m2_per_frame": 130.8264,
+ "vehicle_vol_share_no_ground": 0.17334698242430344,
+ "vehicle_road_share_no_ground": 0.4537881583803448,
+ "note": "ground-class self-occlusion is a ray-sampling artefact and is reported separately",
+ "most_common_worst_occluder": "manmade"
+}
