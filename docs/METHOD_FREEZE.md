@@ -1793,3 +1793,71 @@ a handful of values across bin edges.
 Found by the CI gate in `scripts/ci/check_observability_gates.py`, which asserts
 the value is below 1e-4, on its first run. Recorded because a gate that catches
 the author is the only evidence that the gate is not decoration.
+
+---
+
+## A29 -- blind-spot attribution. Vehicles are 17% of what you cannot see and 45% of the road you cannot see. (19 Sep 2026)
+
+Decided **after** seeing data. Exploratory. `scripts/eval/blind_attribution.py`.
+Week 7 figure, pulled forward.
+
+Every occlusion result up to here says a cell is unseen. None says WHO made it
+unseen. The same ray march answers it: a ray stops at its first occupied voxel,
+so every cell that ray would have reached afterwards is hidden BY that voxel.
+Rays no longer terminate; the first hit is recorded as the occluder and the
+remainder of the ray is credited to it. Cost is about 2x the terminating march.
+Ground truth supplies the occluder's CLASS only; the geometry is the same march
+that produced every frozen map, so this is consistent with A12-A28 by
+construction.
+
+400 frames, 169,468,739 occluded voxels attributed.
+
+### Result, structures and objects only
+
+    occluder        hidden volume   share    hidden drivable   share
+    manmade            74,320,658   48.3%       93.1 m2/frame   32.3%
+    vegetation         47,200,523   30.7%       34.9 m2/frame   12.1%
+    car                17,606,247   11.5%      106.6 m2/frame   37.0%
+    truck               5,951,473    3.9%       18.5 m2/frame    6.4%
+    pedestrian          2,647,132    1.7%        8.5 m2/frame    2.9%
+    bus                 2,026,584    1.3%        3.0 m2/frame    1.0%
+    barrier             1,166,753    0.8%        6.7 m2/frame    2.3%
+
+    all vehicles       17.3% of hidden VOLUME     45.4% of hidden DRIVABLE SURFACE
+    worst single occluder in a frame is manmade in 42% of frames
+
+### The finding
+
+**Buildings dominate the hidden volume; vehicles dominate the hidden road.**
+Structures account for nearly half of everything a camera-only stack cannot
+see, but most of that volume is sky, facade and interior -- space no vehicle
+will ever occupy. Cars are 11.5% of blind volume and **37.0% of blind drivable
+surface**: roughly three times more road hidden per unit of blind volume,
+because a car sits on the road at eye level and a building does not.
+
+The one-line version, which no occupancy paper currently states:
+
+    vehicles are 17% of what a camera-only stack cannot see,
+    and 45% of the ROAD it cannot see.
+
+That is the number a rig designer and a safety case both want, and it is only
+computable because the measure is per-voxel and occlusion-aware.
+
+### LIMITATION, stated before the headline and not after it
+
+The raw table, before ground classes are separated out, credits **47.8% of
+hidden drivable surface to `driveable` itself** -- the road as its own
+occluder. That is a **ray-sampling artefact, not geometry**. At range the pixel
+grid under-samples the ground plane, some road cells fall between rays at
+stride 4 and are reached by none, and the attribution then credits them to the
+nearest road cell a ray did hit.
+
+Cameras do lose angular resolution with range and that part is real -- the
+coverage term already models it -- but calling the road its own occluder is
+misleading, so ground classes (11-14) are reported separately and excluded from
+the headline. A finer stride would shrink the artefact and would not change the
+object-occluder ordering, which depends on solid angle rather than sampling.
+
+This is A10's lesson in a new costume: in a voxel world, a grazing surface
+looks like an occluder. It was caught here because 47.8% for the road was too
+large to be geometry.
