@@ -2258,3 +2258,43 @@ decision, A26's full-split rebuild -- cost about two hours. At 33 minutes the
 rebuild stops being a decision and becomes a step. A24's decile collapse and
 A33's three-way confound both went unexamined longer than they should have
 partly because re-running was expensive.
+
+---
+
+## A36 -- the renderer was showing a corridor computed with the bug A30 fixed. (23 Sep 2026)
+
+Presentation fix, no new claim, recorded because it is the third instance of the
+same failure mode and the pattern now matters more than the instance.
+
+`render_hd.py` computes a verified-free corridor per frame and draws it in green.
+It shipped with `clear_from = 0.4 m`, which A30 later measured to be **inside the
+road surface** -- levels k=0,1,2 are 100% occupied by the road and k=3 is still
+54% road bleed, so the test was asking the road to be free. A30 corrected the
+envelope to k=4..10 (z = +0.6 to +3.4 m) in `safety_envelope.py` and **the fix
+was never carried back to the renderer.**
+
+Effect on what was displayed, scene-0916 frame 21:
+
+    before  corridor 20.4 - 23.2 m   (2.8 m of verified clearance)
+    after   corridor  3.2 - 40.0 m   (36.8 m)
+
+The published median from A30 is 26.4 m, so the videos were understating the
+corridor by roughly an order of magnitude. All 162 frames across four scenes
+were re-rendered.
+
+### The pattern, stated once
+
+Three times now a correction has been made in one file and not carried to
+another that computes the same quantity:
+
+1. A30: longest-run vs first-run. `render_hd.py` had it right; `safety_envelope.py`
+   did not.
+2. A30 again: the height envelope. `safety_envelope.py` got it right; `render_hd.py`
+   did not -- the same two files, in the opposite direction.
+3. A34: the mask_camera scoping trap, recorded in A13 and walked into again.
+
+Each was caught by a number looking implausible, never by a test. The corridor
+computation now exists in two places with the same constants and no shared
+implementation, which is the actual defect. **Action for the writeup phase:
+`verified_free` moves to one module and both callers import it.** Until then
+the constants are duplicated with a comment in each naming the other file.

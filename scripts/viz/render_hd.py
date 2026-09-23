@@ -116,7 +116,7 @@ def chase_render(ax, cls, conf, obs, top, has, eye=(-14., 0., 9.),
     ax.set_facecolor(BG)
 
 
-def verified_free(cls, obs, tau=0.15, halfw=1.4, clear_from=0.4):
+def verified_free(cls, obs, tau=0.15, halfw=1.4, clear_from=0.6, clear_to=3.4):
     """Longest contiguous forward run that is predicted free AND observed.
 
     A column is NOT "all levels free" -- the road surface itself is class 11,
@@ -126,8 +126,15 @@ def verified_free(cls, obs, tau=0.15, halfw=1.4, clear_from=0.4):
     """
     j0 = int((RNG - halfw) / RES); j1 = int((RNG + halfw) / RES)
     i0 = int(RNG / RES)
+    # A30 measured the height profile: levels k=0,1,2 are 100% occupied (that
+    # is the road) and k=3 is still 54% road bleed, so clear_from=0.4 asks the
+    # ROAD to be free and returns a near-zero corridor. The envelope runs
+    # k=4..10, z = +0.6 to +3.4 m. This renderer shipped with the old value and
+    # is corrected here to match safety_envelope.py -- the same failure to carry
+    # a fix across files that A30 recorded in the other direction.
     k0 = max(int((clear_from - Z0) / RES), 0)
-    free = (cls[:, :, k0:] == FREE).all(-1)
+    k1 = min(int((clear_to - Z0) / RES), NZ)
+    free = (cls[:, :, k0:k1] == FREE).all(-1)
     seen = (obs.max(-1) >= tau)
     ok = (free & seen)[:, j0:j1].mean(1) >= 0.8
     # The cells immediately in front of the bumper are ALWAYS unverifiable: the
