@@ -2111,3 +2111,93 @@ the most replicated statement in the project:
 
     observability answers WHICH cells are likely wrong.
     it does not improve HOW WRONG the model says it is.
+
+---
+
+## A34 -- recalibration: ROOT CAUSE FOUND. The target was wrong, not the model. (23 Sep 2026)
+
+Decided **after** seeing data. `scripts/eval/recal_root_cause.py`. Full split,
+**3,852,160,000 voxels**, 150 scenes, held out 75, exact sufficient statistics
+binned by (predicted class, confidence, observability, mask_camera). No
+sampling.
+
+Three attempts had tied or lost to `mask_camera` on calibration (A13, A27,
+A33). Each fixed a modelling problem and each still failed. This asks the
+question none of them asked: **conditional on the predicted class and the
+model's own confidence, does accuracy still depend on observability?**
+
+    model for p(correct)        log-loss        ECE    vs baseline
+    class + confidence          0.159283   0.002177
+    + mask_camera               0.106443   0.001536       +33.17%
+    + observability             0.153435   0.001780        +3.67%
+    + both                      0.101388   0.001195       +36.35%
+
+    scene bootstrap, log-loss reduction
+    observability vs class+confidence   +0.005820  [+0.005400, +0.006258]  WINS
+    observability vs mask_camera        -0.046941  [-0.049693, -0.043659]  LOSES
+    both         vs mask_camera         +0.005069  [+0.004592, +0.005484]  WINS
+
+    model-free, inside a fixed (class, confidence) cell, 157 cells
+      mean accuracy spread across observability   0.0995
+      mean slope                                 +0.0618 per unit observability
+      cells where accuracy rises with it          85.1% by voxel weight
+
+### Three findings, and together they close the question
+
+**1. The signal is real.** Conditional on class AND confidence, accuracy still
+moves 0.0995 across observability with a +0.0618 slope, and observability beats
+the class+confidence baseline with the interval excluding zero. Every earlier
+attempt that concluded "no signal" was wrong about that.
+
+**2. It loses to mask_camera by a wide margin, not a tie.** -0.046941, and the
+interval is nowhere near zero. A13, A27 and A33 all reported a tie; on the full
+population it is a clear loss. The tie was an artefact of evaluating INSIDE
+mask_camera, where the flag is constant and cannot show its advantage.
+
+**3. But it adds on top of mask_camera.** "Both" beats mask_camera alone,
++0.005069, interval excludes zero. The two are not measuring the same thing.
+
+### THE ROOT CAUSE
+
+**`mask_camera` is not a competing visibility measure. It is a label-validity
+flag.** Occ3D builds it during dataset construction from the full sensor suite
+to mark where its own ground truth is trustworthy. Outside it, the labels are
+themselves unreliable, so "correct" is partly noise -- and a flag that predicts
+where the labels are noisy will beat any perception signal at predicting
+apparent error.
+
+Three attempts were therefore aimed at the wrong target. Beating `mask_camera`
+on calibration was never the right bar, because part of what it predicts is
+whether the benchmark can be evaluated at all.
+
+**And it does not exist at deployment.** `mask_camera` is computed offline,
+once, from LiDAR and the full rig. A vehicle on the road has observability and
+does not have `mask_camera`. So the operationally meaningful comparison is
+observability against class and confidence -- **which observability wins** --
+and the fact that it still adds on top of `mask_camera` proves the two carry
+different information.
+
+### Status change
+
+    Stage 5 (recalibration) moves from FAILED to RESOLVED, with a corrected
+    claim rather than a rescued one:
+
+      observability improves calibration over a class-and-confidence baseline,
+      by 3.67% log-loss and 18.2% ECE, on 3.85 billion voxels.
+      It does not beat mask_camera, which is a label-validity flag unavailable
+      at inference, and it adds information on top of it.
+
+The old claim -- "observability-conditioned recalibration fails" -- is
+**withdrawn as mis-specified**, not as wrong: it was true against the target it
+chose, and that target was the wrong one.
+
+### A trap walked into again, and caught
+
+The first version of this script filtered to voxels inside `mask_camera`, which
+makes `mask_camera` **constant** in the sample -- so the baseline the previous
+three attempts lost to could not even be expressed, and the script would have
+reported "observability helps" against a baseline missing its only real
+competitor. A13 recorded this exact trap ("--scope mask made the mask grouping
+constant"). It was walked into a second time and caught only because the first
+result looked too good. The file now keeps all voxels and carries a comment
+naming the trap.
