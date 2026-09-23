@@ -2201,3 +2201,60 @@ competitor. A13 recorded this exact trap ("--scope mask made the mask grouping
 constant"). It was walked into a second time and caught only because the first
 result looked too good. The file now keeps all voxels and carries a comment
 naming the trap.
+
+---
+
+## A35 -- the marcher is 3.46x faster, and the answer is bit-identical. (23 Sep 2026)
+
+Decided **after** seeing data. Stage 7, performance. `scripts/perf/march_bench.py`.
+
+`build_observability_ray.py` has carried this line in its own docstring since
+A11:
+
+    "Affordable because grid and cameras are both ego-fixed, so sample indices
+     are identical every frame: precompute once, then gather and any() per
+     frame."
+
+**That optimisation was described and never implemented.** The shipped marcher
+recomputes every ray direction and every voxel index on every frame, for every
+camera, for all 6,019 frames.
+
+The precondition is in fact stronger than the docstring claims. Measured across
+all 150 scenes: camera extrinsics and intrinsics are **constant within a scene**
+(max variation exactly 0.0) and the whole validation split contains only **two
+distinct rigs**. So the ray-to-voxel index table can be built twice and reused
+6,019 times.
+
+    table[ray, step] -> flat voxel index, plus a validity mask
+    per frame: gather occupancy, find each ray's first hit, mark up to and
+               including it. No trigonometry, no projection, no per-step
+               index arithmetic.
+
+### Result
+
+    verification            0 differing voxels out of 30,720,000 compared
+    shipped                 1.139 s / frame
+    precomputed table       0.329 s / frame
+    speedup                 3.46x
+    table build             6.91 s once, 832 MB resident for 12 camera tables
+    full 6,019-frame build  114 min  ->  33 min, table build included
+
+**Bit-identical, not approximately identical.** A speedup that changes the
+answer is worthless, so the benchmark refuses to print a timing number until
+the equality check passes. Every frozen observability map in A12-A34 can be
+reproduced by the fast path without re-deriving any result.
+
+### Cost, stated with the win
+
+832 MB of resident tables for 12 cameras. That is the trade: memory for
+arithmetic. It is affordable on a laptop and would not be on an embedded
+target, where the per-frame projection is the right implementation. The fast
+path is for offline fleet-scale processing, which is what this pipeline is.
+
+### Why it matters beyond the clock
+
+Every experiment in this project that needed a rebuild -- A23's formula
+decision, A26's full-split rebuild -- cost about two hours. At 33 minutes the
+rebuild stops being a decision and becomes a step. A24's decile collapse and
+A33's three-way confound both went unexamined longer than they should have
+partly because re-running was expensive.
