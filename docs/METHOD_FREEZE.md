@@ -1982,3 +1982,132 @@ sub-500 ms resolution is not available. tau = 0.10 was fixed before the run and
 not tuned. The ego box test is a 4.8 x 2.8 x 2.5 m volume around each future
 pose, which is the vehicle's own footprint and not a planned corridor with
 margin.
+
+---
+
+## A32 -- where does the 7th camera go? Nowhere useful. (23 Sep 2026)
+
+Decided **after** seeing data. Exploratory. Completes Week 4's missing half and
+Week 7's placement figure. `scripts/eval/camera_placement.py`.
+
+A21 asked what the rig loses when a camera fails. This asks the design
+question: given the observability field over real driving, where would an
+ADDITIONAL camera buy the most? The measure makes this answerable analytically
+-- a candidate camera is just another term in the max, so place it, march it,
+recombine. No retraining, no simulator. You cannot ask a trained occupancy
+network what a camera it has never seen would contribute; you can ask the
+geometry.
+
+164 frames. Baseline: **287,248 of 373,345 obstacle voxels (76.94%) have no
+camera coverage at all**, mean observability on obstacles 0.1550.
+
+    add a 7th camera   obstacles recovered   road recovered   mean obs gain
+    roof_high  90 deg        6,200   2.2%     52,381   6.8%        +0.0076
+    rear_tele  45 deg        3,977   1.4%     58,998   7.7%        +0.0287
+    front_wide 120 deg       2,281   0.8%     31,191   4.1%        +0.0024
+    bumper_low 100 deg       2,225   0.8%     15,078   2.0%        +0.0020
+    side_right  90 deg       1,306   0.5%     11,689   1.5%        +0.0020
+    side_left   90 deg       1,136   0.4%      9,064   1.2%        +0.0020
+
+### The finding, and it is a negative one worth more than a positive
+
+**Adding a seventh camera anywhere recovers at most 2.2% of the obstacle voxels
+the six-camera rig cannot see.** The best placement by road recovered
+(rear_tele, 7.7%) is a telephoto pointed backwards, which is a narrow fix for a
+specific gap rather than a rig improvement.
+
+The reason is the point: **this rig is not coverage-limited, it is
+occlusion-limited.** The 76.94% of obstacle voxels with no evidence are behind
+things, not outside anyone's field of view. A29 already said what those things
+are -- structures 48.3% of hidden volume, vehicles 45.4% of hidden drivable
+surface. More lenses do not see through a parked truck.
+
+### Where this leaves the three studies together
+
+    A21  losing one camera costs 8.3% to 30.2% of obstacles
+    A29  what makes cells blind is objects, not field-of-view gaps
+    A32  adding a camera buys back at most 2.2%
+    A31  but 58.3% of the blind volume ON THE EGO'S PATH clears within 2 s
+
+So the rig is well designed for coverage, the residual blindness is physical,
+and the thing that actually resolves it is **motion plus memory**, not
+hardware. For a camera-only stack the return on a seventh camera is near zero
+and the return on knowing what you cannot see is large. That is the argument
+this whole project exists to make, and it now has a hardware-side number.
+
+### Limits
+
+164 frames, six hand-chosen placements rather than a dense sweep -- so this
+bounds the gain, it does not find the optimum. Candidate intrinsics are ideal
+pinholes at 1600x900; a real lens has distortion and a real mount has
+occlusion by the vehicle itself, both of which would lower the gains further,
+not raise them.
+
+---
+
+## A33 -- selective prediction on the max maps. A RESULT CHANGED. (23 Sep 2026)
+
+Decided **after** seeing data. `scripts/eval/selective.py --obs data/pack/obs_max`.
+2,000 frames, 150 scenes, dev/test split by scene, 400 scene bootstrap
+resamples, dev fit fixed.
+
+This was the last analysis still quoted from the superseded noisy-OR maps.
+Re-running it on the A23/A26 maps did not merely move a decimal.
+
+    AURC, lower is better                      value
+    confidence alone                         0.39278 (implied)
+    conf + mask_camera                       0.34418 (+12.4% vs conf alone)
+    conf + observability                     0.32797 (+16.5% vs conf alone)
+    observability alone                      0.38708
+    mask_camera alone                        0.39235
+
+    AURC(mask) - AURC(obs), with confidence  +0.01606  [+0.01041, +0.02169]
+    AURC(conf) - AURC(obs)                   +0.06481  [+0.05502, +0.07538]
+    sensor-only, mask - obs                  +0.00502  [-0.00088, +0.01093]
+
+    ECE                                        value
+    raw confidence                           0.39830
+    global logistic                          0.03182
+    + mask_camera                            0.02335
+    + observability (smooth)                 0.02829
+
+### What changed, stated plainly
+
+On the noisy-OR maps the reported position was: **with** model confidence in
+hand the binary flag is sufficient and the continuous measure adds nothing (CI
+spanned zero), while the continuous measure won in the **sensor-only** regime
+(+0.0430 on occupied voxels).
+
+On the max maps that **inverts**:
+
+* **With confidence, observability now BEATS mask_camera, +0.01606, CI excludes
+  zero.** The old null is gone.
+* **Sensor-only, the difference is now +0.00502 with the CI spanning zero.** The
+  old win is gone.
+
+### This is NOT yet quotable, and here is why
+
+Three things differ from the frozen A12-era run at once: the measure (max
+instead of noisy-OR), the sample (2,000 frames instead of 6,019), and for the
+sensor-only line the scope (full volume here, occupied voxels there). A result
+that reverses under three simultaneous changes has not been isolated to any of
+them.
+
+    ACTION REQUIRED before either number is used:
+      python3 scripts/eval/selective.py --obs data/pack/obs_max --boot 2000
+      python3 scripts/eval/selective.py --obs data/pack/obs_max --nonfree --boot 2000
+    on the FULL split. The scan is ~380 s and exceeds the remote shell's limit,
+    so it runs locally.
+
+Until then the paper quotes neither, and the sensor-only claim in the Field
+Brief (+0.0430) stays labelled as measured on the superseded maps.
+
+### What did NOT change, and it matters
+
+**mask_camera still wins on ECE** -- 0.02335 against 0.02829. Three separate
+attempts (A13, A27, and now this) have failed to beat the binary flag on
+calibration while the continuous measure wins on ranking. That boundary is now
+the most replicated statement in the project:
+
+    observability answers WHICH cells are likely wrong.
+    it does not improve HOW WRONG the model says it is.
