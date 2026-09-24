@@ -127,3 +127,18 @@ jobs:
         # constant was "exactly" inert at 0.0000 when the stored value is 5e-6,
         # a uint8 quantisation residual. The gate found it, not a human.
         run: python scripts/ci/check_observability_gates.py --self-test
+
+  verification-image:
+    name: The verification image builds and passes its own checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # A39 recorded that the image's CONTENTS were verified but the container
+      # was never built, because Docker Hub was unreachable from the machine
+      # that wrote it. This job is what closes that gap, and it must run the
+      # image rather than only building it: a Dockerfile that builds and then
+      # fails every gate inside is not a verification image.
+      - name: Build from the committed tree, exactly as the header documents
+        run: git archive HEAD | docker build -t odfm -
+      - name: Run every check inside the container
+        run: docker run --rm odfm
