@@ -2298,3 +2298,81 @@ computation now exists in two places with the same constants and no shared
 implementation, which is the actual defect. **Action for the writeup phase:
 `verified_free` moves to one module and both callers import it.** Until then
 the constants are duplicated with a comment in each naming the other file.
+
+---
+
+## A37 -- selective prediction, FULL SPLIT. A33's flag lifted, and A33 was partly my error. (24 Sep 2026)
+
+A33 recorded the selective-prediction result as **NOT QUOTABLE** and named a
+required action: run it on the full split. That action is done, and the reason
+it had not been done was itself a defect worth naming.
+
+### Root cause of the delay, and the fix
+
+The scan was single-threaded at ~0.063 s/frame, so 6,019 frames took ~380 s --
+longer than the 180 s a remote shell call allows. A33 was therefore run on a
+2,000-frame subsample and flagged. The scan is a pure per-frame histogram
+accumulation with no cross-frame state, so it parallelises exactly.
+`selective.py` now takes `--jobs`; **verified identical output on 300 frames
+with one worker and with many** before the full run. 380 s becomes 91 s.
+
+This is the root fix for "the full split cannot be run", not a workaround.
+
+### Result. 6,019 frames, 150 scenes, 75 dev / 75 test, 2,000 scene bootstrap.
+
+    scope          regime            AURC(mask) - AURC(obs)          verdict
+    full volume    with confidence   +0.01544 [+0.01028, +0.02098]   obs WINS
+    full volume    sensor-only       +0.00551 [-0.00040, +0.01220]   tie
+    occupied only  with confidence   -0.00327 [-0.00485, -0.00174]   mask WINS
+    occupied only  sensor-only       +0.04215 [+0.03475, +0.04970]   obs WINS
+
+    ECE, full volume   + mask_camera 0.02384   + observability 0.02664
+    ECE, occupied      + mask_camera 0.02221   + observability 0.02378
+
+### A33 WAS PARTLY WRONG, AND IT WAS MY ERROR
+
+A33 stated that "the old +0.0430 sensor-only win is gone", citing +0.00502 with
+an interval spanning zero. **That compared the wrong things.** The frozen
++0.0430 was measured on OCCUPIED voxels; the +0.00502 I set against it was the
+FULL VOLUME line. Different populations.
+
+On the matching scope the original claim is confirmed, not lost:
+
+    frozen (noisy-OR maps, occupied)   +0.0430  [+0.0356, +0.0503]
+    now    (max maps, occupied)        +0.04215 [+0.03475, +0.04970]
+
+A33 listed "the scope" as one of three simultaneous changes and then failed to
+control for it in its own comparison. Recorded as an error of mine, not a
+finding.
+
+### What actually changed, stated correctly
+
+**One thing changed and one thing was confirmed.**
+
+* **Changed:** on the full volume WITH confidence, observability now beats
+  mask_camera (+0.01544, interval excludes zero) where the noisy-OR maps gave a
+  null. The 2,000-frame A33 estimate (+0.01606) and the full split (+0.01544)
+  agree, so the reversal is real and is attributable to the A23 formula change.
+* **Confirmed:** the sensor-only advantage on occupied voxels, +0.04215 against
+  a frozen +0.0430.
+
+### The shape this leaves, and it is the paper's scoping statement
+
+    on OCCUPIED voxels -- the cells a planner cares about --
+      without model confidence, observability wins decisively (+0.04215)
+      with model confidence, the binary flag is slightly better (-0.00327)
+
+    on the FULL VOLUME -- dominated by free space --
+      with confidence, observability wins (+0.01544)
+      without, they tie
+
+And across every scope, `mask_camera` remains better on ECE. That is the same
+boundary A34 established from a different direction: **observability answers
+WHICH cells are likely wrong; it does not improve HOW WRONG the model says it
+is.** Four independent analyses now agree on that sentence.
+
+### Status
+
+A33's NOT QUOTABLE flag is **lifted**. Both numbers are full-split and may be
+used, with their scope stated every time -- the scope is the whole finding.
+The Field Brief's +0.0430 stands and becomes +0.04215 on the max maps.

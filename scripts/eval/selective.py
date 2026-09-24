@@ -49,9 +49,49 @@ import os
 import time
 
 import numpy as np
+from multiprocessing import Pool
 
 FREE = 17
 NC, NO = 40, 12          # confidence bins, observability bins
+
+# --- parallel scan ----------------------------------------------------------
+# The scan was single-threaded at ~0.063 s/frame, so the full 6,019-frame split
+# took ~380 s. That is longer than the 180 s a remote shell call allows, which
+# is why A33 had to be run on a 2,000-frame subsample and why its result was
+# recorded as NOT QUOTABLE. The work is a pure per-frame histogram accumulation
+# with no cross-frame state, so it parallelises exactly. This is the root fix
+# for "the full split cannot be run", not a workaround for it.
+_W = {}
+
+
+def _init_scan(preds, obs, gts, nonfree):
+    _W.update(preds=preds, obs=obs, nonfree=nonfree)
+    _W["gt"] = {os.path.basename(os.path.dirname(q)): q
+                for q in glob.glob(os.path.join(gts, "*", "*", "labels.npz"))}
+
+
+def _scan_one(row):
+    tok = row["token"]
+    pp = os.path.join(_W["preds"], f"{tok}.npz")
+    op = os.path.join(_W["obs"], f"{tok}.npy")
+    gp = _W["gt"].get(tok)
+    if not (gp and os.path.exists(pp) and os.path.exists(op)):
+        return None
+    g = np.load(gp)
+    sem, mk = g["semantics"], g["mask_camera"].astype(bool)
+    z = np.load(pp)
+    cls, conf = z["cls"], z["conf"].astype(np.float32) / 255.0
+    obs = np.load(op).astype(np.float32) / 255.0
+    corr = (cls == sem)
+    keep = np.ones_like(mk) if not _W["nonfree"] else (sem != FREE)
+    c, o, m, y = conf[keep], obs[keep], mk[keep], corr[keep]
+    cb = np.clip((c * NC).astype(np.int32), 0, NC - 1)
+    ob = np.clip((o * (NO - 1)).astype(np.int32), 0, NO - 1)
+    flat = (cb * NO + ob) * 2 + m.astype(np.int32)
+    n = np.bincount(flat, minlength=NC * NO * 2).astype(np.float64)
+    k = np.bincount(flat, weights=y.astype(np.float64),
+                    minlength=NC * NO * 2)
+    return row["scene"], n.reshape(NC, NO, 2), k.reshape(NC, NO, 2)
 
 
 def irls(X, n, k, iters=40):
@@ -109,6 +149,10 @@ def main():
                          "fit held fixed. Without it the observability-vs-mask "
                          "margin (0.7%) cannot be distinguished from noise, "
                          "and every other number in this project carries one.")
+    ap.add_argument("--jobs", type=int, default=0,
+                    help="scan workers; 0 = cores-1. The scan is a pure "
+                         "per-frame histogram accumulation, so this changes "
+                         "the wall clock and nothing else.")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
 
@@ -135,33 +179,24 @@ def main():
     NS = np.zeros((len(test_scenes), NC, NO, 2), np.float32)
     KS = np.zeros((len(test_scenes), NC, NO, 2), np.float32)
     used, t0 = 0, time.time()
-    for row in index:
-        tok = row["token"]
-        pp = os.path.join(args.preds, f"{tok}.npz")
-        op = os.path.join(args.obs, f"{tok}.npy")
-        gp = gt_map.get(tok)
-        if not (gp and os.path.exists(pp) and os.path.exists(op)):
-            continue
-        g = np.load(gp)
-        sem, mk = g["semantics"], g["mask_camera"].astype(bool)
-        z = np.load(pp)
-        cls, conf = z["cls"], z["conf"].astype(np.float32) / 255.0
-        obs = np.load(op).astype(np.float32) / 255.0
-        corr = (cls == sem)
-        keep = np.ones_like(mk) if not args.nonfree else (sem != FREE)
-        c, o, m, y = conf[keep], obs[keep], mk[keep], corr[keep]
-        cb = np.clip((c * NC).astype(np.int32), 0, NC - 1)
-        ob = np.clip((o * (NO - 1)).astype(np.int32), 0, NO - 1)
-        s = 0 if row["scene"] in dev else 1
-        np.add.at(N, (s, cb, ob, m.astype(np.int32)), 1.0)
-        np.add.at(K, (s, cb, ob, m.astype(np.int32)), y.astype(np.float64))
-        if s == 1:
-            j = tsi[row["scene"]]
-            np.add.at(NS, (j, cb, ob, m.astype(np.int32)), 1.0)
-            np.add.at(KS, (j, cb, ob, m.astype(np.int32)), y.astype(np.float32))
-        used += 1
-        if used % 1000 == 0:
-            print(f"  {used}  {(time.time()-t0)/used:.3f}s/frame", flush=True)
+    nj = args.jobs if args.jobs > 0 else max(os.cpu_count() - 1, 1)
+    with Pool(nj, initializer=_init_scan,
+              initargs=(args.preds, args.obs, args.gts, args.nonfree)) as pool:
+        for out in pool.imap_unordered(_scan_one, index, chunksize=8):
+            if out is None:
+                continue
+            scene, n, k = out
+            s_ = 0 if scene in dev else 1
+            N[s_] += n
+            K[s_] += k
+            if s_ == 1:
+                j = tsi[scene]
+                NS[j] += n.astype(np.float32)
+                KS[j] += k.astype(np.float32)
+            used += 1
+            if used % 1000 == 0:
+                print(f"  {used}  {(time.time()-t0)/used:.4f}s/frame "
+                      f"({nj} workers)", flush=True)
 
     cc = (np.arange(NC) + 0.5) / NC
     oo = np.arange(NO) / (NO - 1)
