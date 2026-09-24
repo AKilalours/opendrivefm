@@ -135,3 +135,6 @@ outputs/artifacts/mine_vectors.npz
 !outputs/artifacts/safety_envelope.json
 !outputs/artifacts/recal_confound.json
 !outputs/artifacts/corridor_temporal.json
+!outputs/artifacts/freespace_hump.json
+!outputs/artifacts/hump_edges.json
+outputs/artifacts/hump_store.npz

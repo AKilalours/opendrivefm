@@ -2817,3 +2817,147 @@ model and Stage 5 closes properly this time.
 
 Each of these was written with the outcome unknown and is reported whichever
 way it lands.
+
+---
+
+## A42 -- the free-space hump, explained; and a correction to the result that
+## survived A24
+
+**Date:** 2026-09-24. **Decided:** after seeing data. **EXPLORATORY.**
+`scripts/eval/freespace_hump.py`. Full split, 536,229,736 voxels inside
+`mask_camera` (A5's pre-registered scope), 150 scenes, exact sufficient
+statistics binned by (GT free/occupied, observability decile, height band,
+range ring, proximity to structure, confidence bin).
+
+A24 located H1's failure in the free stratum and recorded that the CAUSE "is
+not established". Two of this project's failed predictions trace to that one
+unexplained phenomenon, so it is worth closing. It is now closed, and closing
+it cost the project one of its own favourable numbers.
+
+### 1. The hump is in ACCURACY, not confidence
+
+    GT FREE      voxels        confidence   accuracy      gap
+    obs = 0     111,848,198      0.9375      0.8823     0.0552
+    decile 1     22,617,552      0.9746      0.9528     0.0219   <- the anomaly
+    decile 3     18,929,992      0.9607      0.9200     0.0407   <- the peak
+    decile 5     24,612,781      0.9664      0.9291     0.0373
+    decile 8     19,522,889      0.9765      0.9576     0.0189
+    decile 10   117,598,612      0.9844      0.9756     0.0088
+
+Both terms dip in the middle; accuracy dips further. So the model is genuinely
+worse at mid observability on free space and its confidence does not follow it
+down. This is a real overconfidence pocket, not a confidence artefact, and the
+distinction was not previously available because nobody had split the gap.
+
+The anomaly is not the peak, it is **decile 1**: barely-observed free cells are
+the second best calibrated of all, beaten only by the fully observed.
+
+### 2. Three composition hypotheses tested. All three FAIL.
+
+**MY PREDICTION FAILED, and this is the sixth recorded.** I predicted the hump
+was Simpson's paradox along geometry -- that deciles mix heights and ranges
+unevenly, air at 4 m being trivially free while the 40 cm above the road is
+contested. Rank correlation of gap against decile, the statistic H1 was
+registered on:
+
+    GT FREE   aggregate                                   -0.550
+              voxel-weighted mean, 7 cells >= 5M voxels   +0.581
+
+It reverses. Geometry composition does not cause the hump -- **it MASKS it.**
+Inside fixed height and range the rising limb is steeper and longer than in the
+aggregate. The aggregate's apparent decline on free space is partly manufactured
+by the height mix shifting across deciles.
+
+Proximity to real structure fails as an explanation too, though it produces the
+mechanism in section 3: the hump is present with the same shape in all three
+shells.
+
+    gap by decile, GT FREE
+      touching a surface   .1112 .1297 .1315 .1423 .1469 .1419 .1265 .1155 .0865
+      one cell away        .0632 .0734 .0828 .0888 .0890 .0780 .0643 .0518 .0231
+      open air (2+ cells)  .0136 .0268 .0316 .0287 .0257 .0185 .0134 .0092 .0017
+
+Rise then fall, every time. **The hump is robust to height, to range and to
+proximity. It is a property of the observability axis, not of what the deciles
+happen to contain.**
+
+### 3. The mechanism: it is a false-positive occupancy curve
+
+On a ground-truth FREE voxel every error is, by construction, the model
+asserting something occupied. So free-space accuracy IS one minus the
+false-positive occupancy rate, and the hump is a hump in false positives.
+
+Where those false positives live:
+
+    GT FREE, by distance to the nearest GT-occupied voxel
+      touching a surface    29,116,975    7.0%   gap 0.1194
+      one cell away         46,593,757   11.2%   gap 0.0627
+      open air (2+ cells)  339,193,947   81.8%   gap 0.0190
+
+A **6.3x gradient**. The model's free-space miscalibration is concentrated at
+object boundaries: it smears occupancy outward from real surfaces rather than
+inventing objects in empty space.
+
+Put beside the occupied stratum, the two halves finally make one statement. On
+OCCUPIED voxels the gap peaks at decile 1 (0.2889) and declines. On FREE voxels
+decile 1 is the best and the peak moves to deciles 3-5. Those are different
+physical situations:
+
+* **barely seen and occupied** -- the model half-sees an object and
+  overcommits. This is A14's danger zone.
+* **barely seen and free** -- there is nothing to assert, so the model leaves it
+  empty and is right. Easy.
+* **moderately seen and free** -- enough evidence to start placing a boundary,
+  not enough to place it correctly. **This is where the false positives are**,
+  and it is why the free-space peak sits at mid observability rather than at
+  the bottom of the scale.
+
+So the hump is not a defect in the measure. It is the measure resolving a
+second, distinct failure mode that the aggregate H1 test could not see because
+it summed the two strata together.
+
+### 4. The correction, and it goes against us
+
+A24's surviving claim is that the pre-registered decline "holds exactly" on
+ground-truth occupied voxels at rank correlation -0.865 (here -0.967). Applying
+the identical confound test to that stratum -- which A24 did not do, and which
+it would have been selective not to do here:
+
+    GT OCCUPIED   aggregate                                   -0.967
+                  within-cell mean, 12 cells >= 1M voxels     -0.301
+
+    by cell, the largest band (vehicle 0.6-1.8 m)
+      10-20 m  -0.086      20-30 m  -0.333      30-57 m  -0.486
+
+**A large part of the occupied decline is also geometry composition.** The
+direction survives everywhere outside the road-surface band, so the sign of
+A24's finding stands, but its strength does not: -0.967 is an aggregate figure
+and the within-geometry figure is about a third of it. Every future quote of the
+occupied decline carries both numbers.
+
+### 5. A defect in the binning H1 was tested on
+
+Observability saturates. Measured on 76,800,000 sampled voxels:
+
+    obs > 0                     32.3% of all voxels
+    obs == 1.0000                7.5% of all, and 23.2% of the obs > 0 population
+
+Almost a quarter of the non-zero population sits at exactly 1.0, so the top two
+deciles cannot be separated: decile 9 comes out **empty** and decile 10 holds
+117.6M of 414.9M free voxels. A26's "all nine deciles are populated" was true of
+its own binning and is not true of an equal-mass decile cut on the full split.
+
+A monotone-across-deciles test in which one bin is empty and the top bin holds
+28% of the stratum is weaker than it appears. This does not change H1's verdict
+-- H1 failed -- but it means the test H1 failed was a blunter instrument than
+the amendment describing it implies, and the second backbone's H1' must state
+its binning against the saturation rather than assuming ten equal bins exist.
+
+### 6. What this does NOT do
+
+It does not rescue H1. H1 was pre-registered over all voxels and lost, and a
+mechanism for why a stratum behaves oddly is an explanation, not a pass. It
+does not rescue A24's failed composition prediction, and it adds a sixth failed
+prediction of mine on top of it. What it does is convert "we do not know why the
+measure is non-monotone on 86% of the volume" -- the first question a reviewer
+asks -- into a mechanism with a 6.3x gradient behind it.
