@@ -2961,3 +2961,80 @@ does not rescue A24's failed composition prediction, and it adds a sixth failed
 prediction of mine on top of it. What it does is convert "we do not know why the
 measure is non-monotone on 86% of the volume" -- the first question a reviewer
 asks -- into a mechanism with a 6.3x gradient behind it.
+
+---
+
+## A43 -- PRE-REGISTRATION: H1 is re-tested once, on a repaired binning
+
+**Date:** 2026-09-24. **Written BEFORE the re-test is run.** The numbers do not
+exist at the time of writing and this entry is committed before the script that
+produces them.
+
+### Why a re-test is legitimate here, and where the line is
+
+H1 failed and that verdict is not in dispute. What A42 section 5 established is
+that **the instrument was broken**: observability saturates, 23.2% of the
+non-zero population sits at exactly 1.0, so an equal-mass decile cut cannot
+separate the top of the scale. On the full split, decile 9 comes out EMPTY and
+decile 10 holds 117.6M of 414.9M free voxels. H1 was specified as a monotone
+trend "with observability decile". A cut in which one decile is empty and
+another holds 28% of the stratum is not a decile cut.
+
+So the distinction this amendment turns on:
+
+* re-running with a **different population** chosen after seeing which
+  population gives the answer you want -- forbidden, and refused in A41
+  section 5;
+* re-running with the **same population and the same statistic** on a binning
+  that actually satisfies the definition already written down -- a repair.
+
+This is the second. The population is unchanged: all voxels inside
+`mask_camera`, exactly as A5 fixed on 17 September. The statistic is unchanged.
+Only the bin edges change, and they change for a defect found independently,
+while investigating something else, and recorded before this re-test was
+contemplated.
+
+**This is the only re-test. It runs once. Whatever it prints is the result.**
+
+### The repaired binning, fixed now
+
+Saturation is not noise, it is a distinct population -- cells a camera sees
+completely -- so it gets its own bin instead of being smeared across two empty
+ones.
+
+    bin 0      observability == 0
+    bins 1-8   equal-mass octiles of the observability in (0, 1) population,
+               edges computed on a 120-frame sample and then FROZEN
+    bin 9      observability == 1.0 exactly
+
+Nine live bins (1-9) for the trend test, as against the nine live deciles A6
+reported. Bin 0 is reported and, as in A5, excluded from the monotone test.
+
+### Acceptance, fixed now
+
+H1 as originally stated: the calibration gap declines monotonically with
+observability, over all voxels inside `mask_camera`, pre-registered direction
+negative.
+
+    HOLDS   strictly decreasing across all nine live bins, no reversals,
+            AND Spearman rank correlation <= -0.5
+    FAILS   anything else
+
+Both figures are reported either way. A single reversal is a failure: that is
+the standard A6 applied when it declared H1 held at ten of ten, and applying a
+looser one now would be choosing the threshold by the answer.
+
+### Stated prior, so it cannot be claimed afterwards
+
+**I expect this to fail.** Free space is 77.4% of the voxels inside the mask
+(414.9M of 536.2M) and A42 measured the free-space hump surviving inside every
+height band, every range ring and every proximity shell. A binning repair does
+not remove a hump that is robust to three stratifications. The re-test is run
+because the instrument was demonstrably broken and the fair thing is to give
+the hypothesis the test it was written for, not because the outcome is expected
+to change.
+
+If it fails, H1 is reported as failed on a repaired binning, which is a
+STRONGER negative result than failing on a broken one, and the matter is closed
+for FB-OCC. If it holds, A7's verdict is superseded and the reason is recorded
+as an instrument defect rather than as a new analysis.
