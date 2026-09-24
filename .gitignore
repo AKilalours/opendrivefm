@@ -139,3 +139,5 @@ outputs/artifacts/mine_vectors.npz
 !outputs/artifacts/hump_edges.json
 outputs/artifacts/hump_store.npz
 !outputs/artifacts/h1_retest.json
+!outputs/artifacts/temporal_observability.json
+outputs/artifacts/tempobs_store.npz

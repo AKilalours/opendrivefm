@@ -3103,3 +3103,90 @@ the same argument that closed Stage 5 before A41 reopened it. A null here is a
 real finding about how much temporal information survives in the model's own
 output, and closes the staleness line for good rather than prompting a third
 definition.
+
+---
+
+## A43 RESULT -- H1 fails on the repaired binning
+
+**Date:** 2026-09-24. Run once, as A43 specified, against criteria fixed before
+it ran.
+
+    all voxels inside mask_camera, 150 scenes, repaired bins
+    bin              voxels    confidence   accuracy      gap
+    obs = 0     185,546,662      0.9139      0.8147     0.0992
+    bin 1        23,055,225      0.9665      0.9232     0.0433
+    bin 2        18,665,073      0.9603      0.9041     0.0562
+    bin 3        20,199,761      0.9512      0.8884     0.0629
+    bin 4        21,985,674      0.9536      0.8917     0.0619
+    bin 5        24,949,520      0.9564      0.8962     0.0602
+    bin 6        29,310,326      0.9595      0.9044     0.0551
+    bin 7        34,205,860      0.9633      0.9133     0.0500
+    bin 8        40,294,395      0.9661      0.9202     0.0459
+    obs = 1.0   138,017,240      0.9760      0.9426     0.0334
+
+    live bins 9 of 9      reversals 2 (acceptance required 0)
+    Spearman -0.433       (acceptance required <= -0.50)
+
+**H1 FAILS on both criteria.** All nine live bins are populated, so the
+empty-decile defect A42 found is gone and the answer did not move. The prior
+stated in A43 before the run is confirmed.
+
+This is worth more than the original failure. H1 failed on a broken instrument
+in A7; it now fails on a repaired one, which removes the only remaining
+defence of it. **The hump is a property of the model, not of the binning**, and
+that is now established rather than assumed. The matter is closed for FB-OCC
+and H1 is reported as failed, without the caveat that the bins were degenerate.
+
+---
+
+## A44 RESULT -- H4 HOLDS. A25's failure is repaired, and it is the first one
+## that turned.
+
+**Date:** 2026-09-24. 900 frames, 149 scenes, 82,298,416 voxels inside
+`mask_camera`. 2,000 paired scene bootstrap draws.
+`scripts/eval/temporal_observability.py`.
+
+    score                                AUROC     vs obs           95% CI
+    observability (A26 measure)         0.6358
+    temporal obs, half-life 0.5 s       0.6452   +0.0094   [+0.0066, +0.0123]
+    temporal obs, half-life 1.0 s       0.6460   +0.0102   [+0.0063, +0.0141]
+    temporal obs, half-life 2.0 s       0.6536   +0.0178   [+0.0128, +0.0229]  PRIMARY
+    temporal obs, half-life 4.0 s       0.6577   +0.0219   [+0.0162, +0.0275]
+    no decay (plain max)                0.6523   +0.0165   [+0.0098, +0.0232]
+
+**At the half-life named in A44 before the run, +0.0178 with an interval
+excluding zero. H4 HOLDS.**
+
+### What this fixes
+
+A25's broad claim -- that time since last seen adds information everywhere --
+failed, and it failed because the variable was undefined on most of the volume.
+It was untestable rather than false, and two repairs were needed to find that
+out: A41's, which reproduced the degeneracy, and A44's, which removed it by
+replacing an age with a decayed evidence maximum defined on every voxel.
+
+**This is the first of the six failed predictions to turn.** It did not turn by
+relaxing a criterion or re-choosing a population. It turned because the measure
+was rebuilt to express the claim the prediction was actually making, and then
+tested once against a bar fixed in advance.
+
+### Three things to state with it, none of them flattering
+
+1. **The sweep rises monotonically to the edge of the window.** 4.0 s gives
+   +0.0219, more than the pre-named 2.0 s. The binding constraint is the
+   eight-keyframe horizon, not the decay rate, and a longer window would
+   probably give more. The primary stays at 2.0 s because it was named first;
+   switching to 4.0 s after seeing the sweep is precisely what A44 forbade.
+2. **Decay earns its place, but modestly.** Plain max over the window gives
+   +0.0165 against +0.0178 at a 2 s half-life. Recency matters; most of the
+   gain is simply having the window at all.
+3. **The baseline here is 0.6358, not A26's 0.6748.** Different scope: this is
+   a 900-frame subset scored inside `mask_camera`, where A26 scored the full
+   volume. The contrast is internally paired, so the delta is the quotable
+   number and the absolute AUROC is not comparable across the two.
+
+### What it does not do
+
+It does not rescue A25. A25 was a claim about age and it failed as stated. H4
+is a successor hypothesis with a different variable, registered before its data
+was measured, and it is reported as its own result.
