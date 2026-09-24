@@ -3038,3 +3038,68 @@ If it fails, H1 is reported as failed on a repaired binning, which is a
 STRONGER negative result than failing on a broken one, and the matter is closed
 for FB-OCC. If it holds, A7's verdict is superseded and the reason is recorded
 as an instrument defect rather than as a new analysis.
+
+---
+
+## A44 -- PRE-REGISTRATION: A25's failure, repaired properly this time
+
+**Date:** 2026-09-24. **Written BEFORE the measurement.** Committed before the
+script that produces it.
+
+### First, a defect in my own A41 pre-registration
+
+A41 section 6 registered H3 as "age = time since observability last exceeded
+tau = 0.15, which varies everywhere". **It does not.** Any cell whose
+observability is above tau right now has age zero by construction, which is
+exactly the degeneracy that killed A25. I wrote a repair that reproduces the
+original defect. Recorded as an error and superseded here before it was run.
+
+### What A25 actually got wrong
+
+A25 asked "how long since this cell was last seen" and could only ask it of
+cells that are blind NOW. That splits the volume into a set where the variable
+is informative (+9.20 pts [+8.08, +10.34] between never-seen and recently-seen)
+and a set where it is identically zero. A variable defined on a subset cannot
+be tested for adding information everywhere, so the broad claim was untestable
+rather than false.
+
+### The repair: one continuous quantity defined everywhere
+
+Replace age with **temporal observability**, evidence discounted by how old it
+is:
+
+    obs_T(v) = max over the current and past 8 keyframes of
+               [ obs_t(v) * lambda^(seconds since t) ]
+
+Past frames only. A cell seen well now scores ~obs_now; a cell seen well two
+seconds ago scores a discounted value; a cell no camera has ever seen scores 0.
+It is continuous, defined on every voxel, and it collapses to plain
+observability at lambda = 0, so the comparison against A26's measure is nested.
+
+**lambda is fixed now, before the run:** half-life **2.0 seconds**, so
+lambda = 0.5^(1/2) per second. Justified from A25's own measured decay -- error
+inside the blind set climbs 13.63% at 0.5 s to 23.83% at never-seen, with the
+midpoint of that climb near 2 s. Other half-lives are reported as a sensitivity
+sweep; **the primary result is the 2.0 s row and it is named here so the sweep
+cannot be mined for the best one.**
+
+### Hypothesis and acceptance, fixed now
+
+H4: temporal observability predicts per-voxel model error better than
+instantaneous observability. AUROC of per-voxel error, inside `mask_camera`
+(A5's scope), paired scene bootstrap.
+
+    HOLDS   AUROC(obs_T) - AUROC(obs) > 0 with a 95% interval excluding zero,
+            at the pre-named half-life of 2.0 s
+    FAILS   anything else
+
+### Stated prior
+
+**Genuinely uncertain, and leaning positive.** A25's narrow result is strong
+and A41's corridor study showed warped past evidence reaching 94% of corridor
+columns, so the information exists. Against that, FB-OCC already fuses sixteen
+frames internally, so the model may have internalised most of it -- which is
+the same argument that closed Stage 5 before A41 reopened it. A null here is a
+real finding about how much temporal information survives in the model's own
+output, and closes the staleness line for good rather than prompting a third
+definition.
