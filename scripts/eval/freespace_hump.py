@@ -123,7 +123,14 @@ def _one(row):
 
 
 def cmd_edges(a):
-    """Decile edges within obs > 0, computed on a sample and then FIXED."""
+    """Bin edges within obs > 0, computed on a sample and then FIXED.
+
+    A43 repairs these. Equal-mass deciles cannot be cut from this population:
+    23.2% of it sits at exactly 1.0, which left decile 9 EMPTY and decile 10
+    holding 28% of the free stratum. Saturation is a distinct population --
+    cells a camera sees completely -- so it gets its own bin, and the rest is
+    cut into equal-mass octiles. Nine live bins, none empty.
+    """
     index = json.load(open(os.path.join(ROOT, "data/pack/index.json")))
     rng = np.random.default_rng(3)
     toks = [r["token"] for r in index
@@ -135,10 +142,13 @@ def cmd_edges(a):
         o = o[o > 0]
         v.append(rng.choice(o, size=min(40000, o.size), replace=False))
     v = np.concatenate(v).astype(np.float32) / 255.0
-    e = [float(q) for q in np.percentile(v, np.arange(10, 100, 10))]
-    json.dump(dict(edges=e, n=int(v.size)),
+    sub = v[v < 1.0]
+    e = [float(q) for q in np.percentile(sub, np.arange(100 / 8, 100, 100 / 8))]
+    e.append(1.0)                     # bin 9 is obs == 1.0 exactly
+    print(f"saturated at 1.0: {100*(v >= 1.0).mean():.1f}% of the obs > 0 population")
+    json.dump(dict(edges=e, n=int(v.size), scheme="A43 octiles + saturation bin"),
               open(os.path.join(ROOT, a.out), "w"), indent=1)
-    print("decile edges within obs > 0, from", f"{v.size:,}", "sampled values")
+    print("bin edges within obs > 0, from", f"{v.size:,}", "sampled values")
     print("  " + "  ".join(f"{x:.4f}" for x in e))
     print("wrote", a.out)
 
@@ -408,6 +418,50 @@ def cmd_analyse(a):
     print("\nwrote", a.out)
 
 
+def cmd_h1(a):
+    """A43. The single re-test of H1 on the repaired binning. Runs once."""
+    z = np.load(os.path.join(ROOT, a.store), allow_pickle=True)
+    N_, K_, S_ = z["n"], z["k"], z["s"]
+    n = N_.sum(0).reshape(SHAPE); k = K_.sum(0).reshape(SHAPE); s = S_.sum(0).reshape(SHAPE)
+    # H1's population: ALL voxels inside mask_camera, both GT strata together.
+    gap, con, acc, tot = _curve(n.sum(0).reshape(NOBS, -1),
+                                k.sum(0).reshape(NOBS, -1),
+                                s.sum(0).reshape(NOBS, -1))
+    lab = (["obs = 0"] + [f"bin {i}" for i in range(1, 9)] + ["obs = 1.0"]
+           + [f"unused {i}" for i in range(NOBS - 10)])
+    print("\nA43  H1 RE-TEST -- all voxels inside mask_camera, repaired binning")
+    print("=" * 74)
+    print(f"{'bin':<12}{'voxels':>18}{'confidence':>13}{'accuracy':>11}{'gap':>10}")
+    print("-" * 74)
+    for i in range(NOBS):
+        if tot[i] == 0:
+            print(f"{lab[i]:<12}{'EMPTY':>18}")
+            continue
+        print(f"{lab[i]:<12}{int(tot[i]):>18,}{con[i]:>13.4f}{acc[i]:>11.4f}{gap[i]:>10.4f}")
+    live = [i for i in range(1, NOBS) if tot[i] > 0]
+    g = np.array([gap[i] for i in live])
+    steps = np.diff(g)
+    rev = int((steps > 0).sum())
+    rc = _rankcorr(gap, tot)
+    print("=" * 74)
+    print(f"live bins {len(live)} of 9   |   reversals {rev}   |   "
+          f"Spearman {rc:+.3f}")
+    holds = (rev == 0) and (rc <= -0.5)
+    print("\nACCEPTANCE (fixed in A43 before this ran):")
+    print(f"  strictly decreasing across all live bins   "
+          f"{'PASS' if rev == 0 else f'FAIL -- {rev} reversal(s)'}")
+    print(f"  Spearman <= -0.50                          "
+          f"{'PASS' if rc <= -0.5 else 'FAIL'}  ({rc:+.3f})")
+    print(f"\nH1 on the repaired binning: {'HOLDS' if holds else 'FAILS'}")
+    json.dump(dict(scheme="A43 octiles + saturation bin",
+                   bins=lab, n=[int(x) for x in tot],
+                   gap=[float(x) for x in gap], conf=[float(x) for x in con],
+                   acc=[float(x) for x in acc], live=len(live),
+                   reversals=rev, spearman=float(rc), holds=bool(holds)),
+              open(os.path.join(ROOT, a.out), "w"), indent=1)
+    print("wrote", a.out)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -422,4 +476,7 @@ if __name__ == "__main__":
     n_ = sub.add_parser("analyse"); n_.set_defaults(f=cmd_analyse)
     n_.add_argument("--store", default="outputs/artifacts/hump_store.npz")
     n_.add_argument("--out", default="outputs/artifacts/freespace_hump.json")
+    h = sub.add_parser("h1retest"); h.set_defaults(f=cmd_h1)
+    h.add_argument("--store", default="outputs/artifacts/hump_store.npz")
+    h.add_argument("--out", default="outputs/artifacts/h1_retest.json")
     a = ap.parse_args(); a.f(a)

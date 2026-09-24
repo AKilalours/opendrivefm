@@ -138,3 +138,4 @@ outputs/artifacts/mine_vectors.npz
 !outputs/artifacts/freespace_hump.json
 !outputs/artifacts/hump_edges.json
 outputs/artifacts/hump_store.npz
+!outputs/artifacts/h1_retest.json
