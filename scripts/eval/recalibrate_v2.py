@@ -17,7 +17,9 @@ Schemes, all Platt-style logistic maps fitted on l = logit(confidence):
 
     A  none          raw model confidence
     B  global        l                            one map for everything
-    C  mask_camera   l, m, l*m                    the binary baseline to beat
+    C  obs > 0       l, m, l*m                    a BINARISED observability
+                                                 baseline. NOT Occ3D's
+                                                 mask_camera -- see A41.
     D  observability l, o, l*o                    A13's best, which only tied C
     E  + staleness   l, o, l*o, a, l*a            NEW
 
@@ -110,13 +112,20 @@ def main():
     NEVER = age.max()
     l = logit(conf)
     o = obs.astype(np.float64)
-    m = (obs > 0).astype(np.float64)             # the binary mask analogue
+    # A41: this is 1[obs > 0], a BINARISATION OF OUR OWN MEASURE. It was named
+    # "mask_camera" in the scheme table and in A27, and it is not: this script
+    # never loads Occ3D's mask_camera at all. So A27's "only ties the binary
+    # mask" was really "adds nothing over its own binarisation" -- a true
+    # statement, a different one, and a weaker baseline than the one claimed.
+    # The genuine mask_camera comparison is in scripts/eval/recal_confound.py,
+    # on all 3.85 billion voxels rather than the 240 frames cached here.
+    m = (obs > 0).astype(np.float64)
     an = np.clip(age / max(NEVER, 1e-6), 0, 1)   # 0 = seen now, 1 = never seen
 
     one = np.ones_like(l)
     feats = {
         "B  global":              np.stack([one, l], 1),
-        "C  mask_camera":         np.stack([one, l, m, l * m], 1),
+        "C  obs > 0 (binarised)": np.stack([one, l, m, l * m], 1),
         "D  observability":       np.stack([one, l, o, l * o], 1),
         "E  + staleness":         np.stack([one, l, o, l * o, an, l * an], 1),
     }
@@ -129,7 +138,7 @@ def main():
         P[k] = 1.0 / (1.0 + np.exp(-(X @ b)))
 
     blind = obs <= 0.0
-    order = ["A  none", "B  global", "C  mask_camera", "D  observability",
+    order = ["A  none", "B  global", "C  obs > 0 (binarised)", "D  observability",
              "E  + staleness"]
 
     print("\nHELD-OUT scenes only")
@@ -138,7 +147,7 @@ def main():
           f"{'ECE | blind':>14}{'ECE | seen':>13}")
     print("-" * 86)
     res = {}
-    eC = ece(P["C  mask_camera"][tst], y[tst])
+    eC = ece(P["C  obs > 0 (binarised)"][tst], y[tst])
     for k in order:
         e_all = ece(P[k][tst], y[tst])
         e_bl = ece(P[k][tst & blind], y[tst & blind])
@@ -165,7 +174,7 @@ def main():
 
     print("\nacceptance: E must beat A, B and C on held-out ECE")
     ok = True
-    for base in ("A  none", "B  global", "C  mask_camera", "D  observability"):
+    for base in ("A  none", "B  global", "C  obs > 0 (binarised)", "D  observability"):
         d = res["E  + staleness"]["ece"] - res[base]["ece"]
         lo, hi = boot("E  + staleness", base, tst)
         verdict = "E WINS" if hi < 0 else ("E LOSES" if lo > 0 else "tie")

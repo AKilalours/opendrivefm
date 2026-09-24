@@ -1,0 +1,54 @@
+{
+ "stratum": {
+  "n_valid": 536229736,
+  "n_unsupervised": 3315930264,
+  "acc_valid": 0.8842364515943218,
+  "acc_unsupervised": 0.38206499327031684
+ },
+ "ALL voxels (A34's scope)": {
+  "class + confidence": {
+   "logloss": 0.15928313691190335,
+   "ece": 0.002176893386376738
+  },
+  "+ mask_camera": {
+   "logloss": 0.10644272378475543,
+   "ece": 0.0015361737963839068
+  },
+  "+ observability": {
+   "logloss": 0.1534347767987966,
+   "ece": 0.0017801513293101818
+  }
+ },
+ "mask_camera == 1 only (labels valid)": {
+  "class + confidence": {
+   "logloss": 0.23972091998851833,
+   "ece": 0.00410029286608369
+  },
+  "+ observability": {
+   "logloss": 0.2364623558389265,
+   "ece": 0.0028373014643893833
+  }
+ },
+ "mask_camera == 0 only (unsupervised)": {
+  "class + confidence": {
+   "logloss": 0.08473546571546746,
+   "ece": 0.0011250631153857235
+  },
+  "+ observability": {
+   "logloss": 0.07938684633029726,
+   "ece": 0.0009413166941100632
+  }
+ },
+ "contrasts": {
+  "observability over class+confidence, INSIDE the mask": [
+   0.0031341348992581595,
+   0.0024552380984526946,
+   0.0039006576282722347
+  ],
+  "mask_camera over observability, ALL voxels": [
+   0.04695454163954041,
+   0.043600877434410386,
+   0.049931977711002475
+  ]
+ }
+}

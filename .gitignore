@@ -133,3 +133,5 @@ outputs/artifacts/mine*.sqlite.bak
 outputs/artifacts/mine_vectors.npz
 !outputs/artifacts/blind_attribution.json
 !outputs/artifacts/safety_envelope.json
+!outputs/artifacts/recal_confound.json
+!outputs/artifacts/corridor_temporal.json

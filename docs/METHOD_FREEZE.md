@@ -2562,3 +2562,258 @@ Every other figure in A1-A39 was traced to a committed artifact and matched.
 The lesson is the same one A38 records from the other direction: a number is
 not verified because it was measured, it is verified because it can be read
 back. Printing is not storing.
+
+---
+
+## A41 -- root causes behind the recorded failures, and what each one actually
+## fixes
+
+**Date:** 2026-09-24. **Decided:** after seeing data, except the two
+pre-registrations in section 6, whose window is open because the data they
+judge does not exist yet.
+
+The instruction behind this amendment was to stop recording failures and find
+their causes. Four of the five had a fixable cause. One did not, and saying so
+is part of the work: **a hypothesis that was pre-registered and lost stays
+lost.** No verdict below is reversed by re-specifying it after the fact.
+
+---
+
+### 1. Stage 5 recalibration -- the target was 86% unsupervised, and the
+### baseline was mislabelled
+
+Two separate defects, both real, and together they change the verdict.
+
+**Defect one: the baseline in `recalibrate_v2.py` was never `mask_camera`.**
+The scheme table calls row C "mask_camera" and A27 quotes it that way. The code
+computes `m = (obs > 0)`. That script never loads Occ3D's mask at all. So A27's
+"only ties the binary mask_camera baseline" was really **"adds nothing over its
+own binarisation"** -- true, materially weaker, and it has been quoted wrongly
+in the Field Brief and in three amendments. The row is renamed in code and the
+artifact re-run; no value moves, only the name and what it licenses.
+
+**Defect two, the substantive one: the evaluation target.** Error is
+`predicted class != Occ3D ground-truth class`, and Occ3D builds `mask_camera`
+offline from the full sensor suite to mark **which voxels the label is valid
+for**. A34 knew this and still scored over all voxels, departing from A5's
+pre-registered scoping rule -- *"All Occ3D results are computed inside
+`mask_camera` only. Outside it the training loss never supervised the model"* --
+which was fixed on 17 Sep before the data existed.
+
+The size of what that departure buys, measured:
+
+    stratum                          voxels          share    accuracy
+    mask_camera = 1  labels valid   536,229,736      13.9%      0.8842
+    mask_camera = 0  unsupervised 3,315,930,264      86.1%      0.3821
+                                                   difference  +0.5022
+
+A feature that flags the valid stratum separates a population the model gets
+88% right from one it gets 38% right. That is not a visibility measure winning
+a fair contest. **It is a feature leaking the construction of the label**, and
+it accounts for the whole of mask_camera's +0.046955 [+0.043601, +0.049932]
+log-loss advantage.
+
+`scripts/eval/recal_confound.py` re-slices A34's own sufficient statistics --
+no new pass over the data -- and asks A34's question inside the pre-registered
+scope, where `mask_camera` is constant and cannot compete. The comparison there
+is observability against **nothing extra**, which is fully expressible, so this
+is not the A13/A34 constant-mask trap.
+
+    inside mask_camera == 1, held-out scenes, 269,451,701 voxels
+      class + confidence        log-loss 0.239721   ECE 0.004100
+      + observability           log-loss 0.236462   ECE 0.002837
+      gain             +0.003134 log-loss  [+0.002455, +0.003901]
+
+**The interval excludes zero, and ECE falls 30.8%.** A34's conclusion -- "there
+is no residual to model, the question is closed" -- **is wrong on the scope the
+project pre-registered**. Conditional on predicted class and the model's own
+confidence, accuracy still depends on observability wherever the ground truth
+is valid.
+
+What this does and does not license:
+
+* It **does** overturn A34's closure and reopen Stage 5 on valid labels.
+* It **does not** retroactively pass A13, A27 or A33. Those ran a different
+  model family on 240 frames and their recorded verdicts stand as run.
+* It **does not** claim observability beats `mask_camera`. Inside the mask that
+  comparison is undefined, and outside it the comparison is contaminated. The
+  honest statement is that **`mask_camera` is not a fair competitor for this
+  target at all**, and it is unavailable at deployment regardless.
+
+---
+
+### 2. The export gate -- it could not catch its own failure, and no threshold
+### on that quantity could
+
+The gate read "dynamic classes >= 1.0% of non-free voxels". The column collapse
+it was written for measured 1.2% and passed. The instinct is to raise the
+threshold; the measurement says that cannot work. On 600 frames of the
+**validated** export:
+
+    per-frame dynamic share of non-free voxels
+      p1 0.036%   p5 0.150%   p50 1.635%   p100 17.779%    pooled 2.274%
+
+An empty street legitimately scores below the broken run. The quantity's own
+variance is larger than the effect the gate is trying to detect, so no single
+threshold separates them. The gate was written against a class histogram that
+*resembles* the failure instead of against the failure.
+
+**The failure is structural and so is the replacement.** A column collapse
+keeps exactly one voxel per BEV column by construction. On 400 frames of the
+validated export:
+
+    occupied voxels per occupied BEV column   min 3.706   median 9.447
+    occupied columns holding exactly one      median 0.29%   max 15.54%
+    a column collapse, by construction              1.000        100%
+
+New gates: **>= 2.0 voxels per occupied column** (a 1.85x margin below the
+worst good frame, and arithmetically unreachable by a collapse) and **<= 50% of
+occupied columns holding exactly one voxel**. The dynamic-class check drops to a
+weak floor at 0.2%.
+
+Three tests in `tests/test_observability_geometry.py` pin this, including
+`test_the_old_dynamic_gate_could_not_have_caught_it`, which builds a collapsed
+export, shows it clearing the old 1.0% threshold, and shows the new gate
+rejecting it.
+
+---
+
+### 3. The safety envelope -- the strongest objection to it, tested, and it
+### does not hold
+
+A38 made the flagged rate worse and the obvious objection is that the metric is
+too conservative: it is single-frame, while FB-OCC fuses sixteen frames and the
+vehicle is moving. A25 measured that memory is real (never-seen 23.83% error
+against 13.63% for seen 0.5 s ago). So the corridor should be a **bracket**, not
+a point.
+
+`scripts/eval/corridor_temporal.py` warps **past** observability maps into the
+current ego frame through the recorded poses -- past only; a deployed stack has
+memory, not prophecy -- and takes the max. 4,819 frames, all with a full
+eight-keyframe history.
+
+    memory      evidence   med reach   p10    flagged   >10 m/s   no corridor
+     0.0 s        77.8%       26.4     10.0      4.2%     24.1%        0.4%
+     0.5 s        83.5%       27.2     11.2      3.6%     21.3%        0.2%
+     1.0 s        87.2%       27.2     11.2      3.6%     21.3%        0.2%
+     2.0 s        92.0%       27.2     11.2      3.6%     21.3%        0.2%
+     4.0 s        94.0%       27.2     11.2      3.6%     21.3%        0.2%
+
+Two things, and the second is the finding.
+
+**The T = 0 row independently reproduces A38** (4.2% against 4.3%, 24.1%
+against 24.5%, on a different frame subset through different code). A38's
+correction is confirmed by a second implementation.
+
+**Memory fills the corridor and the envelope does not move.** Evidence rises
+from 77.8% to 94.0% of corridor columns -- the warp is working, and the
+`corridor_evidence` column exists precisely so a null cannot be confused with a
+no-op -- while the flagged rate above 10 m/s falls only 24.1% to 21.3% and is
+flat after the first half second.
+
+The reason is already in A38: **the corridor terminates on an obstacle 96% of
+the time, not on missing evidence.** Memory adds evidence. Evidence behind an
+obstacle is not clearance in front of one, and `MAX_START` correctly refuses to
+credit it.
+
+So the bracket is narrow and the pessimistic end is nearly the whole story:
+**24.5% is real exposure, not single-frame conservatism.** A38's worse number
+now stands because it survived the strongest objection available, rather than
+because nobody raised one. This also sharpens A32: the residual blindness is
+occlusion-limited, so neither a seventh camera (<= 2.2%) nor four seconds of
+memory (2.8 points) buys much, and the return is on knowing what you cannot see.
+
+Reported as an upper bound and labelled memory-perfect: a patch of road seen two
+seconds ago can hold a cyclist now.
+
+---
+
+### 4. The mining failures -- two of the four are usable inverted, two are not
+
+A28 recorded `blind_commit`, `dim_commit`, `obst_dark` and `obst_n` as failures
+at AUROC 0.17-0.20 against WRONG, with the correct diagnosis: they measure how
+much confident occupied volume a scene holds, and dense confident scenes are
+the ones the model handles well. A signal that ranks the worst frames last
+ranks the easiest frames first, so an EASY target was added and **measured
+rather than inferred from a flipped sign**:
+
+    target EASY -- the best 10% of frames by error rate
+      dim_commit         AUROC 0.7862   prec@100 54%   5.40x
+      dim_commit_rate    AUROC 0.7762   prec@100 60%   6.00x
+      obst_n             AUROC 0.7251   prec@100 50%   5.00x
+      obst_dark          AUROC 0.7033   prec@100 40%   4.00x
+      blind_commit       AUROC 0.4449                  1.40x
+      blind_commit_rate  AUROC 0.4247                  1.70x
+
+Two of the four become a validated down-sampling and triage selector at 5-6x
+lift over the base rate. **Two do not**, and that is the reason for measuring:
+inverting a poor ranker for one target does not produce a good ranker for its
+complement, because the two targets are different label sets rather than
+complements. `blind_commit` at 0.5322 on WRONG and 0.4449 on EASY is simply
+uninformative in both directions.
+
+A28's transferable lesson is unchanged and is now stated with its exception: a
+per-voxel finding does not become a frame-level signal by summing it, and the
+extensive signals that result are useful only where the question is "which
+frames are boring".
+
+---
+
+### 5. What is NOT fixed, and will not be
+
+**H1 stays failed.** It was pre-registered over all voxels, it lost, and A24
+already found the cause: free space is 85-92% of every decile so the aggregate
+followed the stratum the hypothesis was not about. Re-specifying it over
+occupied voxels after seeing that result would be choosing the population by
+the answer, which is the single thing the pre-registration apparatus exists to
+prevent. The corrected form is registered in section 6 and tested on data that
+does not exist yet. Until then, H1 is reported as failed in every writeup.
+
+**A22, A24, A28 and A25's five predictions stay failed.** A prediction is a
+statement about the world that the measurement refuted; there is nothing to
+repair. Their causes are understood -- two failure modes rather than one,
+composition versus a genuinely false hypothesis for free space, extensive
+versus intensive signals, degeneracy above the seen threshold -- and the causes
+are what earn their place in the paper. A22's failure produced the project's
+headline finding.
+
+**The free-space hump remains unexplained.** A24 called it plausible but not
+established and that is still true. It is a real open question, not a failure,
+and it is not being dressed up as either.
+
+---
+
+### 6. PRE-REGISTRATION for the second backbone (written before that data exists)
+
+The SurroundOcc export has not been run. This window closes the moment it lands.
+Both entries below are corrected forms of hypotheses that failed, and the only
+legitimate repair for a pre-registered failure is a correctly specified
+successor tested out of sample.
+
+**H1' (replaces H1).** On ground-truth OCCUPIED voxels inside `mask_camera`,
+the calibration gap declines monotonically with observability decile.
+Pre-registered direction: negative, by Spearman correlation on decile index,
+scene-bootstrapped. Population chosen because the claim H1 was trying to encode
+-- the model knows less where it sees less -- is a statement about cells that
+contain something, and because A5 fixed the scoring scope inside the mask on
+17 Sep. **Acceptance: strictly monotone on at least eight of nine live deciles
+AND rank correlation <= -0.5.** FB-OCC gives -0.865; a second architecture at
+-0.3 would mean this is a property of one checkpoint and H1' fails.
+
+**H3 (replaces A25's broad staleness claim).** A25 failed because age was
+defined as time since `obs > 0`, which is zero by construction above the seen
+threshold and therefore degenerate outside the blind set. Redefined: age is
+**time since observability last exceeded tau = 0.15**, which varies everywhere.
+Hypothesis: conditional on observability and the model's confidence, error
+increases with that age. **Acceptance: positive, interval excluding zero, on
+held-out scenes.** A null closes the staleness line for good rather than
+prompting a third definition.
+
+**Stage 5 reopened (from section 1).** On the second backbone, inside
+`mask_camera`, observability must beat class + confidence on held-out ECE with
+an interval excluding zero. FB-OCC gives +0.003134 [+0.002455, +0.003901]. A
+null on a second architecture means the FB-OCC result was a property of that
+model and Stage 5 closes properly this time.
+
+Each of these was written with the outcome unknown and is reported whichever
+way it lands.

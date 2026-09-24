@@ -15,10 +15,26 @@ output:
               conf2 and rerun this gate.
 
   2. CLASSES  among NON-FREE voxels, the fraction belonging to the ten
-              dynamic classes. The old collapse gave 1.2% of columns and that
-              is what exposed it. Per voxel the honest expectation is a few
-              percent -- cars are small next to road and buildings -- but it
-              must not be ~0. Gate: >= 1.0% of non-free voxels are dynamic.
+              dynamic classes. KEPT AS A WEAK SANITY FLOOR ONLY, at >= 0.2%.
+              A41 audited this gate and found it could not do the job it was
+              written for: the collapse it was meant to catch measured 1.2%
+              and the threshold was 1.0%, so the broken export PASSED. Raising
+              the threshold does not fix it either -- measured on 600 frames of
+              the VALIDATED export, the per-frame dynamic share runs p5 = 0.15%
+              to p100 = 17.8% with a median of 1.6%, so no single threshold can
+              separate a good empty street from a broken run. The quantity has
+              too much natural variance to gate on. Gate 6 replaces it.
+
+  6. STRUCTURE  the gate that can actually catch a column collapse, written
+              against the failure mode instead of against a class histogram
+              that resembles one. A collapse keeps exactly ONE voxel per BEV
+              column by construction, so it scores exactly 1.000 here and
+              100% there. Measured on 400 frames of the validated export:
+                  occupied voxels per occupied column   min 3.71, median 9.45
+                  columns holding exactly one voxel     median 0.29%, max 15.5%
+              Gates: mean >= 2.0 voxels per occupied column (a 1.85x margin
+              below the worst good frame, and unreachable by a collapse), and
+              <= 50% of occupied columns holding exactly one voxel.
 
   3. CONF     the max-softmax distribution. It must SPREAD. If the median is
               1.000 or >50% of voxels sit at the ceiling, confidence carries
@@ -64,6 +80,19 @@ def main(d):
     conf2 = np.concatenate(conf2).astype(np.float32) / 255.0
     pfree = np.concatenate(pfree).astype(np.float32) / 255.0
 
+    # A41: structural check. Loaded per frame because it needs the 3D shape,
+    # which the flattened arrays above have already thrown away.
+    vpc, one_col = [], []
+    for f in fs:
+        c = np.load(f)['cls']
+        col = (c != FREE).sum(-1)
+        nz = col[col > 0]
+        if nz.size:
+            vpc.append(float(nz.mean()))
+            one_col.append(float((nz == 1).mean()))
+    voxels_per_col = float(np.mean(vpc)) if vpc else 0.0
+    single_col_frac = float(np.mean(one_col)) if one_col else 1.0
+
     free_frac = float((cls == FREE).mean())
     nonfree = cls[cls != FREE]
     dyn = float(np.isin(nonfree, DYNAMIC).mean()) if nonfree.size else 0.0
@@ -79,6 +108,8 @@ def main(d):
     print(f'           median {med:.4f}   at ceiling {ceil*100:.1f}%')
     print(f'  margin   ' + '  '.join(f'p{p}={v:.3f}' for p, v in
                                      zip(q, np.percentile(conf - conf2, q))))
+    print(f'6 STRUCT   {voxels_per_col:.3f} occupied voxels per occupied column  |  '
+          f'{single_col_frac*100:.2f}% of columns hold exactly one')
     print(f'4 P_FREE   ' + '  '.join(f'p{p}={v:.3f}' for p, v in
                                      zip(q, np.percentile(pfree, q))))
     h = np.bincount(cls, minlength=18) / cls.size
@@ -94,7 +125,11 @@ def main(d):
     print()
     gates = [
         ('SIZE fits 15 GB free', total <= 13.0, f'{total:.1f} GB'),
-        ('dynamic >= 1.0% of non-free', dyn >= 0.010, f'{dyn*100:.2f}%'),
+        ('dynamic >= 0.2% (weak floor)', dyn >= 0.002, f'{dyn*100:.2f}%'),
+        ('>= 2.0 voxels per occupied column', voxels_per_col >= 2.0,
+         f'{voxels_per_col:.3f}'),
+        ('<= 50% single-voxel columns', single_col_frac <= 0.50,
+         f'{single_col_frac*100:.2f}%'),
         ('conf median <= 0.999', med <= 0.999, f'{med:.4f}'),
         ('conf ceiling <= 50%', ceil <= 0.50, f'{ceil*100:.1f}%'),
         ('free in 0.55-0.95', 0.55 <= free_frac <= 0.95, f'{free_frac:.3f}'),
@@ -107,7 +142,9 @@ def main(d):
                   if ok else 'GATE FAILED -- stop, do not run 6,019 frames'))
     json.dump({'mb_per_frame': nbytes / 1e6, 'gb_total': total,
                'free_frac': free_frac, 'dynamic_of_nonfree': dyn,
-               'conf_median': med, 'conf_ceiling': ceil, 'pass': bool(ok)},
+               'conf_median': med, 'conf_ceiling': ceil,
+               'voxels_per_occupied_column': voxels_per_col,
+               'single_voxel_column_frac': single_col_frac, 'pass': bool(ok)},
               open(os.path.join(d, '_gate.json'), 'w'), indent=2)
 
 

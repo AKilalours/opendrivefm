@@ -271,9 +271,21 @@ def cmd_validate(a):
 
     out = {}
     print(f"\n{len(rs):,} frames with >= {a.min_obst} obstacle columns")
+    # A41. The EASY target is not a third way of asking the same question, it
+    # is the reason four "failed" signals are worth keeping. A28 recorded
+    # blind_commit, dim_commit, obst_dark and obst_n as failures at AUROC 0.17
+    # to 0.20 against WRONG. A signal that reliably ranks the worst frames LAST
+    # ranks the easiest frames FIRST, and 0.19 one way is 0.81 the other. What
+    # they actually measure is how much confident occupied volume a scene
+    # holds, and dense confident scenes are the ones the model handles well.
+    # That is a curriculum and triage tool -- frames safe to down-sample from a
+    # training set, or to skip in a review queue -- not a dead end. Scored here
+    # explicitly so the claim is measured rather than asserted from a flipped
+    # sign.
     for name, target, expl in (
             ("WRONG", e, "frames with the highest error rate on occupied voxels"),
-            ("OVERCONFIDENT", gp, "frames with the largest confidence-minus-accuracy gap")):
+            ("OVERCONFIDENT", gp, "frames with the largest confidence-minus-accuracy gap"),
+            ("EASY", -e, "frames with the LOWEST error rate -- the down-sample target")):
         cut = np.quantile(target, 1 - a.frac)
         y = target >= cut
         base = y.mean()

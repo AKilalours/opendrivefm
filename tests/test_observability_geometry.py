@@ -209,3 +209,70 @@ def test_fast_path_is_bit_identical():
     tab, val = mb.build_table(cam, stride=4)
     fast = mb.march_fast(occ.reshape(-1), tab, val)
     assert int((slow != fast).sum()) == 0
+
+
+# ---------------------------------------------------------------------------
+# A41: the export gate that could not catch its own failure.
+#
+# The first Stage-2 export collapsed each BEV column to one voxel, described
+# the road surface and discarded everything standing on it. The gate written to
+# catch that asked for ">= 1.0% dynamic classes"; the broken export measured
+# 1.2% and PASSED. These tests pin the replacement, which is written against
+# the failure mode itself rather than against a class histogram that resembles
+# it.
+# ---------------------------------------------------------------------------
+FREE_CLS = 17
+
+
+def _column_stats(cls):
+    """Mirror of the gate in scripts/pod/mini_gate.py."""
+    col = (cls != FREE_CLS).sum(-1)
+    nz = col[col > 0]
+    if nz.size == 0:
+        return 0.0, 1.0
+    return float(nz.mean()), float((nz == 1).mean())
+
+
+def _collapsed_export(n=40, nz=16):
+    """What the broken export produced: exactly one occupied voxel per column,
+    at the ground, and that voxel is drivable surface."""
+    cls = np.full((n, n, nz), FREE_CLS, np.int16)
+    cls[:, :, 0] = 11                      # drivable surface, one voxel deep
+    return cls
+
+
+def _healthy_export(n=40, nz=16):
+    """Road surface plus things standing on it, which is what a per-voxel
+    export looks like: several occupied voxels in most occupied columns."""
+    cls = np.full((n, n, nz), FREE_CLS, np.int16)
+    cls[:, :, 0:2] = 11                    # road, two voxels deep
+    cls[10:20, 10:14, 0:8] = 4             # a car
+    cls[30:38, 5:35, 0:12] = 15            # a building
+    return cls
+
+
+def test_gate_rejects_a_column_collapse():
+    vpc, single = _column_stats(_collapsed_export())
+    assert vpc == pytest.approx(1.0), vpc
+    assert single == pytest.approx(1.0), single
+    assert not (vpc >= 2.0), "the structural gate must fail on a column collapse"
+    assert not (single <= 0.50), "the single-column gate must fail on a collapse"
+
+
+def test_gate_passes_a_healthy_export():
+    vpc, single = _column_stats(_healthy_export())
+    assert vpc >= 2.0, vpc
+    assert single <= 0.50, single
+
+
+def test_the_old_dynamic_gate_could_not_have_caught_it():
+    """Recorded so the reason the replacement exists cannot be forgotten: the
+    collapsed export's dynamic share clears the >= 1.0% threshold it was
+    supposed to fail."""
+    cls = _collapsed_export()
+    cls[0:4, 0:5, 0] = 4                   # a few car voxels in the pavement
+    nonfree = cls[cls != FREE_CLS]
+    dyn = float(np.isin(nonfree, list(range(11))).mean())
+    assert dyn >= 0.010, dyn               # the old gate PASSES this
+    vpc, _ = _column_stats(cls)
+    assert not (vpc >= 2.0)                # the new gate does not
