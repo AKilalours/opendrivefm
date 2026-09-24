@@ -1,0 +1,28 @@
+# The image must not carry the measurements it is meant to verify against
+# being rebuildable, nor 4 GB of checkpoints. The canonical build is from the
+# committed tree:
+#
+#     git archive HEAD | docker build -t odfm -
+#
+# This file makes a plain `docker build .` produce the same thing from a dirty
+# working tree. Last match wins, so the re-include lines come after the
+# exclusions they narrow.
+data/
+dataset/
+lightning_logs/
+outputs/viz*/
+outputs/wandb/
+outputs/figures/
+outputs/console/
+cpp/build*/
+**/__pycache__/
+*.zip
+*.pdf
+.git/
+
+# 4 GB of checkpoints, caches and derived arrays live here. Keep only the
+# small JSON summaries the gates actually read.
+outputs/artifacts/*
+!outputs/artifacts/*.json
+outputs/artifacts/road_assets.json
+outputs/artifacts/*cache*.json*

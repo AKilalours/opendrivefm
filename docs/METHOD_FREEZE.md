@@ -2479,3 +2479,59 @@ correction to an implementation that did not match the written definition
 ("the contiguous verified-free run beyond the near-blind zone"), not a new
 parameter choice tuned against a result. The definition always said "beyond";
 the code did not enforce it.
+
+---
+
+## A39 -- A verification image, and what was and was not verified about it
+
+**Date:** 2026-09-24. **Affects:** reproducibility claims only. No measured
+number changes.
+
+`Dockerfile` + `docker/verify.sh` build one image that runs every check this
+repository can run **without a GPU and without the nuScenes export**:
+
+    ctest cpp/build          C++ runtime primitives, release
+    ctest cpp/build-tsan     the same, under ThreadSanitizer
+    pytest tests/            57 tests, including the 14 from A38
+    check_gates.py           release gates on the committed detection artifact
+    check_gates.py (inverted) must FAIL on the known-bad v11 baseline
+    check_observability_gates.py            21 gates
+    check_observability_gates.py --self-test each gate fed a broken artifact
+
+The image is built from the committed tree (`git archive HEAD | docker build
+-t odfm -`), so it is a function of a commit hash. `.dockerignore` reproduces
+that from a dirty tree.
+
+### What it deliberately cannot do
+
+It does not reproduce the measurements. The observability maps need the 26 GB
+packed export, which is not redistributable, and FB-OCC needs a GPU. Both are
+stated in the Dockerfile header with the mount that makes the eval scripts run
+against a local copy. An image that implied otherwise would be a worse artifact
+than none.
+
+### Verification status -- read this before quoting it
+
+**The checks were run and pass. The container was not built.**
+
+Docker Hub is unreachable from this session's sandbox (`registry-1.docker.io`
+returns 403 through the egress proxy), so `docker build` could not be executed.
+What was executed instead, on a clean `git archive HEAD` extract under
+Python 3.11.15:
+
+    pytest tests/ --collect-only        57 collected
+    pytest tests/                       57 passed
+    cmake + ctest, release              3/3 passed
+    cmake + ctest, TSan                 4/4 passed
+    docker/verify.sh gates              exit 0, 21 PASS, all self-tests OK
+    sh -n docker/verify.sh              syntax clean
+
+So the *contents* of the image are verified against the committed tree; the
+`FROM`/`COPY`/`pip` layering is not. `docker build` on a machine with registry
+access is an outstanding one-command check. `verify.sh` now honours
+`ODFM_HOME`, which is how the above was run outside a container and is how it
+can be re-run without Docker at all.
+
+This distinction is recorded rather than glossed because "we have a Dockerfile"
+and "the image builds and passes" are different claims, and only the second one
+is worth anything to a reviewer.
