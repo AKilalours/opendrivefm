@@ -26,9 +26,12 @@ cannot positively justify from camera evidence alone. That is a number a safety
 team can track per release, and it is computable with no ground truth.
 """
 from __future__ import annotations
-import argparse, json, os, time
+import argparse, json, os, sys, time
 from multiprocessing import Pool
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from corridor import verified_free            # noqa: E402  ONE implementation
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -55,53 +58,12 @@ def _one(args):
     cls = np.load(os.path.join(ROOT, "data/preds/preds_voxel",
                                tok + ".npz"))["cls"].astype(np.int16)
     obs = np.load(os.path.join(ROOT, _G["obs"], tok + ".npy")).astype(np.float32) / 255.0
-
-    j0 = int((RNG - _G["halfw"]) / RES); j1 = int((RNG + _G["halfw"]) / RES)
-    i0 = int((RNG + BUMPER) / RES)
-    # The envelope must start ABOVE the road surface and stop BELOW overhead
-    # structure. Measured height profile of non-free voxels in the lane, 40
-    # frames: levels k=0,1,2 are 100% occupied (that is the road itself), k=3
-    # is 54% (road bleed), k=4 drops to 10%, k=7..14 are empty, and k=15 spikes
-    # again on ceiling/sky artefacts. So k0=4 (z >= +0.6 m) and k1=10
-    # (z <= +3.4 m) is the clearance a vehicle actually needs. clear_from=0.4
-    # put k0 at 3 and therefore asked the ROAD to be free, which is why the
-    # first run reported no verified corridor in 51.5% of frames.
-    k0 = max(int((_G["clear_from"] - Z0) / RES), 0)
-    k1 = min(int((_G["clear_to"] - Z0) / RES), NZ)
-    # free = nothing solid in the DRIVING ENVELOPE. The road surface itself is
-    # class 11, so "all levels free" is never true and returns 0 m every frame.
-    free = (cls[:, :, k0:k1] == FREE).all(-1)
-    seen = obs.max(-1) >= _G["tau"]
-    ok = (free & seen)[:, j0:j1].mean(1) >= _G["occ_frac"]
-
-    # LONGEST contiguous verified run, not the first one. The first-run form
-    # latches onto the two cells just past the bumper -- where coverage is still
-    # marginal -- and reported a 2.4 m median while the corridor is in fact
-    # ~95% verified out to 22 m. render_hd.py already made this correction; it
-    # was not carried over here, which is why the first numbers were wrong.
-    best_a = best_n = 0
-    cur = None
-    for i in range(i0, N):
-        if ok[i]:
-            if cur is None:
-                cur = i
-            if i - cur + 1 > best_n:
-                best_a, best_n = cur, i - cur + 1
-        else:
-            cur = None
-    if best_n == 0:
-        return dict(token=tok, scene=scene, speed=speed,
-                    near_blind=float((N - i0) * RES), reach=0.0)
-    # what STOPS the corridor: an obstacle, or simply no camera evidence?
-    e = best_a + best_n
-    stop_free = stop_seen = None
-    if e < N:
-        stop_free = float(free[e, j0:j1].mean())
-        stop_seen = float(seen[e, j0:j1].mean())
+    start, length, _, sf, ss = verified_free(
+        cls, obs, tau=_G["tau"], halfw=_G["halfw"],
+        clear_from=_G["clear_from"], clear_to=_G["clear_to"],
+        occ_frac=_G["occ_frac"])
     return dict(token=tok, scene=scene, speed=speed,
-                near_blind=float((best_a - i0) * RES),
-                reach=float(best_n * RES),
-                stop_free=stop_free, stop_seen=stop_seen)
+                near_blind=start, reach=length, stop_free=sf, stop_seen=ss)
 
 
 def main():

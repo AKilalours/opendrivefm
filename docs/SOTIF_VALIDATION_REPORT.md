@@ -185,12 +185,12 @@ Corridor 2.8 m wide, envelope 0.6–3.4 m, braking 4.0 m/s², no ground truth us
 
 | | p10 | median | p90 |
 |---|---|---|---|
-| near field unverifiable | 1.2 m | 1.2 m | 12.8 m |
-| verified-free reach | 10.8 m | 26.4 m | 36.8 m |
+| near field unverifiable | 1.2 m | 1.2 m | 8.4 m |
+| verified-free reach | 10.0 m | 26.4 m | 36.8 m |
 
-Frames where verified reach is shorter than the stopping distance: **2.7%
-overall, 13.1% above 10 m/s.** The corridor terminates on an obstacle 95% of the
-time and on missing evidence 5%.
+Frames where verified reach is shorter than the stopping distance: **4.3%
+overall, 24.5% above 10 m/s.** The corridor terminates on an obstacle 96% of the
+time and on missing evidence 4%.
 
 **This is a screening statistic, not a violation count.** Most flagged frames are
 ordinary car-following at a legal gap. Its value is the tail across releases.
@@ -339,7 +339,7 @@ The defensible statement is narrow and worth making precisely:
 | 4.5 | vehicles 45.4% of road | A29 | `eval/blind_attribution.py` | `blind_attribution.json` |
 | 4.6 | ≤2.2% from a 7th camera | A32 | `eval/camera_placement.py` | `camera_placement.json` |
 | 4.7 | 31.6% path still blind | A31 | `eval/time_to_visibility.py` | `time_to_visibility.json` |
-| 4.8 | 13.1% above 10 m/s | A30 | `eval/safety_envelope.py` | `safety_envelope.json` |
+| 4.8 | 24.5% above 10 m/s | A30+A38 | `eval/safety_envelope.py` | `safety_envelope.json` |
 | 4.9 | 6.9× mining lift | A28 | `mining/mine.py` | `mining_validation.json` |
 | 4.10 | 3.46×, bit-identical | A35 | `perf/march_bench.py` | `march_bench.json` |
 | 6 | calibration, corrected | A34 | `eval/recal_root_cause.py` | `recal_root_cause.json` |

@@ -18,7 +18,7 @@ observability above a stated threshold. That is the honest camera-only analogue
 of a planned path, and it is a number, not a decoration.
 """
 from __future__ import annotations
-import argparse, json, os
+import argparse, json, os, sys
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -26,6 +26,10 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Rectangle
 from PIL import Image
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "eval"))
+from corridor import verified_free            # noqa: E402  ONE implementation
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FREE, RES, RNG, NZ, Z0, N = 17, 0.4, 40.0, 16, -1.0, 200
@@ -116,49 +120,6 @@ def chase_render(ax, cls, conf, obs, top, has, eye=(-14., 0., 9.),
     ax.set_facecolor(BG)
 
 
-def verified_free(cls, obs, tau=0.15, halfw=1.4, clear_from=0.6, clear_to=3.4):
-    """Longest contiguous forward run that is predicted free AND observed.
-
-    A column is NOT "all levels free" -- the road surface itself is class 11,
-    so requiring free everywhere returns 0 m for every frame. The question a
-    planner asks is whether the DRIVING ENVELOPE is clear: nothing solid from
-    `clear_from` metres above the ground up to the top of the grid.
-    """
-    j0 = int((RNG - halfw) / RES); j1 = int((RNG + halfw) / RES)
-    i0 = int(RNG / RES)
-    # A30 measured the height profile: levels k=0,1,2 are 100% occupied (that
-    # is the road) and k=3 is still 54% road bleed, so clear_from=0.4 asks the
-    # ROAD to be free and returns a near-zero corridor. The envelope runs
-    # k=4..10, z = +0.6 to +3.4 m. This renderer shipped with the old value and
-    # is corrected here to match safety_envelope.py -- the same failure to carry
-    # a fix across files that A30 recorded in the other direction.
-    k0 = max(int((clear_from - Z0) / RES), 0)
-    k1 = min(int((clear_to - Z0) / RES), NZ)
-    free = (cls[:, :, k0:k1] == FREE).all(-1)
-    seen = (obs.max(-1) >= tau)
-    ok = (free & seen)[:, j0:j1].mean(1) >= 0.8
-    # The cells immediately in front of the bumper are ALWAYS unverifiable: the
-    # cameras sit 1.5 m up and cannot see the ground at their own feet. Scanning
-    # from i0 therefore returns 0 m on every frame, which is true but useless.
-    # Report both numbers instead: where verification starts, and how far it runs.
-    # LONGEST contiguous verified run, not the first one. Observability
-    # fluctuates cell to cell, so "first run" latches onto a two-cell patch and
-    # the number jumps around between frames without meaning anything.
-    best_a = best_n = 0
-    cur_a = None
-    for i in range(i0, N):
-        if ok[i]:
-            if cur_a is None:
-                cur_a = i
-            if i - cur_a + 1 > best_n:
-                best_a, best_n = cur_a, i - cur_a + 1
-        else:
-            cur_a = None
-    if best_n == 0:
-        return 0.0, 0.0, (j0, j1)
-    return (best_a - i0) * RES, best_n * RES, (j0, j1)
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene", default="scene-0916")
@@ -204,7 +165,7 @@ def main():
             p1 = np.asarray(r["cams"]["CAM_FRONT"]["ego2global_translation"])
             dt = (r["timestamp"] - rows[n-1]["timestamp"]) / 1e6
             spd = float(np.linalg.norm(p1 - p0) / max(dt, 1e-3) * 3.6)
-        vstart, vfree, (jl, jr) = verified_free(cls, obs)
+        vstart, vfree, (jl, jr), _sf, _ss = verified_free(cls, obs)
         t_rel = (r["timestamp"] - rows[0]["timestamp"]) / 1e6
 
         fig = plt.figure(figsize=(16, 9), facecolor=BG)
@@ -297,7 +258,7 @@ def main():
         fig.text(.982, .953, rt, color="#7d8b9c", fontsize=10.5, ha="right",
                  family="monospace")
         fig.text(.018, .030,
-                 f"verified-free corridor {vstart:4.1f}-{vstart+vfree:5.1f} m ahead      "
+                 f"verified-free corridor {vstart:4.1f}-{vstart+vfree:5.1f} m from the bumper      "
                  f"near-field unverifiable {vstart:4.1f} m      "
                  f"obstacle columns {int(ob.sum()):5d}      "
                  f"no camera coverage {100*t_blind.sum()/max(ob.sum(),1):4.1f}%      "

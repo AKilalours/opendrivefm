@@ -2376,3 +2376,106 @@ is.** Four independent analyses now agree on that sentence.
 A33's NOT QUOTABLE flag is **lifted**. Both numbers are full-split and may be
 used, with their scope stated every time -- the scope is the whole finding.
 The Field Brief's +0.0430 stands and becomes +0.04215 on the max maps.
+
+---
+
+## A38 -- One corridor implementation, fourteen regression tests, and the bug
+## they found on their first run
+
+**Date:** 2026-09-24. **Decided:** after seeing data, on the dev split and on
+synthetic scenes. **Affects:** A30 (safety envelope) and A36 (HD renders).
+**Supersedes the A30 figures below; the A30 method is unchanged.**
+
+### The root cause, first
+
+Three separate bugs in this project share one cause, and it is not arithmetic:
+
+| # | Bug | Caught by |
+|---|---|---|
+| A30 | `clear_from=0.4` bled the road surface into the corridor | an implausible 51.5% no-corridor rate |
+| A30 | first-run instead of longest-run gave a 2.4 m median | an implausible median |
+| A36 | the `clear_from` fix never reached `render_hd.py` | a render that disagreed with the table by 10x |
+
+Each time, the same physical quantity -- the verified-free corridor -- was
+computed by two files, a fix landed in one, and nothing checked that the other
+agreed. Every one of the three was caught by a number that looked wrong to a
+human. That is not a control. It is luck, and it only works on quantities whose
+plausible range I happen to know.
+
+**Fix:** `scripts/eval/corridor.py` is now the ONLY implementation.
+`safety_envelope.py` and `render_hd.py` both import `verified_free` from it.
+`tests/test_observability_geometry.py` contains a test,
+`test_one_corridor_implementation`, that compares the `__code__` objects of the
+function each module holds and fails if a second copy ever appears.
+
+### The tests
+
+Fourteen, all synthetic -- no dataset, no checkpoint, they run in 1.2 s in CI.
+Each exists because a real bug got through:
+
+    test_run_beyond_an_obstacle_is_not_credited      A38 (below)
+    test_longest_run_not_first                       A30 bug 2
+    test_envelope_starts_above_the_road_surface      A30 bug 1
+    test_envelope_has_an_upper_bound                 overhead structure
+    test_one_corridor_implementation                 A36
+    test_road_surface_alone_does_not_block           A30 bug 1, converse
+    test_unobserved_lane_yields_no_corridor          the evidence half
+    test_marcher_is_blocked_by_a_wall                first-hit semantics
+    test_marcher_marks_the_wall_itself               off-by-one at the hit
+    test_fast_path_is_bit_identical                  A35
+    (+4 supporting)
+
+### The bug they found
+
+`longest_run` returned the longest contiguous verified-free run **anywhere** in
+the 40 m lane. On a synthetic scene with a wall at 8 m and clear observed road
+behind it, it returned a corridor starting at 18.8 m. A clear stretch on the FAR
+SIDE of an obstacle is not clearance the ego has. The published metric was
+crediting exactly that whenever a near obstacle was followed by open road.
+
+`MAX_START = 15.0` m now bounds where a credited run may begin. The bound is not
+free-floating: A30 measured the near-blind distribution at median 1.2 m and p90
+8.4 m, so 15 m sits well beyond any legitimate start and only excludes runs that
+begin past an obstacle. The p90 near-blind figure itself falls from 12.8 m to
+8.4 m under the bound, which is the same bug seen from the other side: those
+long "near-blind" stretches were the distance to an obstacle, not to the start
+of vision.
+
+**This is the first bug in this project found by a test rather than by a number
+that looked wrong.** It is the only one of the four that I would not have
+noticed, because a 26 m median reach is exactly what I expected to see.
+
+### Effect on the A30 figures -- they get worse
+
+Full split, 5,869 frames, re-run after the fix:
+
+    quantity                          p10    median      p90
+    near field unverifiable (m)       1.2       1.2       8.4      p90 12.8 -> 8.4
+    verified-free reach (m)          10.0      26.4      36.8      p10 10.8 -> 10.0
+
+    frames reach < d_stop        2.7%  ->  4.3%   (160 -> 252 of 5,869)
+    frames with no corridor      0.27% ->  0.5%
+    corridor ends on an obstacle  95%  ->  96%
+
+    by speed, flagged      2-5 m/s   0.1%  (was 0.1%)
+                          5-10 m/s   4.6%  (was 3.4%)
+                         10-15 m/s  24.5%  (was 13.1%)
+
+The headline sentence nearly doubles: **24.5%, not 13.1%, of frames above
+10 m/s have less camera-verified clear road ahead than the vehicle needs to
+stop.** The error ran in the safe-looking direction -- the metric was
+understating the exposure it exists to measure -- which is the direction a
+safety metric must never be wrong in, and the reason this amendment exists
+rather than a quiet edit.
+
+Superseded everywhere: `docs/SOTIF_VALIDATION_REPORT.md` (rows 4.8 and the
+envelope table), the Field Brief, and any slide carrying 2.7% / 13.1%.
+
+### What did NOT change
+
+The A30 method, its parameters (`tau=0.15`, 2.8 m corridor, 0.6-3.4 m envelope,
+`occ_frac=0.8`, `BUMPER=2.4`), and the sealed test split. `MAX_START` is a
+correction to an implementation that did not match the written definition
+("the contiguous verified-free run beyond the near-blind zone"), not a new
+parameter choice tuned against a result. The definition always said "beyond";
+the code did not enforce it.
