@@ -2535,3 +2535,30 @@ can be re-run without Docker at all.
 This distinction is recorded rather than glossed because "we have a Dockerfile"
 and "the image builds and passes" are different claims, and only the second one
 is worth anything to a reviewer.
+
+---
+
+## A40 -- audit: the most-quoted number was printed, never stored
+
+**Date:** 2026-09-24. **Affects:** provenance only. No value changes.
+
+A plan-versus-delivered audit of all 39 amendments checked every quoted figure
+against the artifact the script actually wrote. One failed.
+
+The sensor-only contrast -- `AURC(mask_camera alone) - AURC(observability
+alone)`, the A17/A37 headline and the number the paper leans on hardest --
+was **printed to stdout and never written to `selective_max_*.json`**. It could
+be quoted only from a terminal log, which is exactly the provenance this
+project refuses everywhere else.
+
+`selective.py` now stores `boot_margin_sensor_mask_minus_obs`. Both full-split
+runs were re-executed and reproduce the quoted values exactly:
+
+    occupied / non-free   +0.042151  [+0.034755, +0.049705]
+    full volume           +0.005512  [-0.000405, +0.012200]
+
+Every other figure in A1-A39 was traced to a committed artifact and matched.
+
+The lesson is the same one A38 records from the other direction: a number is
+not verified because it was measured, it is verified because it can be read
+back. Printing is not storing.

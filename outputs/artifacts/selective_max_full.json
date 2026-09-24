@@ -1,0 +1,39 @@
+{
+  "boot_margin_vs_mask": [
+    0.015437989662357165,
+    0.010277859073596178,
+    0.020977352397651864
+  ],
+  "boot_margin_vs_conf": [
+    0.06252997174139951,
+    0.05303738772070644,
+    0.07135278938124921
+  ],
+  "boot_margin_sensor_mask_minus_obs": [
+    0.005512415103492979,
+    -0.00040461804089892003,
+    0.012199787676874893
+  ],
+  "aurc": {
+    "confidence": 0.3900945370638561,
+    "conf + mask_camera": 0.34299816698637714,
+    "conf + observability": 0.3275311194077363,
+    "observability alone": 0.3867416293545006,
+    "mask_camera alone": 0.3923103309471466
+  },
+  "err80": {
+    "confidence": 0.4872415888794187,
+    "conf + mask_camera": 0.4873419476532813,
+    "conf + observability": 0.4852078270167209,
+    "observability alone": 0.5031692139593078,
+    "mask_camera alone": 0.4924936009695704
+  },
+  "ece": {
+    "raw confidence": 0.39641476940272935,
+    "global logistic": 0.03262602355998699,
+    "+ mask_camera": 0.023840801890910184,
+    "+ observability (smooth)": 0.026644140018492427
+  },
+  "frames": 6019,
+  "nonfree": false
+}

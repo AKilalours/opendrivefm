@@ -333,6 +333,12 @@ def main():
                                            float(lo), float(hi)],
                    "boot_margin_vs_conf": [float(d_oc.mean()),
                                            float(lo2), float(hi2)],
+                   # The sensor-only contrast is the headline of A17/A37 and
+                   # was PRINTED but never stored, so the one number the paper
+                   # quotes most could not be read back from a committed
+                   # artifact. Found in the 24 Sep audit. Stored now.
+                   "boot_margin_sensor_mask_minus_obs": [float(ds.mean()),
+                                                         float(lo3), float(hi3)],
                    "aurc": {k: v[0] for k, v in res.items()},
                    "err80": {k: v[1] for k, v in res.items()},
                    "ece": e, "frames": used, "nonfree": args.nonfree},
