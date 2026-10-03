@@ -1,0 +1,13 @@
+{
+ "frames": 8,
+ "cameras_per_frame": 6,
+ "identical": true,
+ "mismatched_voxels": 0,
+ "table_build_s": 6.908270712000103,
+ "table_mb": 831.6,
+ "s_per_frame_shipped": 1.1394968176250586,
+ "s_per_frame_fast": 0.32920827637491357,
+ "speedup": 3.4613249404682676,
+ "full_build_min_shipped": 114.31052242142047,
+ "full_build_min_fast": 33.14021477021008
+}

@@ -141,3 +141,11 @@ outputs/artifacts/hump_store.npz
 !outputs/artifacts/h1_retest.json
 !outputs/artifacts/temporal_observability.json
 outputs/artifacts/tempobs_store.npz
+!outputs/artifacts/val_dev_test.json
+!outputs/artifacts/missed_detection_ray_full.json
+!outputs/artifacts/camera_placement.json
+!outputs/artifacts/time_to_visibility.json
+!outputs/artifacts/march_bench.json
+!outputs/artifacts/recal_root_cause.json
+!outputs/artifacts/missed_detection_test.json
+!outputs/artifacts/h2_max_test.json

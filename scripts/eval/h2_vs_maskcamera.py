@@ -38,6 +38,7 @@ import json
 import os
 import time
 
+import sys
 import numpy as np
 
 OCC_N, OCC_RES, OCC_RNG = 200, 0.4, 40.0
@@ -79,6 +80,10 @@ def main():
     ap.add_argument("--frames", type=int, default=0)
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--out", default="")
+    # A45: H2 was the paper's central claim and had no dev/test separation at
+    # all. The split existed in outputs/artifacts/val_dev_test.json from 11
+    # September and no script read it. It does now.
+    ap.add_argument("--scenes", default="all", choices=["all", "dev", "test"])
     args = ap.parse_args()
 
     gt_map = {os.path.basename(os.path.dirname(p)): p
@@ -97,9 +102,18 @@ def main():
         return {k: np.zeros((2, NB), np.int64)
                 for k in ("obs_full", "mask_full", "obs_masked")}
 
+    keep = None
+    if args.scenes != "all":
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import split as _sp
+        keep = _sp.dev_scenes() if args.scenes == "dev" else _sp.test_scenes()
+        print(f"[A45] {args.scenes.upper()} scenes only, {len(keep)} of 150, "
+              f"split digest {_sp.digest()}", flush=True)
     used = 0
     t0 = time.time()
     for row in index:
+        if keep is not None and row["scene"] not in keep:
+            continue
         tok = row["token"]
         pp = os.path.join(args.preds, f"{tok}.npz")
         op = (os.path.join(args.obs, f"{tok}.npy") if args.obs else

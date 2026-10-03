@@ -3190,3 +3190,119 @@ tested once against a bar fixed in advance.
 It does not rescue A25. A25 was a claim about age and it failed as stated. H4
 is a successor hypothesis with a different variable, registered before its data
 was measured, and it is reported as its own result.
+
+---
+
+## A45 -- the split had no code behind it; the headlines re-reported on
+## held-out scenes; two results rescaled
+
+**Date:** 2026-10-03. Audit prompted by a full cross-check of the plan against
+what is on disk.
+
+### 1. The protocol existed in prose and not in code
+
+Line 16 of this file is the project's central methodological claim. An audit
+found it was enforced nowhere. The split itself was real --
+`outputs/artifacts/val_dev_test.json`, 75 dev and 75 test scenes from seed
+20261116, written 11 September before the observability work produced any
+result -- but it was **never committed, and no script written after it ever
+read it.** Each invented its own:
+
+    selective.py                dev = scenes where index % 2 == 0
+    recal_confound.py           seeded permutation, seed 9
+    temporal_observability.py   seed 44
+    missed_detection.py         seed 5
+    freespace_hump.py           seed 3
+    safety_envelope.py          no split at all
+    h2_vs_maskcamera.py         no split at all, all 150 scenes
+
+Four splits and two results with none, including H2. A protocol in a document
+and not in code is not a protocol, and 44 amendments about pre-registration
+make that worse rather than better: a reviewer who finds this discounts the
+whole file.
+
+**The recorded sha does not verify.** `3e00ea450bb17507` could not be
+reproduced from the split file by sha256, md5 or blake2b-8 over the raw file,
+the compact or sorted JSON, the scene lists in original or sorted order, or the
+seed. It is treated as unverifiable rather than quoted as if it checked out.
+`scripts/eval/split.py` is now the single source of truth, carries a digest it
+recomputes under `--check` (**924a44db544d4818**), and the split file is
+committed. Provenance rests on the 11 September timestamp and the seed.
+
+### 2. H2 on held-out scenes. It survives.
+
+    all 150 scenes     obs 0.6748  mask 0.6215   +0.0534 [+0.0462, +0.0609]
+    75 TEST scenes     obs 0.6714  mask 0.6230   +0.0484 [+0.0390, +0.0584]
+    (3,008 frames)
+
+The effect is smaller on held-out data, as it should be, and still clears the
+acceptance bar of >= +0.03 fixed in A5 with an interval excluding zero. **The
+central claim is not an artifact of evaluating on the scenes the formula was
+chosen on.** From here the test-only figure is the headline and the full-split
+figure is reported beside it as what it is.
+
+### 3. The strongest result, rescaled 10x, and one number corrected downward
+
+A22 was measured on 570 frames and 8,551 objects. `missed_detection.py` was
+single-threaded and could not finish a 600-frame chunk in a 180 s shell call,
+which is the only reason it had never been run at scale. Parallelised, verified
+bit-identical to the serial path on 139 overlapping frames and 2,126 objects,
+then run on all 6,016 eligible frames and **88,950 objects**:
+
+    bands, full split, max maps   47.85% -> 4.78%   monotone 6/6, 10.0x
+    bands, 75 TEST scenes         47.32% -> 4.69%   monotone 6/6, 10.1x
+
+    AUROC predicting "nothing dynamic placed here"
+                              570 frames    full split    TEST only
+      observability (ours)       0.7650       0.7639       0.7608
+      LiDAR oracle               0.7671       0.7761       0.7743
+      annotator visibility       0.6974       0.7058       0.6940
+      range alone                0.6607       0.6621       0.6660
+
+**The gap to the LiDAR oracle was understated.** The much-quoted "0.0021 below
+an oracle that counts actual LiDAR returns" was a 570-frame artifact. At full
+scale it is **0.0122**, and on held-out scenes **0.0135**. Still a camera-only
+geometric quantity landing inside a hundredth and a half of a LiDAR oracle, and
+still beating the dataset's own human visibility annotation by +0.067, but the
+0.002 figure is withdrawn everywhere it appears.
+
+This script also read `obs_ray` while everything else moved to the max maps at
+A23. Both were run at full scale so the two changes are not confounded, which
+was the A33 error: **obs_ray 0.7658 against obs_max 0.7639.** A23 predicted the
+missed-detection ordering would be invariant to the formula change. At 10x the
+sample it is, to within 0.002.
+
+### 4. The seventh-camera negative claim, rescaled 7.5x
+
+A32 rested on 164 frames while carrying a headline negative statement. Re-run
+on **1,238 frames**:
+
+                            164 frames        1,238 frames
+    obstacles with no coverage   76.94%            76.57%
+    roof_high recovered           2.2%              2.2%
+    rear_tele road recovered      7.7%              7.5%
+
+Ordering unchanged, magnitudes unchanged. "A seventh camera anywhere recovers
+at most 2.2% of the obstacle voxels the six-camera rig cannot see" now has the
+sample size to carry it.
+
+### 5. A40's lesson had already repeated, four times
+
+A40 established that a number is not verified unless it can be read back from a
+committed artifact. The SOTIF report cites eleven artifacts and **four were not
+in git**: `camera_placement.json`, `time_to_visibility.json`, `march_bench.json`
+and `recal_root_cause.json`. The `.gitignore` allowlist never got those lines.
+Committed now. A40 checked the figures it quoted, not the full citation list of
+every document, which is why it missed them.
+
+### 6. Still outstanding after this amendment
+
+* `selective.py`, `recal_confound.py`, `temporal_observability.py`,
+  `freespace_hump.py` and `safety_envelope.py` still use their own splits.
+  Each needs the same `--scenes` treatment before the paper quotes it.
+* Only 6 of roughly 18 published results have a CI gate. Everything from A29
+  onward is ungated, including the two results that reversed earlier
+  conclusions.
+* No comparison against any published uncertainty method. Every baseline is a
+  dataset artifact or a trivial feature. This is the largest remaining hole and
+  it is larger than the second backbone.

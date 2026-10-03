@@ -23,7 +23,8 @@ truth must be the one the convention implies. A transform that cannot be
 confirmed this way is not used.
 """
 from __future__ import annotations
-import argparse, glob, json, os
+import argparse, glob, json, os, sys
+from multiprocessing import Pool
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -74,16 +75,85 @@ def frames_with(ann, index):
     return ann["frame"]
 
 
+_OBS = ["data/pack/obs_max"]
+_W = {}
+
+
+def _init(obs_dir, minpts, index, gt_map, ann_path, order, bounds):
+    """A45: this pass was single-threaded and could not finish 600 frames in a
+    180 s shell call, which is why it had only ever been run on 570 of 6,016
+    eligible frames. One frame is independent of every other, so it fans out."""
+    _W["obs"] = obs_dir
+    _W["minpts"] = minpts
+    _W["index"] = index
+    _W["gt"] = gt_map
+    _W["order"] = order
+    _W["bounds"] = bounds
+    an = np.load(ann_path, allow_pickle=True)
+    _W["ann"] = {k: an[k] for k in ("category", "translation", "rotation",
+                                    "size", "visibility", "num_lidar_pts")}
+    _W["names"] = an["category_names"]
+
+
+def _one(fi):
+    row = _W["index"][fi]
+    tok = row["token"]
+    ann, names = _W["ann"], _W["names"]
+    g = np.load(_W["gt"][tok])
+    gcls = g["semantics"].astype(np.int16)
+    cam0 = row["cams"]["CAM_FRONT"]
+    Re = qrot(np.asarray(cam0["ego2global_rotation"], np.float64))
+    te = np.asarray(cam0["ego2global_translation"], np.float64)
+    pcls = np.load(os.path.join(ROOT, "data/preds/preds_voxel",
+                                tok + ".npz"))["cls"].astype(np.int16)
+    obs = np.load(os.path.join(ROOT, _W["obs"],
+                               tok + ".npy")).astype(np.float32) / 255.0
+    out = []
+    sl = _W["order"][_W["bounds"][fi]:_W["bounds"][fi + 1]]
+    for k in sl:
+        cid = CAT2OCC.get(str(names[ann["category"][k]]))
+        if cid is None or cid not in DYN:
+            continue
+        if ann["num_lidar_pts"][k] < _W["minpts"]:
+            continue
+        c = Re.T @ (ann["translation"][k].astype(np.float64) - te)
+        R = Re.T @ qrot(np.asarray(ann["rotation"][k], np.float64))
+        vx = box_voxels(c, ann["size"][k].astype(np.float64), R, 0.0)
+        if vx is None:
+            continue
+        gm = gcls[vx] == cid
+        if not gm.any():
+            continue
+        out.append(dict(token=tok, obs=float(obs[vx][gm].max()),
+                        det=bool((pcls[vx] != FREE).any()),
+                        dyn=bool(np.isin(pcls[vx], list(DYN)).any()),
+                        exact=bool((pcls[vx] == cid).any()),
+                        vis=int(ann["visibility"][k]),
+                        pts=int(ann["num_lidar_pts"][k]),
+                        scene=row["scene"], cls=cid,
+                        rng=float(np.hypot(c[0], c[1]))))
+    return tok, out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--frames", type=int, default=1200)
     ap.add_argument("--seed", type=int, default=5)
+    # A45. This script read data/pack/obs_ray while every other result in the
+    # paper moved to the max maps at A23. The zero set is identical under both
+    # (A23), so the band ORDERING is invariant, but the band EDGES inside
+    # obs > 0 are not. Default switched to obs_max for consistency; obs_ray is
+    # still selectable so the two can be compared at a FIXED frame count
+    # rather than changing N and the maps together, which is the A33 error.
+    ap.add_argument("--obs", default="data/pack/obs_max")
     ap.add_argument("--minpts", type=int, default=1)
     ap.add_argument("--probe", action="store_true")
     ap.add_argument("--boot", type=int, default=3000)
     ap.add_argument("--chunk", type=int, default=250)
     ap.add_argument("--cache", default="outputs/artifacts/missed_cache.jsonl")
     ap.add_argument("--report", action="store_true")
+    # A45: the protocol in METHOD_FREEZE line 16 now has code behind it.
+    ap.add_argument("--scenes", default="all", choices=["all", "dev", "test"])
     ap.add_argument("--out", default="outputs/artifacts/missed_detection.json")
     a = ap.parse_args()
 
@@ -121,12 +191,37 @@ def main():
         print(f"sample {len(sel)} | remaining {n_left} | this run {len(frames)}",
               flush=True)
 
+    _OBS[0] = a.obs
     zoffs = [-2.0, -1.6, -1.2, -0.8, -0.4, 0.0, 0.4, 0.8, 1.2, 1.6, 2.0] \
         if a.probe else [0.0]
     if a.probe:
         frames = frames[:a.frames]
         print("z-offset probe: fraction of DYNAMIC boxes whose interior contains "
               "at least one ground-truth voxel of the SAME class\n")
+
+    if not a.probe and not a.report:
+        import time as _t
+        t0 = _t.time()
+        with open(cache, "a") as fh, Pool(
+                max(os.cpu_count() - 1, 1), initializer=_init,
+                initargs=(a.obs, a.minpts, index, gt_map,
+                          os.path.join(ROOT, "data/pack/annotations_val.npz"),
+                          order, bounds)) as pool:
+            for n, (tok, out) in enumerate(pool.imap_unordered(_one, frames,
+                                                               chunksize=4)):
+                if out:
+                    for r in out:
+                        fh.write(json.dumps(r) + "\n")
+                else:
+                    fh.write(json.dumps(dict(token=tok, empty=True)) + "\n")
+                if (n + 1) % 400 == 0:
+                    fh.flush(); el = _t.time() - t0
+                    print(f"  {n+1}/{len(frames)}  {el/(n+1):.3f}s/frame  "
+                          f"eta {(len(frames)-n-1)*el/(n+1)/60:.1f} min", flush=True)
+        left = n_left - len(frames)
+        print("chunk done, %d remain" % left if left > 0 else
+              "sample complete -- run with --report", flush=True)
+        return
 
     for zoff in zoffs:
         hit = tot = 0
@@ -142,7 +237,7 @@ def main():
             if not a.probe:
                 pcls = np.load(os.path.join(ROOT, "data/preds/preds_voxel",
                                             tok + ".npz"))["cls"].astype(np.int16)
-                obs = np.load(os.path.join(ROOT, "data/pack/obs_ray",
+                obs = np.load(os.path.join(ROOT, _OBS[0],
                                            tok + ".npy")).astype(np.float32) / 255.0
             sl = order[bounds[fi]:bounds[fi + 1]]
             for k in sl:
@@ -195,10 +290,19 @@ def main():
               "sample complete -- run with --report", flush=True)
         return
 
+    keep = None
+    if a.scenes != "all":
+        sys.path.insert(0, HERE)
+        import split as _sp
+        keep = _sp.dev_scenes() if a.scenes == "dev" else _sp.test_scenes()
+        print(f"[A45] {a.scenes.upper()} scenes only, "
+              f"{len(keep)} of 150, split digest {_sp.digest()}")
     recs = []
     for l in open(cache):
         d = json.loads(l)
         if d.get("empty"):
+            continue
+        if keep is not None and d["scene"] not in keep:
             continue
         recs.append((d["obs"], d["det"], d["dyn"], d["exact"], d["vis"],
                      d["pts"], d["scene"], d["cls"], d["token"], d["rng"]))

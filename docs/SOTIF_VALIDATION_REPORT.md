@@ -334,7 +334,7 @@ The defensible statement is narrow and worth making precisely:
 |---|---|---|---|---|
 | 4.1 | +0.0534 AUROC | A26 | `eval/h2_vs_maskcamera.py` | `h2_max.json` |
 | 4.2 | 5.5× danger zone | A26, A14 | `eval/kill_gate.py` | `killgate_max_nonfree.json` |
-| 4.3 | 48.3% → 5.3% | A22 | `eval/missed_detection.py` | `missed_detection.json` |
+| 4.3 | 47.9% → 4.8% | A22 | `eval/missed_detection.py` | `missed_detection.json` |
 | 4.4 | 30.2% → 8.3% | A21 | `eval/camera_dropout.py` | `camera_dropout.json` |
 | 4.5 | vehicles 45.4% of road | A29 | `eval/blind_attribution.py` | `blind_attribution.json` |
 | 4.6 | ≤2.2% from a 7th camera | A32 | `eval/camera_placement.py` | `camera_placement.json` |

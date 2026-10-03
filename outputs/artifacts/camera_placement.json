@@ -1,0 +1,66 @@
+{
+ "frames": 1238,
+ "baseline": {
+  "obst_n": 2729709,
+  "obst_dark": 2090175,
+  "obst_dark_frac": 0.7657134881410436,
+  "road_dark": 5720234,
+  "mean_obs": 0.16145064124169117
+ },
+ "candidates": {
+  "roof_high": {
+   "obst_dark_after": 2043478,
+   "obstacles_recovered": 46697,
+   "obstacles_recovered_frac": 0.02234119152702525,
+   "road_recovered": 399571,
+   "road_recovered_frac": 0.06985221233956512,
+   "mean_obs_after": 0.16954393463383424,
+   "mean_obs_gain": 0.00809329339214307
+  },
+  "rear_tele": {
+   "obst_dark_after": 2063293,
+   "obstacles_recovered": 26882,
+   "obstacles_recovered_frac": 0.012861124068558853,
+   "road_recovered": 426562,
+   "road_recovered_frac": 0.07457072560318337,
+   "mean_obs_after": 0.1893400389848575,
+   "mean_obs_gain": 0.027889397743166316
+  },
+  "bumper_low": {
+   "obst_dark_after": 2073910,
+   "obstacles_recovered": 16265,
+   "obstacles_recovered_frac": 0.007781645077565276,
+   "road_recovered": 119249,
+   "road_recovered_frac": 0.02084687444604539,
+   "mean_obs_after": 0.16347487444298414,
+   "mean_obs_gain": 0.0020242332012929687
+  },
+  "front_wide": {
+   "obst_dark_after": 2074388,
+   "obstacles_recovered": 15787,
+   "obstacles_recovered_frac": 0.007552956092193237,
+   "road_recovered": 239736,
+   "road_recovered_frac": 0.0419101736047861,
+   "mean_obs_after": 0.16383883785236378,
+   "mean_obs_gain": 0.002388196610672605
+  },
+  "side_right": {
+   "obst_dark_after": 2079719,
+   "obstacles_recovered": 10456,
+   "obstacles_recovered_frac": 0.005002451947803414,
+   "road_recovered": 85866,
+   "road_recovered_frac": 0.015010924378268441,
+   "mean_obs_after": 0.163911110583015,
+   "mean_obs_gain": 0.0024604693413238232
+  },
+  "side_left": {
+   "obst_dark_after": 2080879,
+   "obstacles_recovered": 9296,
+   "obstacles_recovered_frac": 0.004447474493762484,
+   "road_recovered": 75505,
+   "road_recovered_frac": 0.013199634840113184,
+   "mean_obs_after": 0.1635462597029634,
+   "mean_obs_gain": 0.002095618461272236
+  }
+ }
+}
