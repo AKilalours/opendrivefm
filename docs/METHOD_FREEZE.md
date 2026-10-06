@@ -3539,3 +3539,80 @@ opposite direction from every other gate here.
   (A46); the sampling family is not, and a reviewer will ask.
 * The second backbone, now disk-limited as well as unstarted.
 * The paper.
+
+---
+
+## A48 -- the headline broken out by class, and a calibration result that
+## had been sitting unread
+
+**Date:** 2026-10-06. Both on the 75 held-out TEST scenes, split digest
+`924a44db544d4818`. Neither needed a new pass over the data.
+
+### 1. The object-level headline, per class
+
+A46 reported observability beating the model's own confidence by +0.0432
+across 40,863 objects. Broken out:
+
+    class         objects  unplaced     obs     MSP  oracle   obs - MSP
+    car            22,096     11.8%  0.8318  0.6812  0.7860  +0.1521 [+0.108,+0.194] *
+    pedestrian     10,407     36.2%  0.7067  0.7111  0.7388  -0.0045 [-0.027,+0.025]
+    truck           3,956     11.6%  0.7857  0.6964  0.7649  +0.0885 [+0.008,+0.165] *
+    trailer         1,056     11.5%  0.5526  0.7761  0.6300  -0.1975 [-0.391,+0.011]
+    motorcycle      1,011     25.4%  0.7201  0.6726  0.7141  +0.0467 [-0.054,+0.170]
+    bicycle           982     33.2%  0.7078  0.8197  0.7228  -0.1153 [-0.191,-0.034] *
+    bus               814     13.3%  0.7225  0.7309  0.7444  -0.0008 [-0.159,+0.212]
+    constr_veh        541     48.2%  0.6462  0.7290  0.6561  -0.0870 [-0.202,+0.008]
+
+    * interval excludes zero
+
+**The aggregate is carried by cars and trucks, and bicycles go the other way.**
+That is a refinement of the claim, not a weakening of it, and the direction is
+what the mechanism predicts. A car is large enough that "no camera saw this
+volume" is a reliable statement about whether the object could have been
+detected at all. A pedestrian or a bicycle can be missed for reasons occlusion
+does not capture -- small, low contrast, thin against clutter -- and those are
+exactly the failures the model's own confidence does see.
+
+**On cars, observability at 0.8318 beats the LiDAR oracle at 0.7860.** A
+camera-geometry quantity beating a score that counts actual LiDAR returns is
+not something I expected, and the likely reason is mundane: LiDAR return count
+saturates on a nearby car, so it stops discriminating, while observability
+keeps resolving partial occlusion.
+
+The honest sentence for the paper: *the measure is strongest exactly where
+occlusion is the dominant failure mode, and adds nothing for small objects
+where it is not.*
+
+### 2. Stage 5 passes on occupied voxels, and nobody had looked
+
+A27 and A34 concluded that observability-conditioned recalibration loses to
+`mask_camera`. A41 showed that conclusion was scored against a target that is
+86% unsupervised. `selective.py` has been writing an ECE table all along;
+re-run on the A45 split, nobody had read it in this light:
+
+    OCCUPIED / non-free voxels, 75 held-out test scenes
+      raw confidence                     0.23563
+      global logistic (Platt/temperature) 0.02534   <- the unconditioned baseline
+      + mask_camera                      0.02697
+      + observability (smooth)           0.02235   <- BEST
+
+    FULL VOLUME
+      global logistic                    0.03051
+      + mask_camera                      0.02026   <- best
+      + observability (smooth)           0.02875
+
+**On occupied voxels, observability-conditioned recalibration beats plain
+temperature scaling by 11.8% and `mask_camera` by 17.1%.** Stage 5's original
+acceptance was to beat the unconditioned baseline. On that scope it does.
+
+Three things stated against it, because this result arrives late and
+conveniently:
+
+1. **No intervals.** `selective.py` bootstraps AURC, not ECE, so these are
+   point estimates. They must not be quoted with the confidence of the AUROC
+   numbers until that is fixed.
+2. **It fails on the full volume**, where `mask_camera` wins at 0.02026. The
+   scope is the finding, as it has been since A17.
+3. **This is not a new experiment.** It is an existing output read correctly
+   for the first time, which is the same class of error as A40 -- a number
+   that existed and was not looked at.

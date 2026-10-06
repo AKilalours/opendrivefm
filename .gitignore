@@ -152,3 +152,4 @@ outputs/artifacts/tempobs_store.npz
 !outputs/artifacts/baselines.json
 !outputs/artifacts/baselines_object.json
 !outputs/artifacts/baselines_coef.json
+!outputs/artifacts/baselines_by_class.json
