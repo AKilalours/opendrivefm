@@ -3306,3 +3306,78 @@ every document, which is why it missed them.
 * No comparison against any published uncertainty method. Every baseline is a
   dataset artifact or a trivial feature. This is the largest remaining hole and
   it is larger than the second backbone.
+
+---
+
+## A46 -- PRE-REGISTRATION: uncertainty baselines and a combined score
+
+**Date:** 2026-10-06. **Written BEFORE the measurement**, committed before the
+script that produces it.
+
+### Why
+
+The 3 October audit named the largest remaining hole: **every baseline this
+project measures against is a dataset artifact or a trivial feature.**
+`mask_camera` 97 times, range alone, confidence alone, random, the annotator
+label, the LiDAR oracle. Not one published uncertainty method. A reviewer does
+not accept "nobody has conditioned calibration on visibility" as a reason to
+compare against nothing.
+
+MC-dropout and deep ensembles need re-inference and a GPU. The post-hoc
+uncertainty family does not: `preds_voxel` already stores `conf`, `conf2` and
+`p_free` per voxel, so the standard baselines are pure CPU and can be run now.
+
+### What is measured
+
+Predicting per-voxel error, inside `mask_camera` (A5's scope), AUROC by exact
+histogram, paired bootstrap over scenes. **Fit on the 75 dev scenes, scored on
+the 75 test scenes**, under the split materialised in A45
+(digest `924a44db544d4818`).
+
+    MSP              1 - max-softmax confidence      the canonical baseline
+    margin           1 - (conf - conf2)              top-2 ambiguity
+    p_free                                           the free-space head
+    range from ego                                   trivial geometric control
+    mask_camera                                      the benchmark's own flag
+    observability                                    ours, the A23 measure
+    COMBINED         logistic on [logit(conf), margin, obs, range],
+                     coefficients fit on DEV voxels only
+
+### A point that must be stated rather than discovered later
+
+**Temperature scaling cannot appear in the AUROC table.** It is a monotone
+transform of confidence, so it leaves every ranking unchanged and AUROC with
+it. It belongs in the calibration table, where it is the right baseline, and
+quoting it as a ranking baseline would be a mistake. It is reported on ECE
+only.
+
+### Hypothesis and acceptance, fixed now
+
+**H5: the combined score beats observability alone at predicting per-voxel
+error, on held-out scenes.**
+
+    HOLDS   AUROC(combined) - AUROC(observability) > 0 on TEST scenes,
+            95% interval excluding zero, coefficients fit on DEV only
+    FAILS   anything else
+
+**H6: observability adds over the model's own confidence.**
+
+    HOLDS   AUROC(combined) - AUROC(MSP) > 0 on TEST, interval excluding zero
+    FAILS   anything else
+
+### Stated prior, so it cannot be claimed afterwards
+
+I expect **H5 to hold and H6 to hold, and the combined AUROC to land between
+0.72 and 0.78.** Reasoning: A16, A17 and A37 already established that
+observability and model confidence are complementary rather than redundant, and
+a combined score is the obvious consequence nobody has measured for the H2
+metric. If the combined score lands below 0.70 the complementarity is weaker
+than four amendments imply, and that is a finding about the measure's ceiling.
+
+**This does not change H2.** H2 is a pre-registered comparison between
+observability and `mask_camera` and its verdict stands at +0.0484 on held-out
+scenes whatever H5 and H6 do. A combined score is a different claim: it says
+what the best available error predictor is, not whether the continuous measure
+beats the binary flag.
+
+**It runs once.** Whatever it prints is the result.
