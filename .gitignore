@@ -149,3 +149,6 @@ outputs/artifacts/tempobs_store.npz
 !outputs/artifacts/recal_root_cause.json
 !outputs/artifacts/missed_detection_test.json
 !outputs/artifacts/h2_max_test.json
+!outputs/artifacts/baselines.json
+!outputs/artifacts/baselines_object.json
+!outputs/artifacts/baselines_coef.json

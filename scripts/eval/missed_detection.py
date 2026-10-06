@@ -104,8 +104,14 @@ def _one(fi):
     cam0 = row["cams"]["CAM_FRONT"]
     Re = qrot(np.asarray(cam0["ego2global_rotation"], np.float64))
     te = np.asarray(cam0["ego2global_translation"], np.float64)
-    pcls = np.load(os.path.join(ROOT, "data/preds/preds_voxel",
-                                tok + ".npz"))["cls"].astype(np.int16)
+    _p = np.load(os.path.join(ROOT, "data/preds/preds_voxel", tok + ".npz"))
+    pcls = _p["cls"].astype(np.int16)
+    # A46: the per-voxel baselines showed the model's own max-softmax
+    # confidence beats observability by 0.25 AUROC inside mask_camera. The
+    # object-level claim is the paper's strongest and had never been tested
+    # against the same baseline, so the box confidence is recorded here.
+    pconf = _p["conf"].astype(np.float32) / 255.0
+    pconf2 = _p["conf2"].astype(np.float32) / 255.0
     obs = np.load(os.path.join(ROOT, _W["obs"],
                                tok + ".npy")).astype(np.float32) / 255.0
     out = []
@@ -125,6 +131,9 @@ def _one(fi):
         if not gm.any():
             continue
         out.append(dict(token=tok, obs=float(obs[vx][gm].max()),
+                        cmax=float(pconf[vx].max()),
+                        cmean=float(pconf[vx].mean()),
+                        mmean=float((pconf[vx] - pconf2[vx]).mean()),
                         det=bool((pcls[vx] != FREE).any()),
                         dyn=bool(np.isin(pcls[vx], list(DYN)).any()),
                         exact=bool((pcls[vx] == cid).any()),

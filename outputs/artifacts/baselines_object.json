@@ -1,0 +1,28 @@
+{
+ "level": "object",
+ "scope": "test",
+ "objects": 40863,
+ "scenes": 75,
+ "auroc": {
+  "observability": 0.7623374529267868,
+  "MSP (max conf in box)": 0.7192591003542392,
+  "mean conf in box": 0.5408767292771637,
+  "mean top-2 margin": 0.5201817147993427,
+  "LiDAR points in box (ORACLE)": 0.7744688474960503,
+  "range from ego": 0.6660199002053444
+ },
+ "contrasts": {
+  "observability - MSP": [
+   0.043230313745827365,
+   0.013455448238530001,
+   0.07082492027750706
+  ],
+  "observability - LiDAR ORACLE": [
+   -0.012079660424888174,
+   -0.028862851857306443,
+   0.005186639372801325
+  ]
+ },
+ "boot": 600,
+ "split_digest": "924a44db544d4818"
+}

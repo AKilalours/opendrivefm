@@ -3381,3 +3381,90 @@ what the best available error predictor is, not whether the continuous measure
 beats the binary flag.
 
 **It runs once.** Whatever it prints is the result.
+
+---
+
+## A46 RESULT -- the per-voxel claim is dominated by a one-line baseline.
+## The object-level claim beats it. The paper changes shape.
+
+**Date:** 2026-10-06. Run once against criteria fixed in A46 before it ran.
+75 held-out TEST scenes under the A45 split, digest `924a44db544d4818`.
+Coefficients fit on DEV frames only. `scripts/eval/baselines.py`.
+
+### Per voxel, inside mask_camera, 3,008 test frames
+
+    score                      AUROC      vs observability
+    COMBINED                  0.8811   +0.2491 [+0.2407, +0.2575]
+    MSP (max softmax)         0.8797   +0.2476 [+0.2389, +0.2564]
+    margin (top1 - top2)      0.8788   +0.2468 [+0.2379, +0.2557]
+    p_free head               0.7913   +0.1593 [+0.1473, +0.1707]
+    observability (ours)      0.6321    reference
+    range from ego            0.6124   -0.0195 [-0.0307, -0.0083]
+    mask_camera               0.5000   -0.1319  (constant in scope, as expected)
+
+    H5  COMBINED - observability  +0.2491 [+0.2407, +0.2575]   HOLDS
+    H6  COMBINED - MSP            +0.0015 [+0.0009, +0.0022]   HOLDS
+
+Both pre-registered hypotheses hold and **both verdicts flatter the result more
+than the result deserves.** H5 holds trivially, because the combination is
+carried by confidence, not by us. H6 holds with an interval that excludes zero
+and a point estimate of **+0.0015**, which is statistically real and
+practically nothing.
+
+**MY STATED PRIOR WAS WRONG, and this is the seventh recorded.** A46 predicted
+the combined score would land between 0.72 and 0.78. It landed 0.8811, because
+I underestimated plain max-softmax confidence by about twelve points.
+
+**Stated without softening: at the voxel level the model's own confidence is a
+far better error predictor than observability, and observability adds
++0.0015 on top of it.** Every per-voxel framing in this project has to be read
+against that from now on. A reviewer would have found this in an afternoon, and
+it is the measurement the project should have run in week one.
+
+### Per object, 40,863 objects on the same test scenes
+
+The same baseline applied to the question a planner actually asks -- was the
+object placed at all:
+
+    LiDAR points in box (ORACLE)      0.7745
+    observability (ours)              0.7623
+    MSP, max conf in box              0.7193
+    range from ego                    0.6660
+    mean conf in box                  0.5409
+    mean top-2 margin                 0.5202
+
+    observability - MSP        +0.0432  [+0.0135, +0.0708]   excludes zero
+    observability - ORACLE     -0.0121  [-0.0289, +0.0052]   SPANS zero
+
+**The ordering inverts.** Observability beats the model's own confidence by
++0.0432 with an interval excluding zero, and is **statistically
+indistinguishable from an oracle that counts actual LiDAR returns.**
+
+### Why both results are true, and what it means
+
+A voxel's correctness is largely predicted by how confident the model is about
+that voxel, which is close to tautological: the model's confidence is a
+statement about its own likely error, and MSP has been the strongest cheap
+baseline for that since 2017.
+
+**Whether an object is ABSENT from the field is a different question, and
+confidence cannot answer it.** Where a missed object should be, the model is
+not uncertain. It is confidently predicting free space. There is no low
+confidence to detect, because the model never entertained the hypothesis. A
+camera-geometry measure does not need the model to have considered the object:
+it says no camera could have seen that volume. **Confidence cannot flag what
+the model never considered. Geometry can.**
+
+### Consequence: the paper changes shape
+
+* The **object-level result becomes the headline**: beats the model's own
+  confidence by +0.0432, indistinguishable from a LiDAR oracle, 48% of
+  dynamic objects unplaced where no camera has evidence against 5%.
+* **H2 stops being the headline.** It remains a true, pre-registered,
+  held-out comparison against `mask_camera` at +0.0484, and it is demoted to a
+  supporting result with the MSP comparison reported immediately beside it.
+  Quoting H2 without MSP would now be misleading, and is forbidden.
+* The **sensor-only regime** (A16, A17, A37) gains importance rather than
+  losing it: placement studies, fleet coverage and safety cases run without
+  model confidence, and there observability is the only signal available.
+* Nothing is withdrawn. Every number stands. What changes is which one leads.
