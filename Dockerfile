@@ -43,15 +43,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
+# A51: build at the SAME path the runtime image uses. CMake bakes absolute
+# paths into CTestTestfile.cmake, so binaries built at /build/out and copied
+# to /odfm/cpp/build are still looked for at /build/out, and every ctest
+# reports "Unable to find executable". Caught by the CI job added in A39,
+# which is the first time that image was ever actually built and run.
+WORKDIR /odfm
 COPY cpp/ cpp/
 
 # Release build plus the TSan build. A lock-free SPSC queue and a seqlock can
 # pass a functional test and still be racy; TSan is what checks the orderings.
-RUN cmake -S cpp -B out -DCMAKE_BUILD_TYPE=Release \
- && cmake --build out -j"$(nproc)" \
- && cmake -S cpp -B out-tsan -DCMAKE_BUILD_TYPE=Debug -DODFM_TSAN=ON \
- && cmake --build out-tsan -j"$(nproc)"
+RUN cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release \
+ && cmake --build cpp/build -j"$(nproc)" \
+ && cmake -S cpp -B cpp/build-tsan -DCMAKE_BUILD_TYPE=Debug -DODFM_TSAN=ON \
+ && cmake --build cpp/build-tsan -j"$(nproc)"
 
 # ---------------------------------------------------------------- runtime
 FROM python:3.11-slim
@@ -75,8 +80,8 @@ COPY src/ src/
 COPY scripts/ scripts/
 COPY tests/ tests/
 COPY outputs/artifacts/ outputs/artifacts/
-COPY --from=cpp /build/out      cpp/build/
-COPY --from=cpp /build/out-tsan cpp/build-tsan/
+COPY --from=cpp /odfm/cpp/build      cpp/build/
+COPY --from=cpp /odfm/cpp/build-tsan cpp/build-tsan/
 
 COPY docker/verify.sh /usr/local/bin/verify
 RUN chmod +x /usr/local/bin/verify

@@ -3736,3 +3736,49 @@ nothing in `data/pack/obs_max` is rebuilt. The download fits with headroom.
 There is 3.2 GB of retired Stage-1 checkpoints that could be cleared if more
 room were wanted, but it is not required. The warning was overcautious and is
 withdrawn.
+
+---
+
+## A51 -- the verification image, actually built for the first time, and it
+## was broken
+
+**Date:** 2026-10-06. A39 shipped a Dockerfile whose *contents* were verified
+and whose *container* was never built, because Docker Hub was unreachable from
+the machine that wrote it. A39 recorded that distinction and added a CI job to
+close it. The push on 6 October ran that job for the first time. **Both halves
+of it failed**, which is exactly what the job was for.
+
+### Failure 1: every C++ test reported "Unable to find executable"
+
+The cpp stage built into `/build/out` and the runtime stage copied that to
+`/odfm/cpp/build`. CMake bakes **absolute** paths into `CTestTestfile.cmake`,
+so ctest in the final image kept looking in `/build/out` and found nothing:
+3 of 3 not run, exit 8.
+
+Fixed by building at the path the runtime image actually uses --
+`WORKDIR /odfm`, `cmake -S cpp -B cpp/build` -- rather than building elsewhere
+and copying. No copy, no path rewrite, nothing to drift.
+
+### Failure 2: the A38 test needed a plotting stack
+
+`test_one_corridor_implementation` imports both `safety_envelope.py` and
+`render_hd.py` to confirm they hold the **same** corridor function object.
+`render_hd.py` imported matplotlib at module scope, so the test died on
+`ModuleNotFoundError` rather than on a real disagreement between the two
+callers -- a test that cannot run is worth no more than a gate that cannot
+fail.
+
+Fixed by importing matplotlib and PIL lazily inside `_mpl()`, called from
+`main()`. The module now imports with numpy alone, which is what the test
+needs and what `requirements-test.txt` deliberately provides.
+
+### What this says about A39
+
+A39's honesty note was worth exactly what it cost. It stated that the image's
+contents were verified and the container was not, and it added the job that
+would catch the difference. Had it claimed "the image builds and passes," two
+real defects would have shipped behind a true-sounding sentence.
+
+**59 of 60 tests passed in that CI run**, and the one that failed was
+infrastructure rather than a measurement. No published number is affected by
+either defect.

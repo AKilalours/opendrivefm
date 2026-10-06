@@ -20,12 +20,28 @@ of a planned path, and it is a number, not a decoration.
 from __future__ import annotations
 import argparse, json, os, sys
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.collections import PolyCollection
-from matplotlib.patches import Rectangle
-from PIL import Image
+
+# A51: matplotlib and PIL are imported lazily, inside _mpl(), rather than at
+# module scope. tests/test_observability_geometry.py imports this module to
+# check that it and safety_envelope.py hold the SAME corridor function object,
+# and that check should not drag a plotting stack into the test environment.
+# CI caught it: the A38 test failed on ModuleNotFoundError, not on a real
+# disagreement between the two callers.
+plt = PolyCollection = Rectangle = Image = None
+
+
+def _mpl():
+    """Import the plotting stack on first use and bind the module globals."""
+    global plt, PolyCollection, Rectangle, Image
+    if plt is not None:
+        return
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as _plt
+    from matplotlib.collections import PolyCollection as _PC
+    from matplotlib.patches import Rectangle as _R
+    from PIL import Image as _Im
+    plt, PolyCollection, Rectangle, Image = _plt, _PC, _R, _Im
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "eval"))
@@ -121,6 +137,7 @@ def chase_render(ax, cls, conf, obs, top, has, eye=(-14., 0., 9.),
 
 
 def main():
+    _mpl()
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene", default="scene-0916")
     ap.add_argument("--obs", default="data/pack/obs_max")
