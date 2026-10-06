@@ -3616,3 +3616,57 @@ conveniently:
 3. **This is not a new experiment.** It is an existing output read correctly
    for the first time, which is the same class of error as A40 -- a number
    that existed and was not looked at.
+
+---
+
+## A49 -- ECE now carries intervals, and A48 section 2 is WITHDRAWN
+
+**Date:** 2026-10-06, about an hour after A48. 75 held-out TEST scenes,
+digest `924a44db544d4818`, 2,000 scene resamples with the dev fit held fixed.
+
+A48 published the calibration table as point estimates and listed "no
+intervals" as the first of three caveats, because `selective.py` bootstrapped
+AURC and not ECE. That is now fixed: ECE is resampled in the same loop, on the
+same scenes, against the same fixed dev-fitted weights.
+
+    OCCUPIED / non-free voxels
+      ECE(global logistic) - ECE(+observability)
+        +0.00265  95% CI [-0.00262, +0.00581]   no difference
+      ECE(+ mask_camera)   - ECE(+observability)
+        +0.00236  95% CI [-0.00406, +0.00740]   no difference
+
+    FULL VOLUME
+      vs global logistic   +0.00170  [-0.00954, +0.01193]   no difference
+      vs + mask_camera     -0.00539  [-0.01186, +0.00334]   no difference
+
+### The claim is withdrawn
+
+A48 section 2 said Stage 5 passes on occupied voxels, reading 0.02235 against
+0.02534 and 0.02697. **Both of those margins are inside scene-to-scene noise.**
+The honest verdict is **no difference**, and the "beats temperature scaling by
+11.8% and mask_camera by 17.1%" sentence is withdrawn everywhere it appears,
+including the audit page published an hour ago.
+
+### What the corrected result actually is, and it is not nothing
+
+Stage 5's history reads: A13 lost to a global map, A27 lost, A34 concluded the
+question was closed, A41 showed all of that was scored against a target 86%
+unsupervised. The position now, on the pre-registered scope and a held-out
+split with intervals:
+
+**Observability-conditioned recalibration TIES plain temperature scaling and
+TIES `mask_camera` on occupied voxels.** It no longer loses. That is a real
+move from where A27 and A34 left it, and it is the honest ceiling: there is no
+residual calibration signal large enough to separate from noise at 75 scenes.
+
+The AURC side is unaffected and remains the strong result: ranking by
+observability alone beats `mask_camera` alone by **+0.03858 [+0.03112,
++0.04610]** in the sensor-only regime.
+
+### Why this is recorded rather than quietly fixed
+
+A48 was written an hour ago, by me, with the caveat attached that this run has
+now cashed. A point estimate that looks like a win and dies to its own interval
+is the single most common way a result gets into a paper wrong, and it would
+have gone in wrong if the caveat had been dropped instead of closed. The
+interval was the whole reason the caveat existed.

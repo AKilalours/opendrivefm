@@ -290,6 +290,7 @@ def main():
         print(f"{k:<28}{v:>10.5f}")
     print("  smooth conditioning vs global: "
           f"{100*(e['global logistic']-e['+ observability (smooth)'])/e['global logistic']:+.1f}%")
+    print("  intervals for these follow in the bootstrap section (A49)")
 
     # --- bootstrap the margin over the binary mask -----------------------
     # The dev fit is held fixed; only the test scenes are resampled. That is
@@ -299,6 +300,12 @@ def main():
     NSf = NS.reshape(NS.shape[0], -1)
     KSf = KS.reshape(KS.shape[0], -1)
     d_om, d_oc, d_sensor = [], [], []
+    # A49: ECE is bootstrapped here too. A48 had to publish the calibration
+    # table as point estimates with a caveat, because this loop resampled
+    # scenes for AURC and not for ECE. Same resample, same fixed dev fit, so
+    # the calibration numbers now carry intervals like everything else.
+    p_glob, p_mask, p_obs = sig(Xg @ wg), sig(Xm @ wm), sig(Xo @ wo)
+    d_eg, d_em = [], []
     for _ in range(args.boot):
         pick = rs2.integers(0, NSf.shape[0], NSf.shape[0])
         n_b = NSf[pick].sum(0).astype(np.float64)
@@ -311,6 +318,10 @@ def main():
         d_oc.append(a_c - a_o)
         d_sensor.append(risk_coverage(m_f, n_b, w_b)[0]
                         - risk_coverage(o_f, n_b, w_b)[0])
+        # positive = observability-conditioned calibration is BETTER (lower ECE)
+        e_o = ece(p_obs, n_b, k_b)
+        d_eg.append(ece(p_glob, n_b, k_b) - e_o)
+        d_em.append(ece(p_mask, n_b, k_b) - e_o)
     d_om, d_oc = np.array(d_om), np.array(d_oc)
     lo, hi = np.percentile(d_om, [2.5, 97.5])
     lo2, hi2 = np.percentile(d_oc, [2.5, 97.5])
@@ -325,6 +336,16 @@ def main():
                   "NO DIFFERENCE from mask_camera -- CI spans zero"))
     print(f"  AURC(conf) - AURC(obs)  = {d_oc.mean():+.5f}  "
           f"95% CI [{lo2:+.5f}, {hi2:+.5f}]")
+    for nm, arr, base in (("vs global logistic (temperature scaling)", d_eg,
+                           "global logistic"),
+                          ("vs + mask_camera", d_em, "+ mask_camera")):
+        v = np.array(arr); l_, h_ = np.percentile(v, [2.5, 97.5])
+        verdict = ("observability-conditioned calibration WINS"
+                   if l_ > 0 else
+                   "it LOSES -- interval excludes zero" if h_ < 0 else
+                   "no difference -- interval spans zero")
+        print(f"  ECE({base}) - ECE(+observability) = {v.mean():+.5f}  "
+              f"95% CI [{l_:+.5f}, {h_:+.5f}]  -- {verdict}")
     ds = np.array(d_sensor)
     lo3, hi3 = np.percentile(ds, [2.5, 97.5])
     print(f"\nSENSOR-ONLY regime (no model confidence available)")
@@ -347,6 +368,10 @@ def main():
                    # artifact. Found in the 24 Sep audit. Stored now.
                    "boot_margin_sensor_mask_minus_obs": [float(ds.mean()),
                                                          float(lo3), float(hi3)],
+                   "boot_ece_global_minus_obs": [float(np.mean(d_eg)),
+                                                 *map(float, np.percentile(d_eg, [2.5, 97.5]))],
+                   "boot_ece_mask_minus_obs": [float(np.mean(d_em)),
+                                               *map(float, np.percentile(d_em, [2.5, 97.5]))],
                    "aurc": {k: v[0] for k, v in res.items()},
                    "err80": {k: v[1] for k, v in res.items()},
                    "ece": e, "frames": used, "nonfree": args.nonfree},
