@@ -39,12 +39,15 @@ the same as passing a hypothesis about the aggregate.
 """
 from __future__ import annotations
 import argparse, glob, json, os, time
+import sys
 from multiprocessing import Pool
 import numpy as np
 from scipy import ndimage as ndi
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
+sys.path.insert(0, HERE)
+import split as SP                                        # noqa: E402
 FREE, RES, RNG, NZ, Z0, N = 17, 0.4, 40.0, 16, -1.0, 200
 
 NOBS = 11          # bin 0 = obs exactly 0, then deciles 1..10 within obs > 0
@@ -247,6 +250,17 @@ def _humped(gap):
 def cmd_analyse(a):
     z = np.load(os.path.join(ROOT, a.store), allow_pickle=True)
     N_, K_, S_ = z["n"], z["k"], z["s"]
+    # A47: the split now comes from scripts/eval/split.py, the single
+    # source of truth materialised in A45, instead of this file
+    # inventing its own.
+    if getattr(a, "scenes", "all") != "all":
+        _keep = SP.dev_scenes() if a.scenes == "dev" else SP.test_scenes()
+        _i = [i for i, s_ in enumerate(list(z["scenes"])) if str(s_) in _keep]
+        if not _i:
+            raise SystemExit("split did not match the store scene names")
+        N_, K_, S_ = N_[_i], K_[_i], S_[_i]
+        print(f"[A47] {a.scenes.upper()} scenes only, {len(_i)} | "
+              f"split digest {SP.digest()}")
     n = N_.sum(0).reshape(SHAPE); k = K_.sum(0).reshape(SHAPE); s = S_.sum(0).reshape(SHAPE)
     pn = ["touching a surface", "one cell away", "open air (2+ cells)"]
     print(f"\n{len(z['scenes'])} scenes, {int(n.sum()):,} voxels inside mask_camera")
@@ -422,6 +436,16 @@ def cmd_h1(a):
     """A43. The single re-test of H1 on the repaired binning. Runs once."""
     z = np.load(os.path.join(ROOT, a.store), allow_pickle=True)
     N_, K_, S_ = z["n"], z["k"], z["s"]
+    # A47: same split filter as cmd_analyse. This function reads the store
+    # directly, so it needs its own.
+    if getattr(a, "scenes", "all") != "all":
+        _keep = SP.dev_scenes() if a.scenes == "dev" else SP.test_scenes()
+        _i = [i for i, s_ in enumerate(list(z["scenes"])) if str(s_) in _keep]
+        if not _i:
+            raise SystemExit("split did not match the store scene names")
+        N_, K_, S_ = N_[_i], K_[_i], S_[_i]
+        print(f"[A47] {a.scenes.upper()} scenes only, {len(_i)} | "
+              f"split digest {SP.digest()}")
     n = N_.sum(0).reshape(SHAPE); k = K_.sum(0).reshape(SHAPE); s = S_.sum(0).reshape(SHAPE)
     # H1's population: ALL voxels inside mask_camera, both GT strata together.
     gap, con, acc, tot = _curve(n.sum(0).reshape(NOBS, -1),
@@ -476,7 +500,9 @@ if __name__ == "__main__":
     n_ = sub.add_parser("analyse"); n_.set_defaults(f=cmd_analyse)
     n_.add_argument("--store", default="outputs/artifacts/hump_store.npz")
     n_.add_argument("--out", default="outputs/artifacts/freespace_hump.json")
+    n_.add_argument("--scenes", default="test", choices=["all", "dev", "test"])
     h = sub.add_parser("h1retest"); h.set_defaults(f=cmd_h1)
     h.add_argument("--store", default="outputs/artifacts/hump_store.npz")
     h.add_argument("--out", default="outputs/artifacts/h1_retest.json")
+    h.add_argument("--scenes", default="test", choices=["all", "dev", "test"])
     a = ap.parse_args(); a.f(a)

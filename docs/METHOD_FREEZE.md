@@ -3468,3 +3468,74 @@ the model never considered. Geometry can.**
   losing it: placement studies, fleet coverage and safety cases run without
   model confidence, and there observability is the only signal available.
 * Nothing is withdrawn. Every number stands. What changes is which one leads.
+
+---
+
+## A47 -- every script on one split; every result behind a gate
+
+**Date:** 2026-10-06. No new hypothesis. This closes the two items A45 left
+open, both of which were pure bookkeeping that a reviewer would nonetheless
+have found.
+
+### 1. The four remaining scripts now read the A45 split
+
+`selective.py` was still splitting on `index % 2`, and `recal_confound.py`,
+`temporal_observability.py` and `freespace_hump.py` each had their own seeded
+permutation. All four now import `scripts/eval/split.py`. Every headline is
+re-reported on the 75 held-out TEST scenes, digest `924a44db544d4818`:
+
+    result                      own split            A45 TEST split
+    selective, sensor-only   +0.042151            +0.03858 [+0.03112, +0.04610]
+    selective, full volume   +0.005512 (null)     +0.00339 [-0.00111, +0.00834] (null)
+    recalibration (A41)      +0.003134            +0.003038 [+0.002328, +0.003854]
+    temporal obs (A44, H4)   +0.0178              +0.0156  [+0.0098, +0.0214]
+    H1 re-test (A43)         FAILS, Spearman -0.433  FAILS, Spearman -0.283
+
+**Every verdict survives.** The sensor-only margin is smaller and still
+excludes zero, H4 still holds at the pre-named half-life, the full-volume null
+is still a null, and H1 still fails -- more weakly, which makes the negative
+result stronger rather than weaker. Nothing here was chosen after seeing these
+numbers; the split was fixed in A45 and the scripts were simply pointed at it.
+
+### 2. Fourteen gates instead of six
+
+A45 recorded that twelve of roughly eighteen published results had no CI gate,
+and that everything from A29 onward was ungated **including the two results
+that reversed earlier conclusions.** Added:
+
+    safety_envelope           flagged rate must not drift DOWN quietly. A38
+                              raised it and the direction is the finding.
+    corridor_temporal         memory must add evidence AND must not rescue the
+                              envelope. A sudden rescue means the warp is
+                              leaking future frames.
+    selective_max_nonfree     the sensor-only contrast must be STORED, which is
+                              the A40 bug encoded as a gate.
+    recal_confound            the gain that overturned A34.
+    temporal_observability    H4 at the PRE-NAMED half-life, never the best row
+                              of the sweep.
+    baselines                 MSP must still beat observability per voxel. If
+                              that ever flips, check the scoring before
+                              celebrating.
+    baselines_object          observability must still beat MSP per object.
+    camera_placement          a gate on a NEGATIVE result, so it fails if a
+                              candidate suddenly recovers a lot.
+    val_dev_test              the split digest must match the constant in
+                              split.py. If the split moves, every held-out
+                              number is void.
+
+All fourteen pass on the committed artifacts, and all fourteen **fail** when
+fed a deliberately broken version of their own artifact. A gate that cannot
+fail is decoration.
+
+Two of these deserve a note. The `baselines` gate guards a result that is
+*unflattering to us*, because the temptation to quietly re-promote H2 once
+A46 fades from memory is real and a gate is cheaper than discipline. And
+`camera_placement` guards a negative claim, which means it watches the
+opposite direction from every other gate here.
+
+### Still open after this
+
+* MC-dropout and a deep ensemble. Needs a GPU. The post-hoc family is done
+  (A46); the sampling family is not, and a reviewer will ask.
+* The second backbone, now disk-limited as well as unstarted.
+* The paper.

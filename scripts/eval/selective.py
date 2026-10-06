@@ -166,7 +166,15 @@ def main():
               for q in glob.glob(os.path.join(args.gts, "*", "*",
                                               "labels.npz"))}
     scenes = sorted({r["scene"] for r in index})
-    dev = {s for i, s in enumerate(scenes) if i % 2 == 0}
+    # A47: was `dev = scenes where index % 2 == 0`, an alternating split this
+    # file invented. It now reads the single source of truth materialised in
+    # A45, so the sensor-only headline is fit and scored on the same dev/test
+    # partition as every other result.
+    import sys as _sys
+    _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import split as SP
+    dev = SP.dev_scenes() & set(scenes)
+    print(f"[A47] split digest {SP.digest()}")
     print(f"{len(scenes)} scenes -> {len(dev)} dev / {len(scenes)-len(dev)} test")
 
     # (split, conf bin, obs bin, mask) -> n, correct

@@ -45,8 +45,11 @@ Three outcomes, all informative:
 No new pass over the data: this reads the same sufficient statistics A34 built.
 """
 from __future__ import annotations
-import argparse, json, os
+import argparse, json, os, sys
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import split as SP                                        # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -94,8 +97,15 @@ def main():
     full = (NC, NCONF, NOBS, NM)
     sub = (NC, NCONF, NOBS)
     rng = np.random.default_rng(a.seed)
-    perm = rng.permutation(len(scenes))
-    dev, tst = perm[:len(scenes) // 2], perm[len(scenes) // 2:]
+    # A47: the split now comes from scripts/eval/split.py, the single
+    # source of truth materialised in A45, instead of this file
+    # inventing its own.
+    dset, tset = SP.dev_scenes(), SP.test_scenes()
+    dev = np.array([i for i, s in enumerate(scenes) if str(s) in dset])
+    tst = np.array([i for i, s in enumerate(scenes) if str(s) in tset])
+    print(f"[A47] split digest {SP.digest()} | dev {len(dev)} / test {len(tst)} scenes")
+    if len(dev) == 0 or len(tst) == 0:
+        raise SystemExit("split did not match the store scene names")
 
     def stratum(idx_tr, idx_te, mk):
         """mk = 1 (labels valid), 0 (unsupervised), or None (both, A34's scope)."""

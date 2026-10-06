@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release gates for the observability line of work (A12-A28).
+"""Release gates for the observability line of work (A12-A47).
 
 Same principle as check_gates.py: every eval in this repo writes JSON to
 outputs/artifacts/, and gating those files means a regression cannot be
@@ -118,6 +118,128 @@ def gate_mining(d):
               f"{best['lift']:.2f}x over random at precision@100 (gate >= 2.0x)")
 
 
+
+# ---------------------------------------------------------------------------
+# A47. Everything from A29 onward was ungated, including the two results that
+# reversed earlier conclusions. Twelve of eighteen published numbers had no
+# check at all. These close that.
+# ---------------------------------------------------------------------------
+
+def gate_envelope(d):
+    """A30/A38: the safety envelope. The flagged rate must not drift down
+    quietly -- A38 raised it and the direction of that correction is the whole
+    point of the result."""
+    if d is None: return
+    f = d["flagged_frac"]
+    check(0.02 <= f <= 0.08, "safety envelope flagged",
+          f"{100*f:.2f}% of frames (gate 2-8%, frozen 4.3%)")
+    check(d["reach_median"] >= 15.0, "verified-free reach",
+          f"median {d['reach_median']:.1f} m (gate >= 15, frozen 26.4)")
+
+
+def gate_temporal(d):
+    """A41: memory must fill the corridor and must NOT rescue the envelope.
+    A run where 4 s of memory suddenly halves the flagged rate means the warp
+    is leaking future evidence."""
+    if d is None: return
+    h = {r["seconds"]: r for r in d["horizons"]}
+    a, b = h.get(0.0), h.get(4.0)
+    if not (a and b): return
+    check(b["corridor_evidence"] - a["corridor_evidence"] > 0.05,
+          "memory adds evidence",
+          f"{100*a['corridor_evidence']:.1f}% -> {100*b['corridor_evidence']:.1f}% "
+          f"of corridor columns (gate > 5 pts, frozen 77.8 -> 94.0)")
+    drop = a["flagged_above_10"] - b["flagged_above_10"]
+    check(drop < 0.10, "memory does not rescue the envelope",
+          f"flagged above 10 m/s falls {100*drop:.1f} pts (gate < 10, frozen 2.8)")
+
+
+def gate_selective(d):
+    """A37/A40/A47: the sensor-only contrast, the number the paper leans on
+    hardest in the no-confidence regime."""
+    if d is None: return
+    m = d.get("boot_margin_sensor_mask_minus_obs")
+    check(m is not None, "sensor-only contrast is STORED",
+          "printing is not storing -- this is the A40 bug" if m is None else "present")
+    if m:
+        check(m[1] > 0, "sensor-only interval excludes zero",
+              f"{m[0]:+.5f} [{m[1]:+.5f}, {m[2]:+.5f}] (frozen +0.0386 on the A45 split)")
+
+
+def gate_recal(d):
+    """A41: observability must still add over class+confidence inside the mask.
+    This is the result that overturned A34, so it is the one most worth
+    watching."""
+    if d is None: return
+    c = d["contrasts"]["observability over class+confidence, INSIDE the mask"]
+    check(c[1] > 0, "recalibration gain inside the mask",
+          f"{c[0]:+.6f} [{c[1]:+.6f}, {c[2]:+.6f}] (frozen +0.00304)")
+
+
+def gate_h4(d):
+    """A44: temporal observability at the PRE-NAMED half-life, not the best
+    row of the sweep."""
+    if d is None: return
+    pr = str(d.get("primary_half_life", 2.0))
+    r = d.get(pr) or d.get("2.0")
+    check(r and r["lo"] > 0, "H4 at the pre-named half-life",
+          f"{r['delta']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] (frozen +0.0156)")
+
+
+def gate_baselines(d):
+    """A46: the finding that reframed the paper. Two things must stay true:
+    confidence beats us per voxel (so nobody quietly re-promotes H2), and we
+    beat confidence per object (the actual contribution)."""
+    if d is None: return
+    a = d["auroc"]
+    check(a["MSP"] > a["observability"], "A46 voxel ordering is still honest",
+          f"MSP {a['MSP']:.4f} vs observability {a['observability']:.4f} -- if this "
+          f"ever flips, check the scoring before celebrating")
+    check(a["COMBINED"] >= a["MSP"], "combined is not worse than MSP",
+          f"{a['COMBINED']:.4f} vs {a['MSP']:.4f}")
+
+
+def gate_baselines_obj(d):
+    """A46: the object-level claim, which is now the paper's headline."""
+    if d is None: return
+    c = d["contrasts"]
+    m = c["observability - MSP"]
+    check(m[1] > 0, "object level: observability beats model confidence",
+          f"{m[0]:+.4f} [{m[1]:+.4f}, {m[2]:+.4f}] (frozen +0.0430)")
+    a = d["auroc"]
+    check(a["observability"] >= 0.70, "object-level AUROC",
+          f"{a['observability']:.4f} (gate >= 0.70, frozen 0.7623)")
+
+
+def gate_placement(d):
+    """A32/A45: the seventh-camera negative claim. A gate on a NEGATIVE result
+    guards the opposite direction -- it fails if a candidate suddenly recovers
+    a lot, which would mean the rig model changed."""
+    if d is None: return
+    best = max(c["obstacles_recovered_frac"] for c in d["candidates"].values())
+    check(best <= 0.06, "seventh camera recovers little",
+          f"best candidate {100*best:.1f}% of unseen obstacles "
+          f"(gate <= 6%, frozen 2.2%)")
+    check(d["frames"] >= 800, "placement sample size",
+          f"{d['frames']} frames (gate >= 800, A45 reran at 1,238)")
+
+
+def gate_split(_d):
+    """A45: the split file must be present and its digest must match the
+    constant in split.py. If the split moves, every held-out number is void."""
+    sys.path.insert(0, os.path.join(ROOT, "scripts", "eval"))
+    try:
+        import split as SP
+        d_ = SP.digest()
+        check(d_ == SP.DIGEST, "split digest unchanged",
+              f"{d_} (expected {SP.DIGEST})")
+        check(len(SP.dev_scenes()) == 75 and len(SP.test_scenes()) == 75,
+              "split is 75 dev / 75 test",
+              f"{len(SP.dev_scenes())} / {len(SP.test_scenes())}")
+    except Exception as e:                                   # noqa: BLE001
+        check(False, "split loads", str(e))
+
+
 GATES = [
     ("h2_max.json", gate_h2),
     ("surf_zero_verdict.json", gate_surf_zero),
@@ -125,6 +247,15 @@ GATES = [
     ("camera_dropout.json", gate_dropout),
     ("formula_decision.json", gate_formula),
     ("mining_validation.json", gate_mining),
+    ("safety_envelope.json", gate_envelope),
+    ("corridor_temporal.json", gate_temporal),
+    ("selective_max_nonfree.json", gate_selective),
+    ("recal_confound.json", gate_recal),
+    ("temporal_observability.json", gate_h4),
+    ("baselines.json", gate_baselines),
+    ("baselines_object.json", gate_baselines_obj),
+    ("camera_placement.json", gate_placement),
+    ("val_dev_test.json", gate_split),
 ]
 
 
@@ -148,9 +279,35 @@ def self_test():
         "mining_validation.json": lambda d: {**d, "targets": {
             k: {kk: {**vv, "auroc": 0.51, "lift": 1.0} for kk, vv in v.items()}
             for k, v in d["targets"].items()}},
+        "safety_envelope.json": lambda d: {**d, "flagged_frac": 0.001,
+                                           "reach_median": 2.0},
+        "corridor_temporal.json": lambda d: {**d, "horizons": [
+            {**r, "corridor_evidence": 0.80,
+             "flagged_above_10": 0.24 if r["seconds"] == 0.0 else 0.02}
+            for r in d["horizons"]]},
+        "selective_max_nonfree.json": lambda d: {
+            k: v for k, v in d.items()
+            if k != "boot_margin_sensor_mask_minus_obs"},
+        "recal_confound.json": lambda d: {**d, "contrasts": {
+            **d["contrasts"],
+            "observability over class+confidence, INSIDE the mask":
+                [-0.001, -0.003, 0.001]}},
+        "temporal_observability.json": lambda d: {
+            **d, "2.0": {**d["2.0"], "delta": -0.01, "lo": -0.02, "hi": 0.001}},
+        "baselines.json": lambda d: {**d, "auroc": {
+            **d["auroc"], "MSP": 0.10, "COMBINED": 0.05}},
+        "baselines_object.json": lambda d: {**d,
+            "contrasts": {**d["contrasts"],
+                          "observability - MSP": [-0.02, -0.05, -0.001]},
+            "auroc": {**d["auroc"], "observability": 0.50}},
+        "camera_placement.json": lambda d: {**d, "frames": 10, "candidates": {
+            k: {**v, "obstacles_recovered_frac": 0.5}
+            for k, v in d["candidates"].items()}},
     }
     ok = True
     for name, fn in GATES:
+        if name == "val_dev_test.json":
+            continue          # guards a file identity, not a measured value
         real = load(name)
         if real is None:
             ok = False; continue

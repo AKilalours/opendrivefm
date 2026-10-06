@@ -27,6 +27,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import split as SP                                        # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(HERE))
 FREE, RES, RNG, NZ, Z0, N = 17, 0.4, 40.0, 16, -1.0, 200
 MAXH = 8
@@ -138,6 +140,7 @@ def main():
     ap.add_argument("--store", default="outputs/artifacts/tempobs_store.npz")
     ap.add_argument("--out", default="outputs/artifacts/temporal_observability.json")
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--scenes", default="test", choices=["all", "dev", "test"])
     a = ap.parse_args()
     store = os.path.join(ROOT, a.store)
     keys = ["obs"] + [str(h) for h in HALF_LIVES]
@@ -207,6 +210,18 @@ def main():
 
     z = np.load(store, allow_pickle=True)
     scenes = list(z["scenes"]); H = {k: z[k] for k in keys}
+    # A47: the split now comes from scripts/eval/split.py, the single
+    # source of truth materialised in A45, instead of this file
+    # inventing its own.
+    if a.scenes != "all":
+        keepset = SP.dev_scenes() if a.scenes == "dev" else SP.test_scenes()
+        sel = [i for i, s in enumerate(scenes) if str(s) in keepset]
+        if not sel:
+            raise SystemExit("split did not match the store scene names")
+        scenes = [scenes[i] for i in sel]
+        H = {k: v[sel] for k, v in H.items()}
+        print(f"[A47] {a.scenes.upper()} scenes only, {len(scenes)} | "
+              f"split digest {SP.digest()}")
     ns = len(scenes)
     tot = H["obs"].sum()
     print(f"\n{len(z['done'])} frames | {ns} scenes | {int(tot):,} voxels "
