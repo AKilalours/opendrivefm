@@ -3670,3 +3670,69 @@ now cashed. A point estimate that looks like a win and dies to its own interval
 is the single most common way a result gets into a paper wrong, and it would
 have gone in wrong if the caveat had been dropped instead of closed. The
 interval was the whole reason the caveat existed.
+
+---
+
+## A50 -- pre-pod housekeeping: one ambiguous acceptance line, closed
+
+**Date:** 2026-10-06, before the second backbone runs. Written while that data
+does not exist.
+
+### The ambiguity A49 exposed
+
+A41 section 6 registered Stage 5 for the second backbone as:
+
+> observability must beat class + confidence on held-out **ECE** with an
+> interval excluding zero. FB-OCC gives **+0.003134 [+0.002455, +0.003901]**.
+
+**That line names one metric and quotes another.** +0.003134 is a LOG-LOSS
+contrast from `recal_confound.py`. The ECE contrast is a different quantity
+from a different script, and after A49 the two now disagree:
+
+    log-loss, recal_confound.py, A45 split
+      observability over class+confidence   +0.003038 [+0.002328, +0.003854]
+      interval EXCLUDES zero
+
+    ECE, selective.py, A45 split, occupied voxels
+      vs temperature scaling   +0.00265 [-0.00262, +0.00581]   spans zero
+      vs mask_camera           +0.00236 [-0.00406, +0.00740]   spans zero
+
+Left as written, that pre-registration would let me look at the second
+backbone's numbers and then decide which metric Stage 5 was always about. That
+is the failure mode the whole file exists to prevent, and it was sitting in the
+file unnoticed because A41 was written before A49 made the two diverge.
+
+### The acceptance line, restated unambiguously, before the pod boots
+
+**Stage 5 on the second backbone is judged on LOG-LOSS from
+`recal_confound.py`, inside `mask_camera`, on the 75 TEST scenes of split
+digest `924a44db544d4818`.**
+
+    HOLDS   observability over class + confidence > 0,
+            95% interval excluding zero
+    FAILS   anything else
+
+FB-OCC's value on that exact metric and scope is **+0.003038**. The second
+backbone does not have to match it; it has to clear zero with an interval.
+
+**ECE is reported but is NOT the criterion.** On FB-OCC it ties temperature
+scaling and ties `mask_camera`, and that tie is the published position per A49.
+If the second backbone's ECE happens to separate, it is reported as an
+exploratory observation and does not retroactively become what Stage 5 meant.
+
+### The other two pre-registrations are unaffected
+
+**H1'** (A41 section 6) and **H4** (A44) both name a single metric and a single
+scope. They stand as written. H1' must additionally state its binning against
+the saturation A42 measured, which A43's repaired scheme already does: bin 0
+for obs == 0, octiles over obs in (0, 1), and obs == 1.0 as its own bin.
+
+### Correction to my own advice
+
+I told the user twice that disk would block the pod. Re-checked: 20 GB free on
+the Mac, a `preds_voxel` export is 6.7 GB, and **the observability maps are a
+property of the sensor rig and are reused unchanged for any backbone**, so
+nothing in `data/pack/obs_max` is rebuilt. The download fits with headroom.
+There is 3.2 GB of retired Stage-1 checkpoints that could be cleared if more
+room were wanted, but it is not required. The warning was overcautious and is
+withdrawn.
