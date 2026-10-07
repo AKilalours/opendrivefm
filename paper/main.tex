@@ -67,8 +67,8 @@
 
 \begin{document}
 
-\title{When Confidence Is Blind: Geometric Observability for\\
-       Missed Objects in Camera-Only 3D Occupancy}
+\title{Geometric Observability for Missed Objects\\
+       in Camera-Only 3D Occupancy}
 
 \author{%
 Akila Lourdes Miriyala Francis \qquad Akilan Manivannan\\
@@ -82,20 +82,22 @@ Long Island University, Brooklyn, NY\\
 
 % -------------------------------------------------------------------
 \begin{abstract}
-A camera-only 3D occupancy model can assign maximal confidence to free
-space at a location where an object is present but barely observable. That
-exposes a distinction between two different questions: \emph{how reliable
-is the prediction I produced}, which confidence answers, and \emph{how much
-geometric evidence existed for this location}, which it cannot. We study
-whether the second question carries information about occupancy failures
-that the first does not.
+Camera-only 3D occupancy models are evaluated as though every voxel were
+equally observable, yet a model can assign maximal confidence to free space
+exactly where the camera rig supplies almost no geometric evidence. The
+output offers no state that separates the two cases, because a missed
+object and correctly observed empty road are both simply \emph{free}. We
+study whether sensor-side evidence carries information about occupancy
+failures that the model's own confidence does not.
 
-We define \emph{geometric observability} $O(v;\mathcal{G})$, a continuous
-per-voxel measure combining camera projection coverage with first-hit
-visibility under a scene-geometry field $\mathcal{G}$, with one parameter
-and no learned component. On Occ3D-nuScenes it ranks per-voxel error better
-than the dataset's own \texttt{mask\_camera} flag by \Hii\ \HiiCI\ AUROC on
-a sealed test split.
+We introduce \emph{geometric observability} $O(v;\mathcal{G})$, a
+learning-free continuous measure combining projected voxel coverage with
+first-hit visibility across the rig under a scene-geometry field
+$\mathcal{G}$. Unlike a binary camera-observation mask it carries evidence
+\emph{strength} and resolves occlusion explicitly, and it is near-invariant
+to its single parameter by construction. On Occ3D-nuScenes it ranks
+per-voxel error above the dataset's own \texttt{mask\_camera} flag by
+\Hii\ \HiiCI\ AUROC on a sealed test split.
 %
 The result we did not expect is an inversion across granularity, and it is
 the paper's main finding. Predicting
@@ -183,31 +185,26 @@ outside the network from the camera rig and a scene-geometry field:
 
 \paragraph{Contributions.}
 \begin{itemize}\itemsep0pt
-\item \textbf{Geometric observability.} A continuous, learning-free
-      measure combining projection coverage with first-hit visibility
-      under an \emph{explicit} scene-geometry field $\mathcal{G}$, which
-      ranks per-voxel occupancy error above the dataset's own camera mask
-      by \Hii\ \HiiCI\ AUROC on a sealed test split.
-\item \textbf{The granularity inversion.} Over \nObj\ dynamic objects,
-      model confidence dominates observability for voxel-level error
-      ($\voxMSP$ against $\voxObs$), while observability is the stronger
-      signal for objects the model never predicts at all ($\objObs$
-      against $\objMSP$). We give the mechanism, and show the two signals
-      remain non-redundant at matched confidence.
-\item \textbf{The geometry-source boundary.} Separating
-      $\mathcal{G}_{\textsc{gt}}$ from $\hat{\mathcal{G}}_{\text{pred}}$,
-      we show the object-level advantage does not survive substitution
-      with predicted occupancy, and that the cause is over-occlusion by a
-      field an order of magnitude denser, not a circularity in the idea.
-      All hypotheses were pre-registered; of eleven decided entries five
-      did not meet their prespecified criterion and two remain pending,
-      and all are reported (\cref{tab:ledger}).
+\item \textbf{Geometric observability.} A continuous, learning-free,
+      sensor-side measure combining projection coverage with first-hit
+      visibility under an \emph{explicit} scene-geometry field
+      $\mathcal{G}$, for ranking camera-only occupancy failures.
+\item \textbf{The granularity inversion.} Across \nObj\ dynamic objects,
+      confidence dominates voxel-level error ranking while observability
+      becomes the stronger signal for objects the model never predicts at
+      all. The two remain non-redundant at matched confidence.
+\item \textbf{The geometry-source boundary.} The object-level advantage
+      depends on external scene geometry and collapses when the model's own
+      dense occupancy is substituted as the occluder, through
+      over-occlusion rather than any circularity in the idea. All
+      hypotheses were pre-registered and every outcome is reported,
+      including this one (\cref{tab:ledger}).
 \end{itemize}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig0_hero.pdf}
-\caption{\textbf{When confidence is blind.}
+\caption{\textbf{When confidence is blind: a missed object appears as confident free space.}
 (a)~A pedestrian at $18$\,m, behind a lamp post, into direct sun; the
 ground truth contains it. (b)~The predicted occupancy over the same volume
 contains nothing inside the circle, and the model assigns the free class
