@@ -117,7 +117,7 @@ def main():
         r"written into an append-only log with its acceptance criterion before "
         r"the data existed; each entry states whether it was decided before or "
         r"after seeing data. Effect sizes are paired scene-bootstrap means with "
-        r"95\\% intervals on the sealed test split "
+        r"95\% intervals on the sealed test split "
         rf"({h2['scenes']} scenes, {h2['frames']:,} frames). "
         r"Four of the twelve entries did not survive.}",
         r"\label{tab:ledger}",

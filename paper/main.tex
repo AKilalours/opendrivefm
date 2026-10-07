@@ -1,0 +1,283 @@
+% ===================================================================
+% OpenDriveFM -- CVPR submission
+%
+% Replaces opendrivefm_paper.tex, which describes the retired project
+% and whose numbers do not reproduce. Nothing from that file is reused.
+%
+% When the official template for the target year is released, drop
+% cvpr.sty beside this file; the preamble picks it up automatically and
+% the fallback geometry below is ignored.
+%
+%   latexmk -pdf main.tex
+% ===================================================================
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\IfFileExists{cvpr.sty}{%
+  \usepackage[review]{cvpr}%
+}{%
+  % Fallback that approximates the CVPR measure closely enough to judge
+  % length and figure fit. NOT camera-ready. Swap in cvpr.sty.
+  \usepackage[margin=0.75in,top=1in,bottom=1in]{geometry}%
+  \setlength{\columnsep}{0.3125in}%
+}
+
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{microtype}
+
+\definecolor{odfmlink}{rgb}{0.07,0.41,0.66}
+\usepackage[pagebackref,breaklinks,colorlinks]{hyperref}
+\hypersetup{linkcolor=odfmlink,citecolor=odfmlink,urlcolor=odfmlink}
+\usepackage[capitalize]{cleveref}
+
+\graphicspath{{../outputs/figures/}}
+
+% Every number below that appears in prose also appears in a JSON
+% artifact under outputs/artifacts/. Macros so a corrected measurement
+% is a one-line change rather than a grep.
+\newcommand{\Hii}{+0.0484}
+\newcommand{\HiiCI}{[+0.0390,\,+0.0584]}
+\newcommand{\objObs}{0.7623}
+\newcommand{\objMSP}{0.7193}
+\newcommand{\objDelta}{+0.0432}
+\newcommand{\objDeltaCI}{[+0.0135,\,+0.0708]}
+\newcommand{\objOracle}{0.7745}
+\newcommand{\voxMSP}{0.8797}
+\newcommand{\voxObs}{0.6321}
+\newcommand{\frmConf}{0.8618}
+\newcommand{\frmObs}{0.8066}
+\newcommand{\missHi}{47.3\%}
+\newcommand{\missLo}{4.7\%}
+\newcommand{\nObj}{40{,}863}
+\newcommand{\nFrames}{6{,}016}
+\newcommand{\nScenes}{75}
+\newcommand{\splitdigest}{\texttt{924a44db544d4818}}
+\newcommand{\fullpx}{965.0}
+
+\def\paperID{0000}
+\def\confName{CVPR}
+\def\confYear{2027}
+
+\begin{document}
+
+\title{Confidence Cannot Flag What the Model Never Considered:\\
+       Geometric Observability for Camera-Only Occupancy}
+
+\author{%
+Akila Lourdes Miriyala Francis\quad Akilan Manivannan\\
+Long Island University, Brooklyn\\
+{\tt\small \{first.last\}@my.liu.edu}
+}
+
+\date{}
+\maketitle
+
+% -------------------------------------------------------------------
+\begin{abstract}
+Camera-only occupancy models are evaluated almost entirely by how often
+they are right, and their uncertainty is read off their own softmax. We
+ask a different question: can a purely geometric quantity, computed from
+the sensor rig and the ego pose and never from the network, tell us where
+such a model is about to be wrong? We define \emph{observability}, a
+continuous per-voxel measure of how well the camera array actually sees a
+point in space, with a single parameter and no learning. On
+Occ3D-nuScenes, observability ranks per-voxel error better than the
+dataset's own \texttt{mask\_camera} flag by \Hii\ \HiiCI\ AUROC on a
+sealed test split.
+%
+The result we did not expect is an inversion across granularity. Predicting
+whether an individual voxel is wrong, the model's own confidence dominates
+geometry by a wide margin (\voxMSP\ against \voxObs). Predicting whether a
+whole \emph{object} is missed entirely, geometry wins (\objObs\ against
+\objMSP, a gain of \objDelta\ \objDeltaCI\ over \nObj\ objects), and comes
+within noise of a LiDAR point-count oracle (\objOracle). The mechanism is
+simple and, we argue, general: confidence is a statement about a
+prediction that was made, so it is near-tautologically good at flagging a
+wrong one, and structurally unable to flag a prediction that was never
+made at all. Where a missed object should be, the model is confidently
+predicting free space.
+%
+All hypotheses in this paper were registered in an append-only log before
+the corresponding data existed. We report the four that did not survive
+alongside the ones that did.
+\end{abstract}
+
+% -------------------------------------------------------------------
+\section{Introduction}
+
+% MAD opens on animators drawing an animatic. The equivalent concrete
+% opening here is the failure itself, not a literature survey.
+A camera-only occupancy model asked about a volume of space it cannot see
+does not abstain. It predicts free space, and it does so confidently.
+Nothing in the model's output distinguishes ``there is nothing here'' from
+``I have no evidence either way'', because both arrive as a high-probability
+vote for the free class. On the held-out scenes used throughout this paper,
+\missHi\ of annotated dynamic objects standing in volumes with no camera
+evidence are not predicted by the model at all.
+
+% TODO(paper): one paragraph on why this matters downstream -- planner
+% consumes occupancy as if absence of evidence were evidence of absence.
+
+The usual answer is to calibrate the model's own confidence. We show this
+answer is adequate for one question and structurally inadequate for
+another, and that the boundary between them is the granularity of the
+thing being asked about.
+
+% TODO(paper): the gap, stated as a claim a reviewer could disagree with.
+
+We therefore propose \emph{observability}, a geometric measure computed
+entirely outside the network:
+\begin{enumerate}\itemsep0pt
+\item it is a function of the camera rig and the ego pose, so it is
+      available before the model runs and is unchanged when the model
+      changes;
+\item it is continuous, where the dataset's \texttt{mask\_camera} flag is
+      binary and, as we show, is not a visibility measure at all; and
+\item it carries exactly one parameter, fixed once at \fullpx\ and never
+      retuned per model or per split.
+\end{enumerate}
+
+\paragraph{Contributions.}
+\begin{itemize}\itemsep0pt
+\item A geometric, learning-free observability measure that ranks
+      camera-only occupancy error better than the dataset's own camera
+      mask by \Hii\ \HiiCI\ AUROC on a sealed test split.
+\item The granularity inversion: confidence dominates geometry per voxel
+      and per frame, geometry wins per object, and we give the mechanism
+      that predicts this rather than observing it after the fact.
+\item An evaluation protocol in which every hypothesis is registered with
+      its acceptance criterion before the data exists. Four of ten
+      decided hypotheses failed, and all four are reported
+      (\cref{tab:ledger}).
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig1_granularity.pdf}
+\caption{\textbf{Confidence ranks voxels; geometry ranks objects.}
+(a)~AUROC for ranking model error at three granularities on the sealed
+test split. The model's own confidence dominates geometry per voxel and
+per frame, then \emph{loses} per object. (b)~The mechanism: the fraction
+of annotated dynamic objects the model never predicts, against
+observability, monotone across all six bands over \nObj\ objects.
+Confidence cannot flag what the model never considered.}
+\label{fig:teaser}
+\end{figure}
+
+% -------------------------------------------------------------------
+\section{Related Work}
+
+\subsection{Camera-only occupancy prediction}
+% TODO(paper): FB-OCC, SurroundOcc, COTR, TPVFormer, Occ3D benchmark.
+
+\subsection{Uncertainty and failure prediction}
+% TODO(paper): MSP, temperature scaling, deep ensembles, MC-dropout,
+% selective prediction / risk-coverage, conformal.
+
+\subsection{Visibility and observability in 3D perception}
+% TODO(paper): closest competitors. End with the explicit delta: prior
+% work treats visibility as a label-validity mask; we treat it as a
+% continuous runtime signal and evaluate it as a failure predictor.
+
+% -------------------------------------------------------------------
+\section{Observability}
+
+\subsection{Definition}
+Let a voxel $v$ be observed by camera $i$ with coverage
+$c_i(v) \in [0,1]$, the fraction of a full-resolution footprint the voxel
+projects to, and visibility $s_i(v) \in \{0,1\}$, whether the first
+surface hit along the ray through $v$ is $v$ itself. Observability is the
+best evidence any single camera provides:
+\begin{equation}
+\mathrm{obs}(v) \;=\; \max_i \; c_i(v)\cdot s_i(v).
+\label{eq:obs}
+\end{equation}
+The maximum, rather than a sum, encodes that a voxel seen well by one
+camera is observed, regardless of how many others miss it.
+
+\paragraph{The one parameter.}
+Coverage is normalised by \fullpx, the projected footprint in pixels at
+which a voxel counts as fully covered. It is fixed once, before any result
+in this paper, and is not retuned per backbone or per split.
+
+\paragraph{First-hit semantics.}
+% TODO(paper): per-pixel ray marching, why nine z-buffer formulations
+% failed, and the 3.46x marcher with 0 differing voxels of 30,720,000.
+
+\subsection{Why not \texttt{mask\_camera}}
+Occ3D-nuScenes ships a per-voxel \texttt{mask\_camera} flag, and the
+natural objection is that it already encodes what we are measuring. It
+does not. It is a \emph{label-validity} flag built offline from the full
+sensor suite, including LiDAR the model never receives; it is binary; and
+it is unavailable at inference. Inside the mask, where it is constant and
+therefore uninformative by construction, observability still ranks error
+(\cref{fig:maskcam}).
+
+% TODO(fig3): the MAD Fig.3 treatment -- same frame, two maps, annotated
+% on the image with the three contrasts above. Needs one exported scene.
+
+% -------------------------------------------------------------------
+\section{Experiments}
+
+\subsection{Setup}
+\paragraph{Model and data.}
+FB-OCC r50 with temporal fusion on Occ3D-nuScenes, $200\times200\times16$
+voxels at 0.4\,m, 18 classes. We measure mIoU $38.90$ against a
+published $39.1$, so the checkpoint reproduces.
+
+\paragraph{The sealed split.}
+The 150 validation scenes are partitioned once into a development half and
+a held-out test half of \nScenes\ scenes, recorded under digest
+\splitdigest. Method development used the development half only; the test
+half was opened once. A single module is the source of truth for the
+split, and every script and every CI gate reads it from there.
+
+\paragraph{Statistics.}
+AUROC by exact histogram on quantised scores; paired scene bootstrap for
+all intervals; risk-coverage and AURC for selective prediction; ECE in 15
+bins.
+
+\subsection{Observability outranks the camera mask}
+% TODO(paper): H2 result, table, and the full-split vs test-split numbers.
+
+\subsection{The granularity inversion}
+At the voxel level, maximum softmax probability reaches \voxMSP\ against
+observability's \voxObs. At the frame level the ordering holds but
+narrows, \frmConf\ against \frmObs. At the object level it reverses:
+observability reaches \objObs\ against confidence's \objMSP, a gain of
+\objDelta\ \objDeltaCI\ over \nObj\ objects in \nFrames\ frames.
+
+A LiDAR point-count oracle, which sees the modality the model does not,
+reaches \objOracle. Observability is within noise of it.
+
+% TODO(paper): per-class breakdown, including the three classes where
+% observability loses. Do not omit bicycle.
+
+\subsection{Downstream: selective prediction}
+% TODO(paper): sensor-only volume holds, full volume is null. Report both.
+
+\subsection{Ablations}
+% TODO(paper): the single parameter; max vs sum pooling; temporal
+% observability; the seventh-camera counterfactual.
+
+\subsection{What did not survive}
+\input{../outputs/tables/table4_ledger}
+
+% TODO(pod): H2' on SurroundOcc. Registered in METHOD_FREEZE A53 with
+% acceptance >= +0.02 and an interval excluding zero, before the run.
+% TODO(pod): MC-dropout and deep-ensemble rows. Currently the single
+% largest gap in the evaluation.
+
+% -------------------------------------------------------------------
+\section{Conclusion}
+% TODO(paper): one paragraph. No new claims.
+
+{\small
+\bibliographystyle{ieeetr}
+\bibliography{../opendrivefm_refs}
+}
+
+\end{document}
