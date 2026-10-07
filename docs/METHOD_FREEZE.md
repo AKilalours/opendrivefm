@@ -4045,3 +4045,44 @@ occluder was never checked before being described. A55 then described a
 mechanism that was never checked before being written. Both were narrated
 from plausibility. The rule this adds: **a stated mechanism is a claim and
 gets a measurement or it does not go in the paper.**
+
+---
+
+## A56 -- why 965 barely matters, analytically and then measured
+
+**Date:** 2026-10-07. **Decided:** after seeing data, in response to an
+external review asking why `FULL_PX = 965.0` and not some other value.
+
+**The analytic part comes first because it bounds the empirical part.**
+Coverage is `min(1, A_i / pi)`. For a voxel where NO camera saturates,
+changing `pi` multiplies every `c_i` by the same constant, leaves the
+`argmax` camera unchanged, and therefore maps observability to a strictly
+monotone function of itself. Every rank metric in this paper -- AUROC,
+AURC, Spearman -- is **exactly invariant** on that set. `pi` can only act
+through the saturated set.
+
+Measured over 25 frames and 17,666,050 in-frustum voxel-camera pairs:
+
+    saturated (A >= FULL_PX) at pi = 965   11.907%
+
+So 88% of the signal cannot respond to `pi` at all, by construction.
+
+**What the remaining 12% is worth.** Observability rebuilt end to end at
+`pi` in {500, 965, 2000}, a 4x range, scored at object level on the frames
+common to all three (150 frames, 2,080 objects, 13 scenes):
+
+    pi_full =  500    0.7485    -0.0045
+    pi_full =  965    0.7529     ----
+    pi_full = 2000    0.7552    +0.0022
+    MSP, same objects 0.7366
+
+The spread across a fourfold change is 0.0067 AUROC, and every value beats
+MSP on these objects. The registered value sits in the middle of that
+range and was not selected for it: 965 was derived in A7 to preserve the 2D
+measure's 16.3 m saturation radius, before any of these numbers existed.
+
+**Verdict.** "Why 965" is close to the wrong question. The measure is
+near-invariant to it by construction, and the residual dependence is
+smaller than the effect being reported. Recorded as a defence of the
+parameter, not a tuning of it -- no value other than 965 is used anywhere
+else in the paper.

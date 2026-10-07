@@ -25,6 +25,8 @@
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{rotating}
 \usepackage[table]{xcolor}
 \usepackage{array}
 \usepackage{colortbl}
@@ -503,6 +505,36 @@ than against it: a trailer is large enough that some part of it is almost
 always observed, so observability is near-constant across the class and
 has little left to rank, while the model's confidence still varies.
 
+\subsection{Object-level baselines}
+\label{sec:baselines}
+A single confidence baseline is not enough to support the claim, so we score
+every signal we can read from the same predictions on the same objects:
+\begin{center}\small
+\begin{tabular}{llc}
+\toprule
+& Signal & AUROC $\uparrow$ \\
+\midrule
+\multirow{4}{*}{\rotatebox{90}{\scriptsize model}}
+& max softmax probability          & 0.7193 \\
+& mean confidence in box           & 0.5409 \\
+& mean top-1 minus top-2 margin    & 0.5202 \\
+\midrule
+\multirow{2}{*}{\rotatebox{90}{\scriptsize geom.}}
+& range from ego                   & 0.6660 \\
+& observability $O_{\textsc{gt}}$  & \textbf{0.7623} \\
+\midrule
+& LiDAR points in box \textsc{(oracle)} & 0.7745 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The model-derived family is not close to exhausted by maximum softmax, but
+it is bounded by it: the best of the three reaches 0.7193 and the other two
+sit near chance, because inside a box the model never populated there is
+very little for any output statistic to vary over. Entropy and an energy
+score require the full class distribution, which our export does not retain,
+and MC-dropout and ensembles require additional forward passes; all four are
+listed in \cref{sec:limitations} as untested.
+
 \subsection{Does it survive a deployable occluder?}
 \label{sec:deployable}
 The result above uses $\text{occ}_{\text{gt}}$ and is a statement about an
@@ -656,6 +688,34 @@ fixed at $2$\,s before the run; at that value the interval is
 $[+0.0098, +0.0214]$ and H4 holds. The monotone trend to $4$\,s is reported
 but was not registered and is not claimed.
 
+\paragraph{Does $\pi_{\text{full}}$ matter?} Less than one might fear,
+and the analytic part bounds the empirical part. Coverage is
+$\min(1, A_i/\pi_{\text{full}})$, so for a voxel where no camera saturates,
+changing $\pi_{\text{full}}$ multiplies every $c_i$ by one constant, leaves
+the $\arg\max$ camera unchanged, and is a strictly monotone transform of the
+score. Every rank metric here is \emph{exactly} invariant on that set, and
+$\pi_{\text{full}}$ can act only through the saturated remainder, which is
+$11.9\%$ of in-frustum voxel--camera pairs at the registered value.
+Rebuilding observability end to end over a fourfold range and scoring at
+object level on 2080 objects:
+\begin{center}\small
+\begin{tabular}{lcc}
+\toprule
+$\pi_{\text{full}}$ & object AUROC $\uparrow$ & $\Delta$ \\
+\midrule
+$500$   & 0.7485 & $-0.0045$ \\
+$965$ \;(registered) & 0.7529 & --- \\
+$2000$  & 0.7552 & $+0.0022$ \\
+\midrule
+MSP, same objects & 0.7366 & \\
+\bottomrule
+\end{tabular}
+\end{center}
+The spread across $4\times$ is $0.0067$ AUROC, smaller than the effect being
+reported, and every value beats MSP. The registered $965$ was derived to
+preserve a $16.3$\,m saturation radius before any of these numbers existed,
+and no other value is used anywhere in the paper.
+
 \paragraph{Temperature scaling is not a competitor.} It is a monotone
 transform of the confidence score, so it leaves every ranking metric in this
 paper exactly unchanged. It therefore appears in no ranking table in this paper.
@@ -760,7 +820,13 @@ score; confidence plus \texttt{mask\_camera} beats confidence plus
 observability on that test; per class it loses on trailer and bicycle.
 \textbf{No planner.} The downstream argument is motivational. We measure
 ranking quality and selective risk, not collision rate.
-\textbf{Single checkpoint.} Robustness to training stochasticity is untested.
+\textbf{Single checkpoint.} Robustness to training stochasticity is
+untested.
+\textbf{Baselines.} Entropy and energy need the full class distribution,
+which our export does not retain; MC-dropout and deep ensembles need extra
+forward passes. None is run. A \emph{learned} failure detector over local
+occupancy features is also untested, and is the most pointed version of the
+``why not just train one'' objection.
 
 \section{Conclusion}
 Geometric observability, computed from the camera rig and an external

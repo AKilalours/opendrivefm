@@ -176,6 +176,13 @@ def main():
     # runs in is capped, so the test half is subsampled rather than run
     # whole. The subsample is drawn once with a fixed seed and declared in
     # METHOD_FREEZE before any result is read off it.
+    # A56: pi_full sensitivity. Coverage is min(1, A/pi), so for voxels where
+    # no camera saturates, changing pi rescales every coverage by the same
+    # constant, leaves the argmax camera unchanged, and is a strictly
+    # monotone transform -- rank metrics are EXACTLY invariant. pi can only
+    # act through the saturated set, measured at 11.9% of in-frustum
+    # voxel-camera pairs. This flag tests what that 11.9% is worth.
+    ap.add_argument("--full-px", type=float, default=0.0)
     ap.add_argument("--only-token", default="",
                     help="build exactly one frame, for a figure")
     ap.add_argument("--sample", type=int, default=0)
@@ -186,6 +193,9 @@ def main():
                          "max is the formula settled in A23: "
                          "max_i(coverage_i * visible_i), no TRUST constant.")
     args = ap.parse_args()
+    global FULL_PX
+    if args.full_px:
+        FULL_PX = args.full_px
     os.makedirs(args.out, exist_ok=True)
 
     index = json.load(open(os.path.join(args.pack, "index.json")))
