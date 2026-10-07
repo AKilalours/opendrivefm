@@ -25,7 +25,9 @@
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
+\usepackage{array}
+\usepackage{colortbl}
 \usepackage{microtype}
 
 \definecolor{odfmlink}{rgb}{0.07,0.41,0.66}
@@ -238,6 +240,22 @@ therefore uninformative by construction, observability still ranks error
 % TODO(fig3): the MAD Fig.3 treatment -- same frame, two maps, annotated
 % on the image with the three contrasts above. Needs one exported scene.
 
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig3_whynotmask.pdf}
+\caption{\textbf{Why not \texttt{mask\_camera}, argued on the data.}
+All four panels are the same frame. \texttt{mask\_camera} is the obvious
+objection to this paper and it does not survive contact with its own
+definition: it is binary, it is constructed offline from the full sensor
+suite including the LiDAR the model never receives, and it is not available
+at inference, so inside the mask it is constant and ranks nothing. Range
+from ego is continuous and free, and ignores occlusion, which is the entire
+phenomenon. Observability is continuous, camera-only, known before the
+network runs, and resolves occlusion by first-hit ray marching.}
+\label{fig:maskcam}
+\end{figure*}
+
 % -------------------------------------------------------------------
 \section{Experiments}
 
@@ -272,8 +290,15 @@ observability reaches \objObs\ against confidence's \objMSP, a gain of
 A LiDAR point-count oracle, which sees the modality the model does not,
 reaches \objOracle. Observability is within noise of it.
 
-% TODO(paper): per-class breakdown, including the three classes where
-% observability loses. Do not omit bicycle.
+\input{../outputs/tables/table1_perclass}
+
+\Cref{tab:perclass} breaks this down. Observability wins decisively on
+car, the largest class by a factor of two ($+0.152$), and on truck
+($+0.089$). It loses on trailer ($-0.198$) and bicycle ($-0.115$), and
+ties on the rest. Both losses are consistent with the mechanism rather
+than against it: a trailer is large enough that some part of it is almost
+always observed, so observability is near-constant across the class and
+has little left to rank, while the model's confidence still varies.
 
 \subsection{Downstream: selective prediction}
 % TODO(paper): sensor-only volume holds, full volume is null. Report both.
