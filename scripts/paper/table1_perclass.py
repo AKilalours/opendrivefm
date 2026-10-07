@@ -61,9 +61,14 @@ def main():
                  f"{f(r['msp'])} & {f(r['obs'])} & {r['oracle']:.3f} & "
                  f"{dtxt} \\\\")
     A = o["auroc"]; dl = o["contrasts"]["observability - MSP"]
+    # A55: this cell used to carry a hand-typed 10.5%. It is the n-weighted
+    # mean of the per-class miss rates and is 19.35%. A number nobody
+    # computed is exactly the kind this project is not allowed to print.
+    agg = (sum(r["n"] * r["unplaced"] for r in rows)
+           / sum(r["n"] for r in rows))
     L += [
         r"\midrule",
-        f"& \\textbf{{all dynamic}} & {o['objects']:,} & 10.5\\% & "
+        f"& \\textbf{{all dynamic}} & {o['objects']:,} & {100*agg:.1f}\\% & "
         f"{A['MSP (max conf in box)']:.3f} & "
         f"\\textbf{{{A['observability']:.3f}}} & "
         f"{A['LiDAR points in box (ORACLE)']:.3f} & "

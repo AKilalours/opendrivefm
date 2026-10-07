@@ -211,7 +211,10 @@ def main():
     for row in index:
         tok = row["token"]
         dst = os.path.join(args.out, tok + ".npy")
-        if os.path.exists(dst):
+        # A55: a chunked run can be killed mid-write, leaving a short file
+        # that loads as a reshape error later. Skip only COMPLETE outputs.
+        want = OCC_N * OCC_N * OCC_NZ
+        if os.path.exists(dst) and os.path.getsize(dst) >= want:
             done += 1
             continue
         if tok not in gt_map or tok not in calib:

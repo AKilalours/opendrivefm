@@ -10,5 +10,6 @@ S2    Observability beats mask\_camera at selective risk              interval e
 R1    Observability-conditioned recalibration beats global, on ECE    interval excludes zero                        +0.0026 [-0.0026, +0.0058]      TIES    
 E1    Observability outranks confidence per object                    exploratory, reported either way              +0.0432 [+0.0135, +0.0708]      HOLDS   
 E2    Observability matches a LiDAR point-count oracle, per object    exploratory, reported either way              -0.0121 [-0.0289, +0.0052]      TIES    
+A55   The object-level result survives a deployable occluder          interval excludes zero                        -0.0477 [-0.0828, -0.0135]      FAILS   
 H3    Error increases with time since observability last exceeded 0.  interval excludes zero                        not yet run                     PENDING 
 H2'   H2 replicates on a second backbone (SurroundOcc)                >= +0.02 and interval excludes zero           not yet run                     PENDING 

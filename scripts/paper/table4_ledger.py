@@ -34,6 +34,7 @@ def build():
     obj = J("baselines_object.json")["contrasts"]
     sel_s = J("selective_max_nonfree.json")
     sel_f = J("selective_max_full.json")
+    a55 = J("a55_pred_occluder.json")
 
     rows = [
         # id, hypothesis, registered acceptance, result, verdict
@@ -81,6 +82,10 @@ def build():
          "exploratory, reported either way",
          ci(*obj["observability - LiDAR ORACLE"]), "TIES"),
 
+        ("A55", "The object-level result survives a \\emph{deployable} occluder",
+         "interval excludes zero",
+         ci(*a55["contrasts"]["obs_pred - MSP"]), "FAILS"),
+
         ("H3", "Error increases with time since observability last exceeded 0.15",
          "interval excludes zero",
          "not yet run", "PENDING"),
@@ -123,7 +128,7 @@ def main():
         r"after seeing data. Effect sizes are paired scene-bootstrap means with "
         r"95\% intervals on the sealed test split "
         rf"({h2['scenes']} scenes, {h2['frames']:,} frames). "
-        r"Of the ten decided entries, four did not meet their criterion; two remain pending.}",
+        r"Of the eleven decided entries, five did not meet their criterion; two remain pending.}",
         r"\label{tab:ledger}",
         r"\begin{tabular}{llllc}",
         r"\toprule",

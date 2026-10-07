@@ -104,9 +104,10 @@ made at all. Where a missed object should be, the model is confidently
 predicting free space.
 %
 All hypotheses here were registered with their acceptance criteria in an
-append-only log before the corresponding data existed. Of ten decided
-entries four did not meet their criterion and two remain pending; all are
-reported.
+append-only log before the corresponding data existed, including the one
+that bounds this result to evaluation time. Of eleven decided entries five did not meet
+their criterion and two remain pending; all are reported, including the one
+that bounds this paper's own claim to evaluation time.
 \end{abstract}
 
 % -------------------------------------------------------------------
@@ -163,16 +164,18 @@ entirely outside the network:
 \item A geometric, learning-free observability measure that ranks
       camera-only occupancy error better than the dataset's own camera
       mask by \Hii\ \HiiCI\ AUROC on a sealed test split, in two forms:
-      an evaluation-time form resolving occlusion against ground-truth
-      geometry, and a deployable form resolving it against the model's own
-      predicted occupancy (\cref{sec:deployable}).
+      evaluated with two occluder sources. The measure is
+      \emph{evaluation-time}: substituting the model's own predicted
+      occupancy, the only occluder available on a vehicle, destroys the
+      object-level advantage (\cref{sec:deployable}), and we show why.
 \item The granularity inversion: confidence dominates geometry per voxel
       and per frame, geometry wins per object, and we give the mechanism
       that predicts this rather than observing it after the fact.
 \item An evaluation protocol in which every hypothesis is registered with
-      its acceptance criterion before the data exists. Of ten decided entries four did not meet their
+      its acceptance criterion before the data exists. Of eleven decided entries five did not meet their
       pre-registered criterion and two remain pending; all are reported
-      (\cref{tab:ledger}).
+      (\cref{tab:ledger}), including the one that bounds our own
+      contribution.
 \end{itemize}
 
 \begin{figure}[t]
@@ -406,7 +409,7 @@ are excluded, and only boxes holding at least one ground-truth voxel of
 their own class are scored.
 
 \paragraph{Two rates, two conditionings.} Across all dynamic objects in the
-test split, $10.5\%$ are missed under $M^{\text{dyn}}$. \emph{Conditional on
+test split, $19.4\%$ are missed under $M^{\text{dyn}}$. \emph{Conditional on
 the object's voxels having zero observability} it is \missHi, and at full
 observability \missLo\ (\cref{fig:teaser}b). The figures are not in tension
 and we state the conditioning each time.
@@ -444,16 +447,47 @@ registered before the run -- the paired interval on
 $\mathrm{AUROC}(\text{obs}_{\text{pred}}) - \mathrm{AUROC}(\text{MSP})$ at
 object level must exclude zero.
 
-% TODO(A55): numbers land when the rebuild finishes. Reported whichever way
-% it goes; a null bounds the claim to an evaluation-time measure and the
-% GT-occluder figure becomes the diagnostic upper bound beside it.
+\textbf{It does not survive.} On a pre-declared subsample of 800 test
+frames (seed fixed before the run), 10{,}790 objects in all 75 test scenes:
+\begin{center}\small
+\begin{tabular}{lc}
+\toprule
+Occluder for $s_i$ & AUROC $\uparrow$ \\
+\midrule
+$\text{occ}_{\text{gt}}$ \;(evaluation-time) & \textbf{0.7649} \\
+MSP \;(no geometry at all)                   & 0.7184 \\
+$\text{occ}_{\text{pred}}$ \;(deployable)    & 0.6708 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Paired scene bootstrap: $\text{occ}_{\text{gt}}$ reproduces the headline on
+this subsample, $+0.0464$ $[+0.0193, +0.0733]$ over MSP, which confirms the
+subsample is not the cause of what follows. The deployable form is
+$-0.0477$ $[-0.0828, -0.0135]$ \emph{below} MSP, and
+$-0.0936$ $[-0.1113, -0.0761]$ below its own evaluation-time counterpart.
+A55 fails on its pre-registered criterion.
 
-There is a reason to expect it to survive, and it is the paper's own
-mechanism. What occludes a missed object is usually something the model
-represents perfectly well: in \cref{fig:qualitative} the lamp post is large,
-near and well observed, and the prediction contains it. It is the pedestrian
-behind it that is absent. Geometry derived from the predictions the model
-got right can locate the predictions it got wrong.
+We had the reason to expect success backwards, and the failure is more
+informative than the success would have been. The expectation was that
+whatever occludes a missed object is usually something the model represents
+well, so predicted geometry would cast the same shadow: in
+\cref{fig:qualitative} the lamp post is large, near, well observed, and the
+prediction does contain it. But occlusion is not the only route to a low
+observability, and the dominant one is \emph{absence}. Where the model
+misses an object it predicts free space, so a ray cast through predicted
+occupancy passes straight through and the volume is scored as
+\emph{well observed}. The very event we are trying to flag deletes its own
+evidence from the field used to detect it.
+
+This is a circularity that no amount of engineering on the occluder removes,
+and it is why we do not try a third definition. It also sharpens the
+paper's claim rather than weakening it: the information that locates a
+missed object is not present anywhere in the model's output, not in its
+confidence and not in its geometry either. It has to come from outside, and
+in this work it comes from labels. Supplying it on a vehicle requires a
+source of scene geometry independent of the occupancy model --- a depth
+network, a prior map, or a second modality --- and that is future work, not
+a result we have.
 
 \subsection{The combined score}
 Where a combined score appears it is a logistic regression on four features,
@@ -558,9 +592,12 @@ checkpoint of one architecture.
 \textbf{One dataset.} nuScenes only, and Occ3D's annotation geometry defines
 both our ground truth and our occluder set, so a systematic error there is a
 systematic error here.
-\textbf{The occluder.} The headline numbers use $\text{occ}_{\text{gt}}$ and
-are evaluation-time results; \cref{sec:deployable} decides the deployable
-form.
+\textbf{The occluder, and it is the main one.} The headline numbers use
+$\text{occ}_{\text{gt}}$, the ground-truth volume. This is an
+evaluation-time measure. \Cref{sec:deployable} shows the deployable
+substitution fails, so nothing here is a runtime safety monitor yet; it is
+a diagnostic that tells you where a camera rig's blind volume is and that
+model confidence cannot see into it.
 \textbf{Where it loses.} Confidence beats observability at voxel and frame
 granularity by wide margins; observability alone is a poor selective-risk
 score; confidence plus \texttt{mask\_camera} beats confidence plus

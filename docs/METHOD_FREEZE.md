@@ -3952,3 +3952,48 @@ written to `data/pack/obs_pred_s800`. The GT-occluder comparison is re-run on
 *the same 800 frames* so the contrast is paired and the subsample cannot
 favour either arm. Sample size and seed are fixed here and will not be
 changed after seeing the interval.
+
+---
+
+## A55 RESULT -- the deployable occluder FAILS, and the failure explains itself
+
+**Date:** 2026-10-07. Acceptance registered in A54 before the rebuild ran.
+Subsample (800 frames, seed 11) declared before any number was read.
+
+    800 frames, 10,790 objects, all 75 test scenes, event = M^dyn
+
+    occluder                      AUROC
+    occ_gt   (evaluation-time)    0.7649
+    MSP      (no geometry)        0.7184
+    occ_pred (deployable)         0.6708
+
+    obs_gt   - MSP     +0.0464 [+0.0193, +0.0733]   HOLDS
+    obs_pred - MSP     -0.0477 [-0.0828, -0.0135]   FAILS
+    obs_pred - obs_gt  -0.0936 [-0.1113, -0.0761]   FAILS
+
+The GT arm reproduces the full-split headline (+0.0432 [+0.0135, +0.0708])
+on this subsample, so the subsample is not the cause. **A55 FAILS.**
+
+**Why, and it is not a tuning problem.** The expectation written in A54 was
+that whatever occludes a missed object is usually something the model
+represents well, so predicted geometry would cast the same shadow. That
+reasoning only covers occlusion. The dominant route to low observability is
+ABSENCE: where the model misses an object it predicts free, a ray cast
+through PREDICTED occupancy passes straight through, and the volume scores
+as well observed. The event being detected erases its own evidence from the
+field used to detect it. No third occluder definition is tried; A54 said so
+in advance and the mechanism says it would not help.
+
+**What this costs the paper.** Every deployability claim is withdrawn.
+Observability is an evaluation-time diagnostic. The granularity inversion
+stands -- it was always measured with occ_gt -- but it is a statement about
+what information exists in the labels and NOT in the model's output, not a
+runtime monitor. Supplying occ() on a vehicle needs geometry independent of
+the occupancy model (depth network, prior map, second modality). That is
+future work and is not claimed.
+
+**Also found while checking.** `table1_perclass.py` printed a hand-typed
+10.5% for the aggregate miss rate. The n-weighted mean of the per-class
+rates is **19.35%**. The cell is now computed. A number nobody computed is
+exactly the kind this project does not print, and it survived three
+readings of the table.
