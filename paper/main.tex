@@ -475,6 +475,12 @@ changes the rate and a reader should see both. Boxes with no LiDAR return
 are excluded, and only boxes holding at least one ground-truth voxel of
 their own class are scored.
 
+\Cref{fig:qualitative} is one such object in full: the ground truth
+contains a pedestrian, the prediction contains nothing where it stands,
+and the observability field is zero over the same cells. The strict and
+dynamic criteria agree on that example; they disagree on boxes the model
+fills with static classes, which is why both are reported.
+
 \paragraph{Two rates, two conditionings.} Across all dynamic objects in the
 test split, $19.3\%$ are missed under $M^{\text{dyn}}$. \emph{Conditional on
 the object's voxels having zero observability} it is \missHi, and at full
