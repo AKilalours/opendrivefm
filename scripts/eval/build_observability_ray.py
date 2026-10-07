@@ -176,6 +176,8 @@ def main():
     # runs in is capped, so the test half is subsampled rather than run
     # whole. The subsample is drawn once with a fixed seed and declared in
     # METHOD_FREEZE before any result is read off it.
+    ap.add_argument("--only-token", default="",
+                    help="build exactly one frame, for a figure")
     ap.add_argument("--sample", type=int, default=0)
     ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--limit", type=int, default=0)
@@ -197,6 +199,8 @@ def main():
         SP = importlib.util.module_from_spec(spec); spec.loader.exec_module(SP)
         keep = SP.dev_scenes() if args.scenes == "dev" else SP.test_scenes()
         index = [r for r in index if r["scene"] in keep]
+    if args.only_token:
+        index = [r for r in index if r["token"] == args.only_token]
     if args.sample and args.sample < len(index):
         rs = np.random.default_rng(args.seed)
         sel = sorted(rs.choice(len(index), args.sample, replace=False))

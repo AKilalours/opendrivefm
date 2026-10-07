@@ -146,6 +146,18 @@ def main():
         verdict = "HOLDS" if v[1] > 0 else ("FAILS" if v[2] < 0 else "NULL")
         print(f"  {k:<22} {v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}]  {verdict}")
 
+    np.savez_compressed(os.path.join(ROOT, "outputs/artifacts/a55_rows.npz"),
+                        scene=scene, ogt=ogt, opr=opr, msp=msp, det=det)
+
+    # A55b: is the stated mechanism true? If a miss erases its own occluder,
+    # obs_pred should be systematically HIGHER than obs_gt on MISSED objects
+    # and similar on detected ones. Measured, not asserted.
+    for nm, m in (("missed", miss), ("detected", ~miss)):
+        print(f"  {nm:<9} n={m.sum():>6,}  obs_gt {ogt[m].mean():.4f}  "
+              f"obs_pred {opr[m].mean():.4f}  "
+              f"delta {opr[m].mean()-ogt[m].mean():+.4f}  "
+              f"frac obs_pred>obs_gt {100*(opr[m]>ogt[m]+0.02).mean():.1f}%")
+
     out = dict(level="object", scope="test subsample", frames=len(fis),
                objects=len(rows), scenes=int(len(set(scene))),
                sample=800, seed=11, boot=2000, auroc=A, contrasts=C,

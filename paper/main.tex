@@ -469,27 +469,65 @@ $-0.0477$ $[-0.0828, -0.0135]$ \emph{below} MSP, and
 $-0.0936$ $[-0.1113, -0.0761]$ below its own evaluation-time counterpart.
 A55 fails on its pre-registered criterion.
 
-We had the reason to expect success backwards, and the failure is more
-informative than the success would have been. The expectation was that
-whatever occludes a missed object is usually something the model represents
-well, so predicted geometry would cast the same shadow: in
-\cref{fig:qualitative} the lamp post is large, near, well observed, and the
-prediction does contain it. But occlusion is not the only route to a low
-observability, and the dominant one is \emph{absence}. Where the model
-misses an object it predicts free space, so a ray cast through predicted
-occupancy passes straight through and the volume is scored as
-\emph{well observed}. The very event we are trying to flag deletes its own
-evidence from the field used to detect it.
+\paragraph{Which side of the comparison moves.} The intuitive explanation
+is that a missed object, being predicted free, stops occluding, so the ray
+passes through and observability is falsely \emph{high} exactly where we
+need it low. That explanation is wrong, and the per-object means say so
+(\cref{fig:deploy}c):
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+mean observability & $\text{occ}_{\text{gt}}$ & $\text{occ}_{\text{pred}}$ & $\Delta$ \\
+\midrule
+missed objects   & 0.1987 & 0.2017 & $+0.0030$ \\
+detected objects & 0.5402 & 0.4586 & $\mathbf{-0.0816}$ \\
+\midrule
+separation       & 0.3415 & 0.2569 & $-25\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Observability at missed objects is unchanged. What collapses is
+observability at \emph{detected} objects, and the ranking degrades because
+the top of the scale falls rather than because the bottom rises.
 
-This is a circularity that no amount of engineering on the occluder removes,
-and it is why we do not try a third definition. It also sharpens the
-paper's claim rather than weakening it: the information that locates a
-missed object is not present anywhere in the model's output, not in its
-confidence and not in its geometry either. It has to come from outside, and
-in this work it comes from labels. Supplying it on a vehicle requires a
-source of scene geometry independent of the occupancy model --- a depth
-network, a prior map, or a second modality --- and that is future work, not
-a result we have.
+The cause is density. Predicted occupancy is far coarser than the
+ground-truth volume --- over 60 sampled frames the occupied fraction is
+$0.579$ against $0.052$, a factor of $11$, and $37\times$ on the frame in
+\cref{fig:deploy} --- so a great many more rays are stopped. Mean
+observability on that frame falls $41\%$ and the zero-observability
+fraction rises from $48.9\%$ to $77.7\%$. The measure saturates toward zero
+and loses the range it needs to discriminate. This is over-occlusion, not
+lost evidence.
+
+That distinction matters for what comes next. An evidence-erasure failure
+would be circular and unfixable; an over-occlusion failure is a property of
+\emph{this} occupancy field, and a sparser, better-calibrated source of
+geometry independent of the occupancy model --- a monocular depth network,
+a prior map, a second modality --- is not ruled out by this result. We have
+not tried one, and we do not claim it would work.
+
+\paragraph{A caveat against our own headline.} The ground-truth volume is
+sparse partly because unobserved space is labelled free, and an occluder
+set that sparse may \emph{under}-occlude, which would make
+$\text{occ}_{\text{gt}}$ optimistic. We have not quantified this and state
+it because it cuts against us.
+
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig5_deployability.pdf}
+\caption{\textbf{Why the deployable occluder fails.}
+(a)~Observability resolved against the ground-truth volume.
+(b)~The same frame resolved against the model's own predicted occupancy,
+which holds $37\times$ more occupied voxels here and therefore casts far
+more shadow. (c)~The measured mechanism over 10{,}790 objects: observability
+at \emph{missed} objects is unchanged by the substitution, while at
+\emph{detected} objects it collapses, so the separation between the two
+shrinks by a quarter. (d)~The cost in object-level AUROC. The deployable
+form falls below plain softmax. This is over-occlusion, not the circularity
+one would predict.}
+\label{fig:deploy}
+\end{figure*}
 
 \subsection{The combined score}
 Where a combined score appears it is a logistic regression on four features,
@@ -632,11 +670,12 @@ voxel is wrong, and the worse signal for whether an object is missing
 entirely, because a missed object is a confident prediction of free space.
 External geometry has no such blind spot, because it never consults the
 model. Rebuilding the same signal \emph{from} the model's own predicted
-geometry fails, and fails for the same reason: a missed object is predicted
-free, so a ray passes through the volume it should have been occluding, and
-the failure deletes the evidence needed to detect it. The information that
-locates a missed object is therefore not recoverable from the model's
-output at all. We report that result, four other unmet criteria and two
+occupancy fails, but not for the reason one would guess: observability at
+missed objects barely moves, while observability at detected objects
+collapses, because predicted occupancy is an order of magnitude denser than
+the ground-truth volume and shadows regions the rig genuinely sees. The
+deployable form fails on over-occlusion, which is a property of that
+particular occupancy field rather than a circularity in the idea. We report that result, four other unmet criteria and two
 ties alongside the successes, because an evaluation protocol that only
 produces agreeable results is not measuring anything. What this work
 provides today is a diagnostic for camera-only occupancy, not a runtime

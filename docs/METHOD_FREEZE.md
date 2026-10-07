@@ -3997,3 +3997,51 @@ future work and is not claimed.
 rates is **19.35%**. The cell is now computed. A number nobody computed is
 exactly the kind this project does not print, and it survived three
 readings of the table.
+
+---
+
+## A55b -- the mechanism I wrote for A55 was wrong; here is the measured one
+
+**Date:** 2026-10-07. **Decided:** after seeing data. This corrects A55's
+explanation, not its result. The verdict (FAILS) is unchanged.
+
+A55 explained the failure as: a missed object is predicted free, so a ray
+through predicted occupancy passes through, and observability is falsely
+HIGH at exactly the objects we want to flag. That was written from
+reasoning, not measurement, and the per-object numbers refute it.
+
+    mean observability, 10,790 objects, 800-frame test subsample
+
+                   occ_gt    occ_pred    delta
+    missed         0.1987     0.2017     +0.0030     unchanged
+    detected       0.5402     0.4586     -0.0816     collapses
+
+    separation (detected - missed):  0.3415 -> 0.2569, a 25% loss
+
+Observability at MISSED objects is essentially unchanged. What moves is the
+other side: observability at DETECTED objects collapses. The ranking
+degrades because the top of the scale falls, not because the bottom rises.
+
+**Why.** Predicted occupancy is far denser than the ground-truth volume:
+
+    occupied fraction, 60 sampled frames   GT 0.0518   PRED 0.5787   11.2x
+    the Fig. 2 frame                       GT 9,405    PRED 348,690  37x
+    mean observability, that frame         0.2271 -> 0.1346          -41%
+    zero-observability fraction            48.9% -> 77.7%
+
+A denser occluder set blocks more rays, so volumes the rig genuinely sees
+are scored unobserved, the measure saturates toward zero, and its
+discriminative range disappears. This is an over-occlusion failure, not an
+evidence-erasure failure.
+
+**A caveat this raises against our own headline.** The GT occupancy volume
+is sparse partly because unobserved space is labelled free. An occluder set
+that sparse under-occludes, which may make the occ_gt measure optimistic.
+We have not quantified that and do not claim it either way; it is recorded
+because it cuts against this paper, not for it.
+
+**Process note, and this is the second time.** A54 recorded that Eq. 3's
+occluder was never checked before being described. A55 then described a
+mechanism that was never checked before being written. Both were narrated
+from plausibility. The rule this adds: **a stated mechanism is a claim and
+gets a measurement or it does not go in the paper.**
