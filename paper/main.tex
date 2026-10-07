@@ -67,7 +67,7 @@
 
 \begin{document}
 
-\title{Geometric Observability for Missed Objects\\
+\title{SightOcc: Geometric Observability for Missed Objects\\
        in Camera-Only 3D Occupancy}
 
 \author{%
@@ -90,8 +90,8 @@ object and correctly observed empty road are both simply \emph{free}. We
 study whether sensor-side evidence carries information about occupancy
 failures that the model's own confidence does not.
 
-We introduce \emph{geometric observability} $O(v;\mathcal{G})$, a
-learning-free continuous measure combining projected voxel coverage with
+We introduce \textsc{SightOcc}, a learning-free continuous measure of
+\emph{geometric observability} $O(v;\mathcal{G})$, combining projected voxel coverage with
 first-hit visibility across the rig under a scene-geometry field
 $\mathcal{G}$. Unlike a binary camera-observation mask it carries evidence
 \emph{strength} and resolves occlusion explicitly, and it is near-invariant
@@ -315,10 +315,16 @@ models~\cite{rahimi2026mad, xia2026drivelaw, zhu2026dlwm, tan2026lcdrive}
 likewise treat geometry as something to reconstruct or to condition
 generation on, not as a runtime predictor of where the perception stack is
 about to fail. Visibility is not a new concern in this literature and we do not claim to
-introduce it. Occ3D ships a camera-observation mask; evidential
-formulations such as EvOcc~\cite{kalble2025evocc} model uncertainty arising
-from unobserved and conflicting space; and observability-aware temporal
-fusion has been used inside occupancy architectures~\cite{wang2026ngocc}.
+introduce it. Occ3D~\cite{tian2023occ3d} ships a camera-observation mask;
+evidential formulations such as EvOcc~\cite{kalble2025evocc} model
+uncertainty arising from unobserved and conflicting space;
+$\alpha$-OCC~\cite{occ2024alpha} studies uncertainty for camera-based
+occupancy directly; observability-aware temporal fusion has been used
+inside occupancy architectures~\cite{wang2026ngocc}; and sensor visibility
+has been formalised as its own estimation problem with its own
+metrics~\cite{borger2022sensorvisibility}. Datasets now exist specifically
+to probe perception under occlusion~\cite{occludednuscenes2025}, and the
+area has been surveyed~\cite{occsurvey2024}.
 What separates this work is the role the quantity plays. In those systems
 visibility is an input to the model or to the loss. Here it is held
 entirely outside the model and evaluated \emph{against} the model's own
