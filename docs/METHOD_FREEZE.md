@@ -3782,3 +3782,43 @@ real defects would have shipped behind a true-sounding sentence.
 **59 of 60 tests passed in that CI run**, and the one that failed was
 infrastructure rather than a measurement. No published number is affected by
 either defect.
+
+---
+
+## A52 -- the TSan binary could not load its own runtime in the final image
+
+**Date:** 2026-10-07. Third defect found by the CI job A39 added, and the last
+one blocking a green verification image.
+
+A51 fixed the path problem and ctest then ran for real: release 3/3 passed,
+TSan 3/4. The fourth died before executing a single memory ordering:
+
+    /odfm/cpp/build-tsan/test_spsc_ring_tsan: error while loading shared
+    libraries: libtsan.so.2: cannot open shared object file
+
+The TSan binary is compiled in a `debian:bookworm-slim` stage that has gcc and
+therefore `libtsan`, then copied into a `python:3.11-slim` runtime stage that
+does not. A dynamically linked sanitizer binary cannot survive that move.
+
+**Fixed by linking the sanitizer runtime statically** (`-static-libtsan`)
+rather than by installing `libtsan2` into the runtime image. Installing the
+library would work today and would silently break the day either base image
+changes its gcc major version, because the binary and the library have to
+match. A self-contained binary cannot drift.
+
+Verified directly rather than by waiting for CI:
+
+    g++ -fsanitize=thread -static-libtsan ... tests/test_spsc_ring.cpp
+    ldd      -> no libtsan dependency
+    execute  -> passes, no races reported
+
+`odfm_core` is an INTERFACE (header-only) target, so nothing else links
+differently.
+
+### The running count on A39's honesty note
+
+A39 declined to claim the image "builds and passes" and shipped a CI job to
+find out. That job has now found **three real defects** that the written
+verification could not: absolute ctest paths, a test that pulled in a plotting
+stack, and a sanitizer binary without its runtime. Every one of them would
+have shipped behind the sentence A39 refused to write.

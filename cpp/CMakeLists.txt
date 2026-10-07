@@ -48,7 +48,13 @@ if(ODFM_TSAN)
   add_executable(test_spsc_ring_tsan tests/test_spsc_ring.cpp)
   target_link_libraries(test_spsc_ring_tsan PRIVATE odfm_core)
   target_compile_options(test_spsc_ring_tsan PRIVATE -fsanitize=thread -g -O1)
-  target_link_options(test_spsc_ring_tsan PRIVATE -fsanitize=thread)
+  # A52: link TSan's runtime statically. The binary is built in one container
+  # stage and run in another, and the runtime image has no libtsan.so, so a
+  # dynamically linked copy dies with "cannot open shared object file" before
+  # a single memory ordering is checked. Static linking makes the test binary
+  # self-contained and immune to the base image changing underneath it.
+  target_link_options(test_spsc_ring_tsan PRIVATE -fsanitize=thread
+                      -static-libtsan)
   add_test(NAME test_spsc_ring_tsan COMMAND test_spsc_ring_tsan)
 endif()
 
