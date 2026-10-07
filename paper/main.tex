@@ -145,8 +145,9 @@ answer is adequate for one question and structurally inadequate for
 another, and that the boundary between them is the granularity of the
 thing being asked about.
 
-Our claim is sharper than ``uncertainty estimation is hard'': \emph{no score computed from the network's
-output can flag a missing object, however well calibrated it is.} A missed
+Our claim is sharper than ``uncertainty estimation is hard'':
+\emph{a score computed from the network's output cannot by itself
+distinguish a confidently empty location from a confidently missed object.} A missed
 object is not a low-confidence prediction that the right machinery could
 surface. It is a confident prediction of the free class, which is
 indistinguishable, in the output alone, from correctly observed empty road.
@@ -154,8 +155,19 @@ Calibration rescales confidences; it does not create a prediction that was
 never made. If the claim is right, the remedy cannot come from the model,
 and has to come from something that knows about the sensors.
 
-We therefore propose \emph{observability}, a geometric measure computed
-entirely outside the network:
+\paragraph{Two different questions.} Confidence asks whether the
+prediction the model just produced is likely to be correct. Observability
+asks whether the sensor configuration could have supplied evidence about
+that location at all. The two coincide when the model predicts an object
+and diverge when it confidently predicts free space, because in that case
+there is no object hypothesis whose confidence could be evaluated. No
+recalibration of the output changes this: calibration rescales the
+confidences attached to predictions that exist. That is the gap external
+geometric evidence might fill, and the rest of this paper measures whether
+it does.
+
+We therefore propose \emph{geometric observability}, a measure computed
+outside the network from the camera rig and a scene-geometry field:
 \begin{enumerate}\itemsep0pt
 \item it is a function of the camera rig, the ego pose and the scene's
       occupancy, and of nothing the network produces, so it is unchanged
@@ -168,21 +180,25 @@ entirely outside the network:
 
 \paragraph{Contributions.}
 \begin{itemize}\itemsep0pt
-\item A geometric, learning-free observability measure that ranks
-      camera-only occupancy error better than the dataset's own camera
-      mask by \Hii\ \HiiCI\ AUROC on a sealed test split, in two forms:
-      evaluated with two occluder sources. The measure is
-      \emph{evaluation-time}: substituting the model's own predicted
-      occupancy, the only occluder available on a vehicle, destroys the
-      object-level advantage (\cref{sec:deployable}), and we show why.
-\item The granularity inversion: confidence dominates geometry per voxel
-      and per frame, geometry wins per object, and we give the mechanism
-      that predicts this rather than observing it after the fact.
-\item An evaluation protocol in which every hypothesis is registered with
-      its acceptance criterion before the data exists. Of eleven decided entries five did not meet their
-      pre-registered criterion and two remain pending; all are reported
-      (\cref{tab:ledger}), including the one that bounds our own
-      contribution.
+\item \textbf{Geometric observability.} A continuous, learning-free
+      measure combining projection coverage with first-hit visibility
+      under an \emph{explicit} scene-geometry field $\mathcal{G}$, which
+      ranks per-voxel occupancy error above the dataset's own camera mask
+      by \Hii\ \HiiCI\ AUROC on a sealed test split.
+\item \textbf{The granularity inversion.} Over \nObj\ dynamic objects,
+      model confidence dominates observability for voxel-level error
+      ($\voxMSP$ against $\voxObs$), while observability is the stronger
+      signal for objects the model never predicts at all ($\objObs$
+      against $\objMSP$). We give the mechanism, and show the two signals
+      remain non-redundant at matched confidence.
+\item \textbf{The geometry-source boundary.} Separating
+      $\mathcal{G}_{\textsc{gt}}$ from $\hat{\mathcal{G}}_{\text{pred}}$,
+      we show the object-level advantage does not survive substitution
+      with predicted occupancy, and that the cause is over-occlusion by a
+      field an order of magnitude denser, not a circularity in the idea.
+      All hypotheses were pre-registered; of eleven decided entries five
+      did not meet their prespecified criterion and two remain pending,
+      and all are reported (\cref{tab:ledger}).
 \end{itemize}
 
 \begin{figure}[t]
@@ -261,13 +277,17 @@ built from the full rig offline. Recent driving world
 models~\cite{rahimi2026mad, xia2026drivelaw, zhu2026dlwm, tan2026lcdrive}
 likewise treat geometry as something to reconstruct or to condition
 generation on, not as a runtime predictor of where the perception stack is
-about to fail. We study continuous geometric camera visibility as a failure-prediction
-signal for camera-only occupancy and evaluate it against the model's own
-uncertainty across voxel, frame and object granularity, where the
-comparison reverses. We make no priority claim: the visibility,
-occlusion-reasoning and open-space literatures are large, and what we can
-say is that we have not found this comparison made at object granularity
-with the geometry source stated explicitly.
+about to fail. Visibility is not a new concern in this literature and we do not claim to
+introduce it. Occ3D ships a camera-observation mask; evidential
+formulations such as EvOcc~\cite{kalble2025evocc} model uncertainty arising
+from unobserved and conflicting space; and observability-aware temporal
+fusion has been used inside occupancy architectures~\cite{wang2026ngocc}.
+What separates this work is the role the quantity plays. In those systems
+visibility is an input to the model or to the loss. Here it is held
+entirely outside the model and evaluated \emph{against} the model's own
+uncertainty as a failure-ranking signal, across three granularities, with
+the geometry source stated explicitly and both choices reported. We make
+no priority claim about observability itself.
 
 % -------------------------------------------------------------------
 \section{Observability}
@@ -350,12 +370,17 @@ tested, with zero differing.
 
 \subsection{Why not \texttt{mask\_camera}}
 Occ3D-nuScenes ships a per-voxel \texttt{mask\_camera} flag, and the
-natural objection is that it already encodes what we are measuring. It
-does not. It is a \emph{label-validity} flag built offline from the full
-sensor suite, including LiDAR the model never receives; it is binary; and
-it is unavailable at inference. Inside the mask, where it is constant and
-therefore uninformative by construction, observability still ranks error
-(\cref{fig:maskcam}).
+natural objection is that it already encodes what we are measuring. It encodes something real --- Occ3D documents it as a per-voxel mask of
+whether a voxel is observed in the current camera view --- but it encodes
+it as one bit. Three differences matter here. It is binary, so inside the
+mask it is constant and cannot rank anything, which is exactly the regime
+our comparison operates in. It is constructed offline from the full sensor
+suite, so it is a property of the annotation pipeline rather than of what
+the model's cameras resolved. And it marks observation, not evidence
+strength: a voxel grazed by one camera at 40\,m and one filling half an
+image both read $1$. Observability is continuous over that same support
+(\cref{fig:maskcam}). We do not claim \texttt{mask\_camera} fails at its
+own job, which is deciding where labels are valid.
 
 
 \begin{figure*}[t]
