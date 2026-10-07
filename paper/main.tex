@@ -121,15 +121,29 @@ vote for the free class. On the held-out scenes used throughout this paper,
 \missHi\ of annotated dynamic objects standing in volumes with no camera
 evidence are not predicted by the model at all. \Cref{fig:qualitative} shows one of them.
 
-% TODO(paper): one paragraph on why this matters downstream -- planner
-% consumes occupancy as if absence of evidence were evidence of absence.
+This matters because of what consumes the occupancy field. A planner reads
+it as a statement about the world, not as a statement about the camera rig:
+a cell marked free is a cell the vehicle may drive through. The
+representation has no channel in which to say \emph{I have no evidence
+here}, so absence of evidence is delivered to the planner as evidence of
+absence, and the planner has no way to tell the two apart. On the frames we
+measure, $76.6\%$ of ground-truth obstacle voxels lie in volumes with no
+camera evidence at all.
 
 The usual answer is to calibrate the model's own confidence. We show this
 answer is adequate for one question and structurally inadequate for
 another, and that the boundary between them is the granularity of the
 thing being asked about.
 
-% TODO(paper): the gap, stated as a claim a reviewer could disagree with.
+Our claim is sharper than "uncertainty estimation is hard", and a reviewer
+is free to disagree with it: \emph{no score computed from the network's
+output can flag a missing object, however well calibrated it is.} A missed
+object is not a low-confidence prediction that the right machinery could
+surface. It is a confident prediction of the free class, which is
+indistinguishable, in the output alone, from correctly observed empty road.
+Calibration rescales confidences; it does not create a prediction that was
+never made. If the claim is right, the remedy cannot come from the model,
+and has to come from something that knows about the sensors.
 
 We therefore propose \emph{observability}, a geometric measure computed
 entirely outside the network:
