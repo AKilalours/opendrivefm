@@ -3822,3 +3822,63 @@ find out. That job has now found **three real defects** that the written
 verification could not: absolute ctest paths, a test that pulled in a plotting
 stack, and a sanitizer binary without its runtime. Every one of them would
 have shipped behind the sentence A39 refused to write.
+
+---
+
+## A53 -- the second backbone's HEADLINE hypothesis, pre-registered
+
+**Date:** 2026-10-07. **Decided:** BEFORE the SurroundOcc export exists; no
+SurroundOcc code has been run, no checkpoint downloaded, no pod booted.
+
+A41 section 6 pre-registered H1', H3 and a reopened Stage 5 for the second
+backbone. It did not pre-register **H2**, which is the headline. The pod
+runbook states an acceptance line in prose, but a runbook is not this file and
+is editable without leaving a trace. Writing it here, before the run, is the
+whole point of the mechanism. This gap was found while preparing the pod, not
+after seeing a result.
+
+**H2' (second backbone).** On the sealed test split, inside `mask_camera`,
+observability ranks per-voxel error better than `mask_camera` does:
+
+    H2' = AUROC(observability) - AUROC(mask_camera)
+
+**Acceptance, stated in advance:**
+
+1. the paired scene-bootstrap 95% interval excludes zero, AND
+2. the point estimate is >= +0.02.
+
+**The comparison number is the TEST-split figure, not the full-split one.**
+FB-OCC gives **+0.0484 [+0.0390, +0.0584]** on the 75 held-out test scenes
+(digest `924a44db544d4818`). The full-split +0.0534 is quoted in the runbook
+and is the wrong baseline for a held-out comparison; recording that here so
+the two numbers are not mixed up under time pressure on the pod.
+
+**What each outcome means, written now so it cannot be chosen later:**
+
+* `>= +0.02`, interval excluding zero -- the effect is a property of
+  camera-based occupancy models, not of one checkpoint. This is the result
+  that changes the paper's scope claim.
+* interval spanning zero, or point estimate below +0.02 -- H2' FAILS. It is
+  written up as a failure, with the FB-OCC result demoted to a single-model
+  finding and the paper's claim narrowed accordingly. **A third backbone is
+  not run to break the tie.** That rule is stated here precisely because the
+  temptation will exist at 2am on a metered pod.
+* the two backbones disagree in SIGN -- reported as such; no reconciliation
+  attempt, no post-hoc exclusion of either model.
+
+**Scope discipline.** Observability maps are NOT rebuilt for the second
+backbone. They are a function of the sensor rig and the ego poses, not of the
+model, and reusing them unchanged is what makes this a $3-6 experiment and a
+clean comparison. If any observability artifact is regenerated during the pod
+day, that invalidates the comparison and must be recorded here.
+
+**One parameter, unchanged.** `FULL_PX = 965.0`. Not retuned for SurroundOcc.
+Retuning it per model would make H2' a statement about fitting, not geometry.
+
+**Secondary, explicitly lower priority.** H1', H3 and Stage 5 (A41 section 6,
+as amended by A50 to log-loss) are evaluated on the same export if it lands.
+They do not gate the pod and none of them changes H2's verdict.
+
+**Procedural.** The 50-frame sanity check in the runbook is a GO/NO-GO on the
+export, not on the hypothesis. Failing it means the export is wrong and is
+rerun; it is not evidence about H2' in either direction.
