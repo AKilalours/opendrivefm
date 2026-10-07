@@ -87,6 +87,7 @@ outputs/figures/*
 # says must be in git rather than only on one laptop. Still an explicit
 # allowlist: never blanket-unignore outputs/tables/.
 !outputs/figures/fig1_granularity.pdf
+!outputs/figures/fig2_qualitative.pdf
 !outputs/tables/
 outputs/tables/*
 !outputs/tables/table4_ledger.tex

@@ -69,7 +69,8 @@
 \author{%
 Akila Lourdes Miriyala Francis\quad Akilan Manivannan\\
 Long Island University, Brooklyn\\
-{\tt\small \{first.last\}@my.liu.edu}
+{\tt\small akialourdes.miriyalafrancis@my.liu.edu}\quad
+{\tt\small akilan.manivannan@my.liu.edu}
 }
 
 \date{}
@@ -116,7 +117,7 @@ Nothing in the model's output distinguishes ``there is nothing here'' from
 ``I have no evidence either way'', because both arrive as a high-probability
 vote for the free class. On the held-out scenes used throughout this paper,
 \missHi\ of annotated dynamic objects standing in volumes with no camera
-evidence are not predicted by the model at all.
+evidence are not predicted by the model at all. \Cref{fig:qualitative} shows one of them.
 
 % TODO(paper): one paragraph on why this matters downstream -- planner
 % consumes occupancy as if absence of evidence were evidence of absence.
@@ -166,6 +167,24 @@ observability, monotone across all six bands over \nObj\ objects.
 Confidence cannot flag what the model never considered.}
 \label{fig:teaser}
 \end{figure}
+
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig2_qualitative.pdf}
+\caption{\textbf{One frame, and the failure this paper is about.}
+(a)~The camera that should see the pedestrian: it stands behind a lamp post,
+into direct sun. (b)~Occ3D ground truth, dynamic classes in red; the
+pedestrian is there. (c)~The FB-OCC prediction over the same volume: nothing
+inside the circle, and the model assigns the free class there at confidence
+$1.00$. Its softmax offers no signal at all, because a confident prediction
+of \emph{free} is exactly what a missed object looks like. (d)~Observability
+for the same frame. The lamp post casts a zero-observability wedge, and the
+pedestrian sits inside it, $\mathrm{obs}=0.00$. The geometry knows the
+volume is unobserved before the network runs, and knows it without ever
+seeing the network's output.}
+\label{fig:qualitative}
+\end{figure*}
 
 % -------------------------------------------------------------------
 \section{Related Work}
