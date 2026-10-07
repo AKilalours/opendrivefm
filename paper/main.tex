@@ -65,7 +65,7 @@
 
 \begin{document}
 
-\title{Confidence Cannot Flag What the Model Never Considered:\\
+\title{Confidence Cannot Flag What the Model Never Predicted:\\
        Geometric Observability for Camera-Only Occupancy}
 
 \author{%
@@ -137,8 +137,7 @@ answer is adequate for one question and structurally inadequate for
 another, and that the boundary between them is the granularity of the
 thing being asked about.
 
-Our claim is sharper than "uncertainty estimation is hard", and a reviewer
-is free to disagree with it: \emph{no score computed from the network's
+Our claim is sharper than ``uncertainty estimation is hard'': \emph{no score computed from the network's
 output can flag a missing object, however well calibrated it is.} A missed
 object is not a low-confidence prediction that the right machinery could
 surface. It is a confident prediction of the free class, which is
@@ -187,7 +186,7 @@ test split. The model's own confidence dominates geometry per voxel and
 per frame, then \emph{loses} per object. (b)~The mechanism: the fraction
 of annotated dynamic objects the model never predicts, against
 observability, monotone across all six bands over \nObj\ objects.
-Confidence cannot flag what the model never considered.}
+Confidence cannot flag what the model never predicted.}
 \label{fig:teaser}
 \end{figure}
 
@@ -350,8 +349,11 @@ definition: it is binary, it is constructed offline from the full sensor
 suite including the LiDAR the model never receives, and it is not available
 at inference, so inside the mask it is constant and ranks nothing. Range
 from ego is continuous and free, and ignores occlusion, which is the entire
-phenomenon. Observability is continuous, camera-only, known before the
-network runs, and resolves occlusion by first-hit ray marching.}
+phenomenon. Observability is continuous, independent of the model and of its
+confidence, and resolves occlusion by first-hit ray marching --- but it
+needs an external occupancy field to do so, and rebuilding it from the
+model's own prediction drops it below plain softmax
+(\cref{sec:deployable}). The panel states both.}
 \label{fig:maskcam}
 \end{figure*}
 
@@ -409,7 +411,7 @@ are excluded, and only boxes holding at least one ground-truth voxel of
 their own class are scored.
 
 \paragraph{Two rates, two conditionings.} Across all dynamic objects in the
-test split, $19.4\%$ are missed under $M^{\text{dyn}}$. \emph{Conditional on
+test split, $19.3\%$ are missed under $M^{\text{dyn}}$. \emph{Conditional on
 the object's voxels having zero observability} it is \missHi, and at full
 observability \missLo\ (\cref{fig:teaser}b). The figures are not in tension
 and we state the conditioning each time.
@@ -539,8 +541,7 @@ but was not registered and is not claimed.
 
 \paragraph{Temperature scaling is not a competitor.} It is a monotone
 transform of the confidence score, so it leaves every ranking metric in this
-paper exactly unchanged. It appears in no AUROC table here, and a reviewer
-should expect its absence.
+paper exactly unchanged. It therefore appears in no ranking table in this paper.
 
 \paragraph{Which term carries the result.} \Cref{eq:obs} has two factors and
 a pooling choice, and only one of the three matters. Scoring per-voxel error
@@ -565,8 +566,16 @@ factor, so that coverage alone decides, costs $0.0847$ AUROC and drops the
 score \emph{below} \texttt{mask\_camera}. Resolving occlusion is not a
 refinement of this measure. It is the measure.
 
-\paragraph{Would a seventh camera fix it?} On 1{,}238 frames, $76.6\%$ of
-ground-truth obstacle voxels fall in volumes with no camera evidence. We
+\paragraph{What the blind volume is made of.} On 1{,}238 frames, $76.6\%$
+of ground-truth obstacle voxels fall in volumes with no camera evidence,
+which is large enough to deserve an account. Attributing each shadowed
+voxel to the surface that casts it, over 400 frames and 169M occluded
+voxels: man-made structure $43.9\%$, vegetation $27.9\%$, other vehicles
+$10.4\%$, drivable surface $4.3\%$, remainder spread across the rest. The
+blind volume is mostly buildings and foliage, with one voxel in ten hidden
+behind another car, which is the subset a planner cares about most.
+
+\paragraph{Would a seventh camera fix it?} We
 re-ran the geometry with each of six additional camera placements added to
 the rig. The best of them, a higher roof mount, recovers $2.23\%$ of those
 voxels; a rear telephoto recovers $1.29\%$; no other placement exceeds
@@ -576,6 +585,14 @@ universal claim; what we can say is that none of the placements evaluated
 closes more than a small fraction of the unobserved volume.
 
 \subsection{What did not survive}
+\Cref{tab:ledger} is the full record. Five of eleven decided entries did not
+meet the criterion registered for them: the calibration-gap monotonicity H1,
+the claim that observability beats \texttt{mask\_camera} at selective risk
+(S2), and the deployable occluder (A55); observability-conditioned
+recalibration and the LiDAR-oracle comparison tie. Two remain pending. The
+failures are not peripheral --- A55 bounds this paper's own contribution to
+evaluation time --- and listing them is cheaper than having a reader find
+them.
 \input{../outputs/tables/table4_ledger}
 
 % TODO(pod): H2' on SurroundOcc. Registered in METHOD_FREEZE A53 with
@@ -607,16 +624,24 @@ ranking quality and selective risk, not collision rate.
 \textbf{Single checkpoint.} Robustness to training stochasticity is untested.
 
 \section{Conclusion}
-Observability is a geometric quantity with one parameter and no learned
-component, and it predicts where a camera-only occupancy model is about to
-fail. Its value is not uniform across granularity, and that non-uniformity
+Geometric observability, computed from the camera rig and an external
+occupancy field with one parameter and no learned component, reveals where
+a camera-only occupancy model fails in a way its own confidence cannot. Its value is not uniform across granularity, and that non-uniformity
 is the result: the model's own confidence is the better signal for whether a
 voxel is wrong, and the worse signal for whether an object is missing
 entirely, because a missed object is a confident prediction of free space.
-Geometry has no such blind spot, since it never consults the model. We
-report four failed hypotheses alongside the successful ones and a selective
-prediction comparison that observability loses, because an evaluation
-protocol that only produces agreeable results is not measuring anything.
+External geometry has no such blind spot, because it never consults the
+model. Rebuilding the same signal \emph{from} the model's own predicted
+geometry fails, and fails for the same reason: a missed object is predicted
+free, so a ray passes through the volume it should have been occluding, and
+the failure deletes the evidence needed to detect it. The information that
+locates a missed object is therefore not recoverable from the model's
+output at all. We report that result, four other unmet criteria and two
+ties alongside the successes, because an evaluation protocol that only
+produces agreeable results is not measuring anything. What this work
+provides today is a diagnostic for camera-only occupancy, not a runtime
+monitor; supplying the occupancy field from a source independent of the
+occupancy model is the obvious next step and we have not taken it.
 
 {\small
 \bibliographystyle{ieeetr}

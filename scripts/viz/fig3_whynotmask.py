@@ -125,15 +125,18 @@ def main():
 
     # (d) observability
     bev(A4, obs.max(2), "magma", 0, 1, True)
-    panel_band(A4, "observability   ours", [
+    a55 = json.load(open(os.path.join(ROOT,
+                    "outputs/artifacts/a55_pred_occluder.json")))["auroc"]
+    panel_band(A4, "observability   ours, evaluation-time", [
         (True, "continuous, and carries one parameter"),
-        (True, "camera-only: known before the model runs"),
+        (True, "independent of the model and of its confidence"),
         (True, "resolves occlusion by first-hit ray marching"),
         (True, f"AUROC {A['observability']:.3f} per object, "
                f"{h2['diff']:+.4f} over mask_camera"),
-        (True, "within noise of a LiDAR oracle "
-               f"({A['LiDAR points in box (ORACLE)']:.3f})"),
-    ], tint="#141414", fg="#f2f2f2")
+        (False, "needs external scene geometry. Rebuilt from the"),
+        (None,  f"    model's own prediction it falls to "
+                f"{a55['obs_pred (deployable)']:.3f}, below MSP"),
+    ], tint="#141414", fg="#f2f2f2", h=0.52)
 
     fig.text(0.004, 0.012,
              f"All four panels are the same frame, token {TOKEN[:12]}, "
