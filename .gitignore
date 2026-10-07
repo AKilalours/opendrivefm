@@ -92,6 +92,7 @@ outputs/figures/*
 !outputs/figures/fig2_qualitative.pdf
 !outputs/figures/fig3_whynotmask.pdf
 !outputs/figures/fig5_deployability.pdf
+!outputs/figures/fig6_quadrant.pdf
 !outputs/tables/
 outputs/tables/*
 !outputs/tables/table4_ledger.tex

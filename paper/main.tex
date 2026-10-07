@@ -65,12 +65,12 @@
 
 \begin{document}
 
-\title{Confidence Cannot Flag What the Model Never Predicted:\\
-       Geometric Observability for Camera-Only Occupancy}
+\title{When Confidence Is Blind: Geometric Observability for\\
+       Missed Objects in Camera-Only 3D Occupancy}
 
 \author{%
-Akila Lourdes Miriyala Francis\quad Akilan Manivannan\\
-Long Island University, Brooklyn\\
+Akila Lourdes Miriyala Francis \qquad Akilan Manivannan\\
+Long Island University, Brooklyn, NY\\
 {\tt\small akialourdes.miriyalafrancis@my.liu.edu}\quad
 {\tt\small akilan.manivannan@my.liu.edu}
 }
@@ -80,18 +80,23 @@ Long Island University, Brooklyn\\
 
 % -------------------------------------------------------------------
 \begin{abstract}
-Camera-only occupancy models are evaluated almost entirely by how often
-they are right, and their uncertainty is read off their own softmax. We
-ask a different question: can a purely geometric quantity, computed from
-the sensor rig and the scene's geometry, and never from the network, tell us where
-such a model is about to be wrong? We define \emph{observability}, a
-continuous per-voxel measure of how well the camera array actually sees a
-point in space, with a single parameter and no learning. On
-Occ3D-nuScenes, observability ranks per-voxel error better than the
-dataset's own \texttt{mask\_camera} flag by \Hii\ \HiiCI\ AUROC on a
-sealed test split.
+A camera-only 3D occupancy model can assign maximal confidence to free
+space at a location where an object is present but barely observable. That
+exposes a distinction between two different questions: \emph{how reliable
+is the prediction I produced}, which confidence answers, and \emph{how much
+geometric evidence existed for this location}, which it cannot. We study
+whether the second question carries information about occupancy failures
+that the first does not.
+
+We define \emph{geometric observability} $O(v;\mathcal{G})$, a continuous
+per-voxel measure combining camera projection coverage with first-hit
+visibility under a scene-geometry field $\mathcal{G}$, with one parameter
+and no learned component. On Occ3D-nuScenes it ranks per-voxel error better
+than the dataset's own \texttt{mask\_camera} flag by \Hii\ \HiiCI\ AUROC on
+a sealed test split.
 %
-The result we did not expect is an inversion across granularity. Predicting
+The result we did not expect is an inversion across granularity, and it is
+the paper's main finding. Predicting
 whether an individual voxel is wrong, the model's own confidence dominates
 geometry by a wide margin (\voxMSP\ against \voxObs). Predicting whether a
 whole \emph{object} is missed entirely, geometry wins (\objObs\ against
@@ -103,11 +108,14 @@ wrong one, and structurally unable to flag a prediction that was never
 made at all. Where a missed object should be, the model is confidently
 predicting free space.
 %
-All hypotheses here were registered with their acceptance criteria in an
-append-only log before the corresponding data existed, including the one
-that bounds this result to evaluation time. Of eleven decided entries five did not meet
-their criterion and two remain pending; all are reported, including the one
-that bounds this paper's own claim to evaluation time.
+The advantage depends on where $\mathcal{G}$ comes from. With
+ground-truth geometry it holds; substituting the occupancy model's own
+prediction --- the only field a vehicle has --- drops object-level AUROC to
+$0.6708$, below confidence at $0.7184$, because predicted occupancy is an
+order of magnitude denser and over-occludes regions the rig genuinely sees.
+We therefore position observability as an evaluation-time diagnostic and
+not a runtime monitor. Of eleven pre-registered entries five did not meet
+their criterion and two remain pending; all are reported.
 \end{abstract}
 
 % -------------------------------------------------------------------
@@ -253,10 +261,13 @@ built from the full rig offline. Recent driving world
 models~\cite{rahimi2026mad, xia2026drivelaw, zhu2026dlwm, tan2026lcdrive}
 likewise treat geometry as something to reconstruct or to condition
 generation on, not as a runtime predictor of where the perception stack is
-about to fail. To the best of our knowledge, this is the first work to treat
-camera visibility as a continuous, inference-time signal and to evaluate it
-head-to-head against the model's own uncertainty as a failure predictor,
-including at object granularity where the comparison reverses.
+about to fail. We study continuous geometric camera visibility as a failure-prediction
+signal for camera-only occupancy and evaluate it against the model's own
+uncertainty across voxel, frame and object granularity, where the
+comparison reverses. We make no priority claim: the visibility,
+occlusion-reasoning and open-space literatures are large, and what we can
+say is that we have not found this comparison made at object granularity
+with the geometry source stated explicitly.
 
 % -------------------------------------------------------------------
 \section{Observability}
@@ -268,11 +279,19 @@ projects to, and visibility $s_i(v) \in \{0,1\}$, whether the first
 surface hit along the ray through $v$ is $v$ itself. Observability is the
 best evidence any single camera provides:
 \begin{equation}
-\mathrm{obs}(v) \;=\; \max_i \; c_i(v)\cdot s_i(v).
+O(v;\mathcal{G}) \;=\; \max_{i \in \mathcal{C}} \; c_i(v)\cdot
+   s_i(v;\mathcal{G}).
 \label{eq:obs}
 \end{equation}
-The maximum, rather than a sum, encodes that a voxel seen well by one
-camera is observed, regardless of how many others miss it.
+$\mathcal{C}$ is the camera set, $c_i$ the projection coverage of camera
+$i$ and $s_i$ its first-hit visibility, which is where the scene-geometry
+field $\mathcal{G}$ enters. The maximum, rather than a sum, encodes that a
+voxel seen well by one camera is observed regardless of how many others
+miss it. We write $O_{\textsc{gt}} = O(v;\mathcal{G}_{\textsc{gt}})$ and
+$O_{\text{pred}} = O(v;\hat{\mathcal{G}}_{\text{pred}})$ and keep the two
+distinct throughout: the dependence on $\mathcal{G}$ is not a detail, it is
+what decides whether the measure is an evaluation diagnostic or a runtime
+signal.
 
 \paragraph{The one parameter.}
 Coverage is normalised by \fullpx, the projected footprint in pixels at
@@ -401,10 +420,11 @@ M_j^{\text{any}} &= \mathbb{1}\!\left[\;\nexists\, v \in B_j :
 M_j^{\text{dyn}} &= \mathbb{1}\!\left[\;\nexists\, v \in B_j :
    \hat{y}(v) \in \mathcal{D}\;\right], \label{eq:missdyn}
 \end{align}
-with $\mathcal{D}$ the dynamic classes. $M^{\text{any}}$ is the strict
-reading, nothing at all predicted inside the box; $M^{\text{dyn}}$ is the
-one a planner cares about, nothing \emph{movable} predicted there, so a box
-filled with predicted road surface counts as a miss. We report
+with $\mathcal{D}$ the dynamic classes. We call $M^{\text{any}}$ the \textbf{strict miss}, nothing at all
+predicted inside the box, and $M^{\text{dyn}}$ the \textbf{dynamic miss},
+nothing \emph{movable} predicted there, so a box filled with predicted road
+surface counts as a miss. The second is the one a planner cares about and
+the terms are used consistently below. We report
 $M^{\text{dyn}}$ and give $M^{\text{any}}$ beside it, because the choice
 changes the rate and a reader should see both. Boxes with no LiDAR return
 are excluded, and only boxes holding at least one ground-truth voxel of
@@ -505,6 +525,21 @@ would be circular and unfixable; an over-occlusion failure is a property of
 geometry independent of the occupancy model --- a monocular depth network,
 a prior map, a second modality --- is not ruled out by this result. We have
 not tried one, and we do not claim it would work.
+
+\subsection{The two signals are not redundant}
+If observability were merely a noisy restatement of confidence, holding one
+fixed would flatten the other. It does not (\cref{fig:quadrant}a). Among
+objects the model is \emph{confident} about, those in the low-observability
+half are missed $23.6\%$ of the time against $3.7\%$ in the
+high-observability half, a factor of $6.3$ at matched confidence. The
+reverse also holds, so neither axis subsumes the other.
+
+One number in that figure deserves its own sentence: the median
+maximum-softmax value over all test objects is $1.00$. More than half of
+every annotated object in the split sits at saturated confidence. A score
+that is maximal for the median case cannot separate the median case from
+anything, and that is the structural reason the object-level comparison
+goes the way it does.
 
 \paragraph{A caveat against our own headline.} The ground-truth volume is
 sparse partly because unobserved space is labelled free, and an occluder
@@ -639,6 +674,28 @@ them.
 % largest gap in the evaluation.
 
 % -------------------------------------------------------------------
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig6_quadrant.pdf}
+\caption{\textbf{Confidence and observability are different axes, populated
+with real objects.}
+(a)~Test objects split at the population medians. The taxonomy one would
+draw is not what the data gives: the worst cell is low confidence with low
+observability, not high confidence with low observability. What the data
+does support is the paper's claim. Holding confidence \emph{high} and
+varying observability gives $23.6\%$ against $3.7\%$ missed, a $6.3\times$
+difference at matched confidence, so the two axes are not redundant. Note
+also that the median maximum-softmax value over all objects is $1.00$:
+more than half carry the saturated value, which is the problem the paper
+starts from.
+(b)~Per class. Observability wins decisively on car and truck, ties on
+pedestrian and bus, and loses on construction vehicle, bicycle and
+trailer. Neither signal dominates, and we report the losses at the same
+size as the wins.}
+\label{fig:quadrant}
+\end{figure*}
+
 \section{Limitations}
 \label{sec:limitations}
 \textbf{One backbone.} Every number is FB-OCC r50. The SurroundOcc
