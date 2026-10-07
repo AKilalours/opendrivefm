@@ -88,6 +88,7 @@ outputs/figures/*
 # cited by the manuscript -- which is exactly the class of file A40's lesson
 # says must be in git rather than only on one laptop. Still an explicit
 # allowlist: never blanket-unignore outputs/tables/.
+!outputs/figures/fig0_hero.pdf
 !outputs/figures/fig1_granularity.pdf
 !outputs/figures/fig2_qualitative.pdf
 !outputs/figures/fig3_whynotmask.pdf

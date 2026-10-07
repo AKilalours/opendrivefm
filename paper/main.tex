@@ -129,7 +129,7 @@ Nothing in the model's output distinguishes ``there is nothing here'' from
 ``I have no evidence either way'', because both arrive as a high-probability
 vote for the free class. On the held-out scenes used throughout this paper,
 \missHi\ of annotated dynamic objects standing in volumes with no camera
-evidence are not predicted by the model at all. \Cref{fig:qualitative} shows one of them.
+evidence are not predicted by the model at all. \Cref{fig:hero} shows one of them.
 
 This matters because of what consumes the occupancy field. A planner reads
 it as a statement about the world, not as a statement about the camera rig:
@@ -173,7 +173,8 @@ outside the network from the camera rig and a scene-geometry field:
       occupancy, and of nothing the network produces, so it is unchanged
       when the model changes and transfers between architectures;
 \item it is continuous, where the dataset's \texttt{mask\_camera} flag is
-      binary and, as we show, is not a visibility measure at all; and
+      binary, so it is constant over the support where we
+      compare and cannot rank within it; and
 \item it carries exactly one parameter, fixed once at \fullpx\ and never
       retuned per model or per split.
 \end{enumerate}
@@ -200,6 +201,24 @@ outside the network from the camera rig and a scene-geometry field:
       did not meet their prespecified criterion and two remain pending,
       and all are reported (\cref{tab:ledger}).
 \end{itemize}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig0_hero.pdf}
+\caption{\textbf{When confidence is blind.}
+(a)~A pedestrian at $18$\,m, behind a lamp post, into direct sun; the
+ground truth contains it. (b)~The predicted occupancy over the same volume
+contains nothing inside the circle, and the model assigns the free class
+there at confidence $1.00$. Its softmax offers no signal, because a
+confident prediction of \emph{free} is exactly what a missed object looks
+like. (c)~Observability for the same frame: the post casts a
+zero-observability wedge and the pedestrian sits inside it. (d)~The
+consequence, over the sealed test split. Confidence ranks error better at
+voxel and frame granularity; at object granularity --- the question
+\emph{was anything here at all} --- the ordering inverts. Panels (a)--(c)
+are one token; (d) is \nObj\ objects.}
+\label{fig:hero}
+\end{figure*}
 
 \begin{figure}[t]
 \centering
