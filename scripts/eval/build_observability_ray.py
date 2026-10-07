@@ -163,6 +163,21 @@ def main():
     ap.add_argument("--gts",
                     default="data/occ3d/Occupancy3D-nuScenes-trainval/gts")
     ap.add_argument("--out", default="data/pack/observability_ray")
+    # A54: the occluder set. "gt" is what every frozen number used, and it
+    # makes observability an EVALUATION-TIME measure: it needs the dense
+    # ground-truth volume to decide what blocks what. "pred" swaps in the
+    # model's own predicted occupancy, which is available at inference, so
+    # the measure becomes deployable. Whether the object-level result
+    # survives that swap is the experiment.
+    ap.add_argument("--occluder", choices=["gt", "pred"], default="gt")
+    ap.add_argument("--preds", default="data/preds/preds_voxel")
+    ap.add_argument("--scenes", default="all", choices=["all", "dev", "test"])
+    # A55: the predicted-occluder rebuild costs ~1 s/frame and the shell it
+    # runs in is capped, so the test half is subsampled rather than run
+    # whole. The subsample is drawn once with a fixed seed and declared in
+    # METHOD_FREEZE before any result is read off it.
+    ap.add_argument("--sample", type=int, default=0)
+    ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--measure", choices=["noisy_or", "max"], default="noisy_or",
                     help="noisy_or reproduces every frozen number (A12-A22). "
@@ -176,6 +191,16 @@ def main():
     gt_map = {os.path.basename(os.path.dirname(q)): q
               for q in glob.glob(os.path.join(args.gts, "*", "*",
                                               "labels.npz"))}
+    if args.scenes != "all":
+        spec = importlib.util.spec_from_file_location(
+            "split", os.path.join(HERE, "split.py"))
+        SP = importlib.util.module_from_spec(spec); spec.loader.exec_module(SP)
+        keep = SP.dev_scenes() if args.scenes == "dev" else SP.test_scenes()
+        index = [r for r in index if r["scene"] in keep]
+    if args.sample and args.sample < len(index):
+        rs = np.random.default_rng(args.seed)
+        sel = sorted(rs.choice(len(index), args.sample, replace=False))
+        index = [index[i] for i in sel]
     if args.limit:
         index = index[:args.limit]
     vox = voxel_centres()
@@ -191,8 +216,14 @@ def main():
             continue
         if tok not in gt_map or tok not in calib:
             continue
-        sem = np.load(gt_map[tok])["semantics"]
-        occ_flat = (sem.reshape(-1) != 17)
+        if args.occluder == "pred":
+            pp = os.path.join(args.preds, tok + ".npz")
+            if not os.path.exists(pp):
+                continue
+            occ_flat = (np.load(pp)["cls"].reshape(-1) != 17)
+        else:
+            sem = np.load(gt_map[tok])["semantics"]
+            occ_flat = (sem.reshape(-1) != 17)
 
         miss = np.ones(vox.shape[0], np.float32)
         best = np.zeros(vox.shape[0], np.float32)
@@ -226,7 +257,8 @@ def main():
 
     json.dump(dict(grid=[OCC_N, OCC_N, OCC_NZ], res=OCC_RES, rng=OCC_RNG,
                    z0=OCC_Z0, trust=TRUST, full_px=FULL_PX, step_m=STEP,
-                   measure=args.measure,
+                   measure=args.measure, occluder=args.occluder,
+                   scenes=args.scenes,
                    method="recursive ray march, no free parameters",
                    quantisation="uint8 = round(255 * observability)",
                    frames=done),

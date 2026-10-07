@@ -143,7 +143,17 @@ def main():
 
     ax2.set_title(f"(b)  Monotone 6/6, n = {miss['objects']:,} objects",
                   fontsize=8, loc="left", pad=4, color=INK)
-    ax2.text(1.0, -0.41, f"{miss['frames']:,} frames  ·  "
+    # A54: missed_detection_test.json's "frames" field counts frames SCANNED,
+    # not frames in the split, and reports 6,016 -- the same number as the
+    # all-scenes run. The test half holds 3,008. The figure printed the wrong
+    # one. Counted from the split module instead of trusting the field.
+    import importlib.util as _ilu
+    _sp = _ilu.spec_from_file_location("split", os.path.join(
+        ROOT, "scripts/eval/split.py"))
+    _SP = _ilu.module_from_spec(_sp); _sp.loader.exec_module(_SP)
+    _idx = json.load(open(os.path.join(ROOT, "data/pack/index.json")))
+    nfr = sum(1 for r in _idx if r["scene"] in _SP.test_scenes())
+    ax2.text(1.0, -0.41, f"{nfr:,} frames  ·  "
                          f"{obj['scenes']} held-out test scenes  ·  split {digest}",
              transform=ax2.transAxes, ha="right", va="top",
              fontsize=5.8, color=MUTED)

@@ -3882,3 +3882,73 @@ They do not gate the pod and none of them changes H2's verdict.
 **Procedural.** The 50-frame sanity check in the runbook is a GO/NO-GO on the
 export, not on the hypothesis. Failing it means the export is wrong and is
 rerun; it is not evidence about H2' in either direction.
+
+---
+
+## A54 -- two reporting errors found by an external review, and the
+## deployability claim withdrawn
+
+**Date:** 2026-10-07. **Decided:** after seeing data, in response to an
+external reviewer's reading of the draft. Both items below are corrections,
+not results.
+
+### 1. `occ(u)` is GROUND TRUTH, and the paper claimed otherwise
+
+The draft's method section described observability as "camera-only",
+"computed entirely outside the network" and "available before the model
+runs". The first two are true. **The third is false.**
+
+`scripts/eval/build_observability_ray.py` line 194:
+
+    sem = np.load(gt_map[tok])["semantics"]
+    occ_flat = (sem.reshape(-1) != 17)
+
+The occluder set is the dense Occ3D ground-truth volume. Deciding whether a
+voxel is the first hit along a ray requires knowing what else in the scene
+is occupied, and the frozen numbers get that from the labels. So the measure
+is independent of the occupancy MODEL -- which is why it transfers unchanged
+to a second backbone -- and is NOT independent of scene geometry, and is not
+available at inference.
+
+Those are different claims and this project conflated them. The confusion
+originates here, not in the review: the pod runbook's phrase "a property of
+the sensor rig, not of the model" is correct and was over-read into
+"available before the model runs", which does not follow from it.
+
+**Withdrawn:** every statement that observability is available at inference
+time. The frozen results are unaffected -- nothing measured changes -- but
+they are results about an EVALUATION-TIME measure until A55 says otherwise.
+
+**A55 (pre-registered now, before the run).** Rebuild observability with the
+MODEL'S OWN predicted occupancy as the occluder set, which IS available at
+inference, and re-run the object-level comparison on the sealed test split.
+
+    HOLDS   AUROC(obs_pred) - AUROC(MSP) > 0 at object level, 95% paired
+            scene-bootstrap interval excluding zero
+    FAILS   anything else
+
+Stated in advance: a FAILS here does not retract the granularity inversion.
+It bounds it to an evaluation-time measure, and the GT-occluder number
+becomes the diagnostic upper bound with the predicted-occluder number
+reported beside it. No third occluder definition will be tried.
+
+### 2. The frame count printed on Figure 1 was wrong
+
+`missed_detection_test.json` carries `"frames": 6016`, which is the number
+of frames SCANNED and is identical to the all-scenes run. The test half of
+the split holds **3,008** frames. The object count, 40,863, is correct and
+test-only: `baselines_object.json` reaches the same figure by a different
+script, and the all-scenes count is 88,950, close to twice it, as a 50/50
+scene split implies.
+
+So the result stands and the label did not. Figure 1 now counts frames from
+`split.py` rather than trusting the field.
+
+**A55 subsample, declared before any number is read.** The predicted-occluder
+rebuild costs ~1 s/frame and the shell it runs in is time-capped, so the
+test half is subsampled rather than run whole: **800 frames drawn without
+replacement from the 3,008 test-split frames, `numpy` default_rng seed 11**,
+written to `data/pack/obs_pred_s800`. The GT-occluder comparison is re-run on
+*the same 800 frames* so the contrast is paired and the subsample cannot
+favour either arm. Sample size and seed are fixed here and will not be
+changed after seeing the interval.

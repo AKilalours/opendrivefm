@@ -123,7 +123,7 @@ def main():
         r"after seeing data. Effect sizes are paired scene-bootstrap means with "
         r"95\% intervals on the sealed test split "
         rf"({h2['scenes']} scenes, {h2['frames']:,} frames). "
-        r"Four of the twelve entries did not survive.}",
+        r"Of the ten decided entries, four did not meet their criterion; two remain pending.}",
         r"\label{tab:ledger}",
         r"\begin{tabular}{llllc}",
         r"\toprule",

@@ -83,7 +83,7 @@ Long Island University, Brooklyn\\
 Camera-only occupancy models are evaluated almost entirely by how often
 they are right, and their uncertainty is read off their own softmax. We
 ask a different question: can a purely geometric quantity, computed from
-the sensor rig and the ego pose and never from the network, tell us where
+the sensor rig and the scene's geometry, and never from the network, tell us where
 such a model is about to be wrong? We define \emph{observability}, a
 continuous per-voxel measure of how well the camera array actually sees a
 point in space, with a single parameter and no learning. On
@@ -103,9 +103,10 @@ wrong one, and structurally unable to flag a prediction that was never
 made at all. Where a missed object should be, the model is confidently
 predicting free space.
 %
-All hypotheses in this paper were registered in an append-only log before
-the corresponding data existed. We report the four that did not survive
-alongside the ones that did.
+All hypotheses here were registered with their acceptance criteria in an
+append-only log before the corresponding data existed. Of ten decided
+entries four did not meet their criterion and two remain pending; all are
+reported.
 \end{abstract}
 
 % -------------------------------------------------------------------
@@ -148,9 +149,9 @@ and has to come from something that knows about the sensors.
 We therefore propose \emph{observability}, a geometric measure computed
 entirely outside the network:
 \begin{enumerate}\itemsep0pt
-\item it is a function of the camera rig and the ego pose, so it is
-      available before the model runs and is unchanged when the model
-      changes;
+\item it is a function of the camera rig, the ego pose and the scene's
+      occupancy, and of nothing the network produces, so it is unchanged
+      when the model changes and transfers between architectures;
 \item it is continuous, where the dataset's \texttt{mask\_camera} flag is
       binary and, as we show, is not a visibility measure at all; and
 \item it carries exactly one parameter, fixed once at \fullpx\ and never
@@ -161,13 +162,16 @@ entirely outside the network:
 \begin{itemize}\itemsep0pt
 \item A geometric, learning-free observability measure that ranks
       camera-only occupancy error better than the dataset's own camera
-      mask by \Hii\ \HiiCI\ AUROC on a sealed test split.
+      mask by \Hii\ \HiiCI\ AUROC on a sealed test split, in two forms:
+      an evaluation-time form resolving occlusion against ground-truth
+      geometry, and a deployable form resolving it against the model's own
+      predicted occupancy (\cref{sec:deployable}).
 \item The granularity inversion: confidence dominates geometry per voxel
       and per frame, geometry wins per object, and we give the mechanism
       that predicts this rather than observing it after the fact.
 \item An evaluation protocol in which every hypothesis is registered with
-      its acceptance criterion before the data exists. Four of ten
-      decided hypotheses failed, and all four are reported
+      its acceptance criterion before the data exists. Of ten decided entries four did not meet their
+      pre-registered criterion and two remain pending; all are reported
       (\cref{tab:ledger}).
 \end{itemize}
 
@@ -295,8 +299,28 @@ s_i(v) \;=\; \mathbb{1}\!\left[\,v = \arg\min_{u \in \mathcal{R}_i(v)}
           \; \lVert u - o_i \rVert \; \text{s.t.}\; \text{occ}(u) \,\right],
 \label{eq:firsthit}
 \end{equation}
-where $\mathcal{R}_i(v)$ is the set of voxels the ray traverses and $o_i$ is
-the camera centre. This is the expensive part of the definition and it is
+where $\mathcal{R}_i(v)$ is the set of voxels the ray traverses, $o_i$ is
+the camera centre, and $\text{occ}(\cdot)$ is an occupancy field saying
+which voxels block light.
+
+\paragraph{Where $\text{occ}(\cdot)$ comes from, and why it matters.}
+Deciding whether a voxel is the first hit along a ray requires knowing what
+else in the scene is solid, so \cref{eq:firsthit} is only as available as
+its occupancy field. We are explicit about this because it decides what the
+measure can be used for, and we evaluate two choices:
+\begin{description}\itemsep1pt
+\item[$\text{occ}_{\text{gt}}$] the dense Occ3D ground-truth volume. An
+  \emph{evaluation-time} quantity: independent of the occupancy model, which
+  is why it transfers unchanged between architectures, but not available on
+  a vehicle. Every number in \cref{sec:h2,sec:inversion} uses it.
+\item[$\text{occ}_{\text{pred}}$] the model's own predicted occupancy, which
+  \emph{is} available at inference. \Cref{sec:deployable} asks whether the
+  object-level result survives the substitution.
+\end{description}
+In neither case does observability read the network's confidence or any
+uncertainty head; under $\text{occ}_{\text{pred}}$ it reads only the hard
+class decision. That keeps \cref{fig:teaser} a comparison between two kinds
+of information rather than two readings of the same one. This is the expensive part of the definition and it is
 why nine successive z-buffer approximations were abandoned: each of them
 decides occlusion per voxel rather than per pixel, and a voxel can be
 half-occluded. The marcher used here is $3.46\times$ faster than the
@@ -363,14 +387,42 @@ interest is that it is obtained by a quantity that costs no training, reads
 nothing from the network, and is available before the forward pass.
 
 \subsection{The granularity inversion}
+\label{sec:inversion}
+\paragraph{What counts as a miss.} For a ground-truth box $B_j$ of class
+$y_j$ with predicted labels $\hat{y}$:
+\begin{align}
+M_j^{\text{any}} &= \mathbb{1}\!\left[\;\nexists\, v \in B_j :
+   \hat{y}(v) \neq \textit{free}\;\right], \label{eq:missany}\\
+M_j^{\text{dyn}} &= \mathbb{1}\!\left[\;\nexists\, v \in B_j :
+   \hat{y}(v) \in \mathcal{D}\;\right], \label{eq:missdyn}
+\end{align}
+with $\mathcal{D}$ the dynamic classes. $M^{\text{any}}$ is the strict
+reading, nothing at all predicted inside the box; $M^{\text{dyn}}$ is the
+one a planner cares about, nothing \emph{movable} predicted there, so a box
+filled with predicted road surface counts as a miss. We report
+$M^{\text{dyn}}$ and give $M^{\text{any}}$ beside it, because the choice
+changes the rate and a reader should see both. Boxes with no LiDAR return
+are excluded, and only boxes holding at least one ground-truth voxel of
+their own class are scored.
+
+\paragraph{Two rates, two conditionings.} Across all dynamic objects in the
+test split, $10.5\%$ are missed under $M^{\text{dyn}}$. \emph{Conditional on
+the object's voxels having zero observability} it is \missHi, and at full
+observability \missLo\ (\cref{fig:teaser}b). The figures are not in tension
+and we state the conditioning each time.
+
 At the voxel level, maximum softmax probability reaches \voxMSP\ against
 observability's \voxObs. At the frame level the ordering holds but
 narrows, \frmConf\ against \frmObs. At the object level it reverses:
 observability reaches \objObs\ against confidence's \objMSP, a gain of
 \objDelta\ \objDeltaCI\ over \nObj\ objects in \nFrames\ frames.
 
-A LiDAR point-count oracle, which sees the modality the model does not,
-reaches \objOracle. Observability is within noise of it.
+A LiDAR point-count oracle reaches \objOracle. It counts returns inside the
+ground-truth box in the current sweep and sees a modality the model never
+receives, so it is an upper reference, not a competitor. The paired contrast
+is $-0.0121$ $[-0.0289, +0.0052]$: observability is \emph{statistically
+indistinguishable} from it on this test set, which is weaker than matching
+it and is what the interval supports.
 
 \input{../outputs/tables/table1_perclass}
 
@@ -381,6 +433,38 @@ ties on the rest. Both losses are consistent with the mechanism rather
 than against it: a trailer is large enough that some part of it is almost
 always observed, so observability is near-constant across the class and
 has little left to rank, while the model's confidence still varies.
+
+\subsection{Does it survive a deployable occluder?}
+\label{sec:deployable}
+The result above uses $\text{occ}_{\text{gt}}$ and is a statement about an
+evaluation-time measure. We rebuild observability with
+$\text{occ}_{\text{pred}}$, changing nothing else: same marcher, same
+$\pi_{\text{full}}$, same sealed split. The acceptance criterion was
+registered before the run -- the paired interval on
+$\mathrm{AUROC}(\text{obs}_{\text{pred}}) - \mathrm{AUROC}(\text{MSP})$ at
+object level must exclude zero.
+
+% TODO(A55): numbers land when the rebuild finishes. Reported whichever way
+% it goes; a null bounds the claim to an evaluation-time measure and the
+% GT-occluder figure becomes the diagnostic upper bound beside it.
+
+There is a reason to expect it to survive, and it is the paper's own
+mechanism. What occludes a missed object is usually something the model
+represents perfectly well: in \cref{fig:qualitative} the lamp post is large,
+near and well observed, and the prediction contains it. It is the pedestrian
+behind it that is absent. Geometry derived from the predictions the model
+got right can locate the predictions it got wrong.
+
+\subsection{The combined score}
+Where a combined score appears it is a logistic regression on four features,
+fitted on the development half and applied unchanged to the test half:
+\begin{equation}
+S(v) = \sigma\!\big(w^{\!\top}
+  [\,\mathrm{logit}\,p_{\max}(v),\; m(v),\; \mathrm{obs}(v),\; d(v)\,] + b\big),
+\label{eq:combined}
+\end{equation}
+with $p_{\max}$ the maximum softmax probability, $m$ the top-1 minus top-2
+margin and $d$ range from ego. No weight is tuned on the test half.
 
 \subsection{Downstream: selective prediction}
 A ranking score is only useful if abstaining on its worst-ranked fraction
@@ -452,9 +536,10 @@ ground-truth obstacle voxels fall in volumes with no camera evidence. We
 re-ran the geometry with each of six additional camera placements added to
 the rig. The best of them, a higher roof mount, recovers $2.23\%$ of those
 voxels; a rear telephoto recovers $1.29\%$; no other placement exceeds
-$0.8\%$. The blind volume is not an artifact of this particular rig and is
-not closed by adding a sensor to it, which is the argument for measuring it
-rather than engineering it away.
+$0.8\%$. A voxel counts as recovered when its observability rises from exactly zero
+to any positive value. Six placements are a finite search and license no
+universal claim; what we can say is that none of the placements evaluated
+closes more than a small fraction of the unobserved volume.
 
 \subsection{What did not survive}
 \input{../outputs/tables/table4_ledger}
@@ -465,6 +550,25 @@ rather than engineering it away.
 % largest gap in the evaluation.
 
 % -------------------------------------------------------------------
+\section{Limitations}
+\label{sec:limitations}
+\textbf{One backbone.} Every number is FB-OCC r50. The SurroundOcc
+replication (H2$'$) is registered and unrun, so the claim is about one
+checkpoint of one architecture.
+\textbf{One dataset.} nuScenes only, and Occ3D's annotation geometry defines
+both our ground truth and our occluder set, so a systematic error there is a
+systematic error here.
+\textbf{The occluder.} The headline numbers use $\text{occ}_{\text{gt}}$ and
+are evaluation-time results; \cref{sec:deployable} decides the deployable
+form.
+\textbf{Where it loses.} Confidence beats observability at voxel and frame
+granularity by wide margins; observability alone is a poor selective-risk
+score; confidence plus \texttt{mask\_camera} beats confidence plus
+observability on that test; per class it loses on trailer and bicycle.
+\textbf{No planner.} The downstream argument is motivational. We measure
+ranking quality and selective risk, not collision rate.
+\textbf{Single checkpoint.} Robustness to training stochasticity is untested.
+
 \section{Conclusion}
 Observability is a geometric quantity with one parameter and no learned
 component, and it predicts where a camera-only occupancy model is about to
