@@ -298,9 +298,6 @@ it is unavailable at inference. Inside the mask, where it is constant and
 therefore uninformative by construction, observability still ranks error
 (\cref{fig:maskcam}).
 
-% TODO(fig3): the MAD Fig.3 treatment -- same frame, two maps, annotated
-% on the image with the three contrasts above. Needs one exported scene.
-
 
 \begin{figure*}[t]
 \centering
@@ -413,13 +410,37 @@ transform of the confidence score, so it leaves every ranking metric in this
 paper exactly unchanged. It appears in no AUROC table here, and a reviewer
 should expect its absence.
 
-% TODO(paper): max vs sum pooling over cameras; sensitivity to the single
-% parameter; the seventh-camera counterfactual. All three exist as
-% artifacts and need writing up, none needs the pod.
+\paragraph{Which term carries the result.} \Cref{eq:obs} has two factors and
+a pooling choice, and only one of the three matters. Scoring per-voxel error
+on 675 frames across 145 scenes:
+\begin{center}\small
+\begin{tabular}{lcc}
+\toprule
+Variant & AUROC $\uparrow$ & vs \texttt{mask\_camera} \\
+\midrule
+$\max_i c_i s_i$ \;(ours)        & \textbf{0.6755} & $+0.0575$ \\
+sum over cameras                 & 0.6748 & $+0.0568$ \\
+no temporal term                 & 0.6755 & $+0.0575$ \\
+\textbf{no visibility term} $s_i$ & 0.5908 & $\mathbf{-0.0272}$ \\
+\texttt{mask\_camera}            & 0.6180 & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+Pooling by maximum rather than by sum is worth $+0.0007$, which is nothing;
+we keep the maximum because it is the one with a reading ("seen well by at
+least one camera"), not because it measures better. Dropping the visibility
+factor, so that coverage alone decides, costs $0.0847$ AUROC and drops the
+score \emph{below} \texttt{mask\_camera}. Resolving occlusion is not a
+refinement of this measure. It is the measure.
 
-\subsection{Ablations}
-% TODO(paper): the single parameter; max vs sum pooling; temporal
-% observability; the seventh-camera counterfactual.
+\paragraph{Would a seventh camera fix it?} On 1{,}238 frames, $76.6\%$ of
+ground-truth obstacle voxels fall in volumes with no camera evidence. We
+re-ran the geometry with each of six additional camera placements added to
+the rig. The best of them, a higher roof mount, recovers $2.23\%$ of those
+voxels; a rear telephoto recovers $1.29\%$; no other placement exceeds
+$0.8\%$. The blind volume is not an artifact of this particular rig and is
+not closed by adding a sensor to it, which is the argument for measuring it
+rather than engineering it away.
 
 \subsection{What did not survive}
 \input{../outputs/tables/table4_ledger}
