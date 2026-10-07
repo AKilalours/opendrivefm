@@ -57,13 +57,17 @@ def build():
          "interval excludes zero",
          ci(*vox["combined_minus_MSP"]), "HOLDS"),
 
-        ("S1", "Selective risk improves on the sensor-only volume",
+        # A53b: the two rows below previously used
+        # boot_margin_sensor_mask_minus_obs, whose name does not state which
+        # way the subtraction runs. Replaced with the two unambiguously named
+        # contrasts, which also surfaced a loss the earlier labelling hid.
+        ("S1", "Observability improves selective risk over confidence alone",
          "interval excludes zero",
-         ci(*sel_s["boot_margin_sensor_mask_minus_obs"]), "HOLDS"),
+         ci(*sel_s["boot_margin_vs_conf"]), "HOLDS"),
 
-        ("S2", "Selective risk improves on the full volume",
+        ("S2", "Observability beats \\texttt{mask\\_camera} at selective risk",
          "interval excludes zero",
-         ci(*sel_f["boot_margin_sensor_mask_minus_obs"]), "NULL"),
+         ci(*sel_s["boot_margin_vs_mask"]), "FAILS"),
 
         ("R1", "Observability-conditioned recalibration beats global, on ECE",
          "interval excludes zero",

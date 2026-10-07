@@ -192,16 +192,51 @@ seeing the network's output.}
 \section{Related Work}
 
 \subsection{Camera-only occupancy prediction}
-% TODO(paper): FB-OCC, SurroundOcc, COTR, TPVFormer, Occ3D benchmark.
+Dense 3D occupancy has become the representation of choice for camera-only
+perception because it describes arbitrary geometry rather than a fixed set
+of boxes. BEVFormer~\cite{li2022bevformer} established the spatiotemporal
+attention backbone that most later work inherits; TPVFormer~\cite{huang2023tpvformer}
+replaces the single bird's-eye plane with three orthogonal views;
+SurroundOcc~\cite{wei2023surroundocc} predicts the volume directly from
+multi-camera features with no temporal window; and
+FB-OCC~\cite{li2023fbocc} combines forward and backward view transformation
+and fuses sixteen frames of history. Occ3D~\cite{tian2023occ3d} supplies the
+benchmark all of them are measured on, including the \texttt{mask\_camera}
+flag we examine in \cref{fig:maskcam}.
+
+These systems are evaluated by mIoU, which is an average over voxels. An
+average over voxels cannot express that some of those voxels were never
+visible, and that is the gap this paper works in.
 
 \subsection{Uncertainty and failure prediction}
-% TODO(paper): MSP, temperature scaling, deep ensembles, MC-dropout,
-% selective prediction / risk-coverage, conformal.
+The standard baseline is the maximum softmax probability~\cite{hendrycks2017msp},
+which remains hard to beat on in-distribution misclassification. Temperature
+scaling~\cite{guo2017calibration} fixes the calibration of that score without
+changing its ordering, so it cannot appear in a ranking table at all, a point
+we return to in \cref{sec:ablations}. Deep
+ensembles~\cite{lakshminarayanan2017ensembles} and MC
+dropout~\cite{gal2016dropout} estimate epistemic uncertainty at a multiple of
+inference cost. Selective prediction~\cite{geifman2017selective} evaluates
+such scores by the risk remaining after abstaining on the least certain
+fraction, which is the form that matters for a system allowed to slow down
+rather than guess.
 
-\subsection{Visibility and observability in 3D perception}
-% TODO(paper): closest competitors. End with the explicit delta: prior
-% work treats visibility as a label-validity mask; we treat it as a
-% continuous runtime signal and evaluate it as a failure predictor.
+Every one of these reads the network. Each is therefore a statement about a
+prediction the network produced, which is precisely the limitation
+\cref{fig:teaser} measures.
+
+\subsection{Visibility as a label mask, and as a signal}
+Visibility already appears in this literature, but almost always as a
+\emph{label-validity} device: Occ3D's \texttt{mask\_camera} exists so that
+training and evaluation can ignore voxels no sensor could annotate, and it is
+built from the full rig offline. Recent driving world
+models~\cite{rahimi2026mad, xia2026drivelaw, zhu2026dlwm, tan2026lcdrive}
+likewise treat geometry as something to reconstruct or to condition
+generation on, not as a runtime predictor of where the perception stack is
+about to fail. To the best of our knowledge, this is the first work to treat
+camera visibility as a continuous, inference-time signal and to evaluate it
+head-to-head against the model's own uncertainty as a failure predictor,
+including at object granularity where the comparison reverses.
 
 % -------------------------------------------------------------------
 \section{Observability}
@@ -224,9 +259,35 @@ Coverage is normalised by \fullpx, the projected footprint in pixels at
 which a voxel counts as fully covered. It is fixed once, before any result
 in this paper, and is not retuned per backbone or per split.
 
+\paragraph{Coverage.}
+A voxel of side $r$ at depth $d$ along the optical axis of a camera with
+focal length $f$ projects to a footprint whose area in pixels is
+approximately $(f r / d)^2$. Coverage is that footprint normalised by the
+constant $\pi_{\text{full}}$ and clipped,
+\begin{equation}
+c_i(v) \;=\; \min\!\left(1,\; \frac{(f_i r / d_i(v))^{2}}{\pi_{\text{full}}}\right),
+\qquad \pi_{\text{full}} = 965.0 ,
+\label{eq:coverage}
+\end{equation}
+so a voxel resolved by at least $\pi_{\text{full}}$ pixels counts as fully
+covered and everything beyond that range degrades smoothly rather than
+falling off a threshold.
+
 \paragraph{First-hit semantics.}
-% TODO(paper): per-pixel ray marching, why nine z-buffer formulations
-% failed, and the 3.46x marcher with 0 differing voxels of 30,720,000.
+Visibility $s_i(v)$ is decided by marching the ray from camera $i$ through
+the voxel grid and asking whether $v$ is the first occupied cell it meets:
+\begin{equation}
+s_i(v) \;=\; \mathbb{1}\!\left[\,v = \arg\min_{u \in \mathcal{R}_i(v)}
+          \; \lVert u - o_i \rVert \; \text{s.t.}\; \text{occ}(u) \,\right],
+\label{eq:firsthit}
+\end{equation}
+where $\mathcal{R}_i(v)$ is the set of voxels the ray traverses and $o_i$ is
+the camera centre. This is the expensive part of the definition and it is
+why nine successive z-buffer approximations were abandoned: each of them
+decides occlusion per voxel rather than per pixel, and a voxel can be
+half-occluded. The marcher used here is $3.46\times$ faster than the
+reference implementation and agrees with it on all $30{,}720{,}000$ voxels
+tested, with zero differing.
 
 \subsection{Why not \texttt{mask\_camera}}
 Occ3D-nuScenes ships a per-voxel \texttt{mask\_camera} flag, and the
@@ -278,7 +339,17 @@ all intervals; risk-coverage and AURC for selective prediction; ECE in 15
 bins.
 
 \subsection{Observability outranks the camera mask}
-% TODO(paper): H2 result, table, and the full-split vs test-split numbers.
+\label{sec:h2}
+Scoring per-voxel error inside \texttt{mask\_camera}, where the mask is
+constant and therefore ranks nothing, observability reaches an AUROC of
+$0.6321$. The pre-registered contrast H2 against the mask is
+\Hii\ \HiiCI\ on the test half, and $+0.0534$ on the full 150 scenes; the
+test figure is the one we quote, and the two are given together so the
+difference cannot be mistaken for a selection effect.
+
+This is a modest effect in absolute terms and we do not inflate it. Its
+interest is that it is obtained by a quantity that costs no training, reads
+nothing from the network, and is available before the forward pass.
 
 \subsection{The granularity inversion}
 At the voxel level, maximum softmax probability reaches \voxMSP\ against
@@ -301,7 +372,50 @@ always observed, so observability is near-constant across the class and
 has little left to rank, while the model's confidence still varies.
 
 \subsection{Downstream: selective prediction}
-% TODO(paper): sensor-only volume holds, full volume is null. Report both.
+A ranking score is only useful if abstaining on its worst-ranked fraction
+actually lowers risk. Measuring area under the risk-coverage curve
+(AURC, lower is better) on the sensor-only volume:
+\begin{center}\small
+\begin{tabular}{lc}
+\toprule
+Score & AURC $\downarrow$ \\
+\midrule
+confidence alone                & 0.2526 \\
+confidence + \texttt{mask\_camera} & \textbf{0.2128} \\
+confidence + observability      & 0.2160 \\
+observability alone             & 0.3156 \\
+\texttt{mask\_camera} alone     & 0.3542 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Adding observability to confidence reduces AURC by
+$0.0365$ $[0.0307, 0.0425]$, which holds. Against
+confidence plus \texttt{mask\_camera} it is $-0.0033$
+$[-0.0051, -0.0015]$: \textbf{observability loses this comparison, and the
+interval excludes zero.} We report it because an oracle mask built from the
+full sensor suite offline ought to win a volume-level abstention test, and
+because the object-level result in \cref{tab:perclass} is not weakened by
+it. The two measure different things, and only one of them is available on
+a vehicle.
+
+\subsection{Ablations}
+\label{sec:ablations}
+\paragraph{Temporal accumulation.} Propagating past observability through
+ego poses with an exponential half-life, and scoring on the same voxels:
+half-lives of $0.5$, $1$, $2$ and $4$\,s give $+0.0080$, $+0.0083$,
+$+0.0156$ and $+0.0196$ AUROC over the instantaneous map. The half-life was
+fixed at $2$\,s before the run; at that value the interval is
+$[+0.0098, +0.0214]$ and H4 holds. The monotone trend to $4$\,s is reported
+but was not registered and is not claimed.
+
+\paragraph{Temperature scaling is not a competitor.} It is a monotone
+transform of the confidence score, so it leaves every ranking metric in this
+paper exactly unchanged. It appears in no AUROC table here, and a reviewer
+should expect its absence.
+
+% TODO(paper): max vs sum pooling over cameras; sensitivity to the single
+% parameter; the seventh-camera counterfactual. All three exist as
+% artifacts and need writing up, none needs the pod.
 
 \subsection{Ablations}
 % TODO(paper): the single parameter; max vs sum pooling; temporal
@@ -317,7 +431,16 @@ has little left to rank, while the model's confidence still varies.
 
 % -------------------------------------------------------------------
 \section{Conclusion}
-% TODO(paper): one paragraph. No new claims.
+Observability is a geometric quantity with one parameter and no learned
+component, and it predicts where a camera-only occupancy model is about to
+fail. Its value is not uniform across granularity, and that non-uniformity
+is the result: the model's own confidence is the better signal for whether a
+voxel is wrong, and the worse signal for whether an object is missing
+entirely, because a missed object is a confident prediction of free space.
+Geometry has no such blind spot, since it never consults the model. We
+report four failed hypotheses alongside the successful ones and a selective
+prediction comparison that observability loses, because an evaluation
+protocol that only produces agreeable results is not measuring anything.
 
 {\small
 \bibliographystyle{ieeetr}
