@@ -125,6 +125,24 @@ their criterion and two remain pending; all are reported.
 % -------------------------------------------------------------------
 \section{Introduction}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig0_hero.pdf}
+\caption{\textbf{When confidence is blind: a missed object appears as confident free space.}
+(a)~A pedestrian at $18$\,m, behind a lamp post, into direct sun; the
+ground truth contains it. (b)~The predicted occupancy over the same volume
+contains nothing inside the circle, and the model assigns the free class
+there at confidence $1.00$. Its softmax offers no signal, because a
+confident prediction of \emph{free} is exactly what a missed object looks
+like. (c)~Observability for the same frame: the post casts a
+zero-observability wedge and the pedestrian sits inside it. (d)~The
+consequence, over the sealed test split. Confidence ranks error better at
+voxel and frame granularity; at object granularity --- the question
+\emph{was anything here at all} --- the ordering inverts. Panels (a)--(c)
+are one token; (d) is \nObj\ objects.}
+\label{fig:hero}
+\end{figure*}
+
 % MAD opens on animators drawing an animatic. The equivalent concrete
 % opening here is the failure itself, not a literature survey.
 A camera-only occupancy model asked about a volume of space it cannot see
@@ -201,23 +219,6 @@ outside the network from the camera rig and a scene-geometry field:
       including this one (\cref{tab:ledger}).
 \end{itemize}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{fig0_hero.pdf}
-\caption{\textbf{When confidence is blind: a missed object appears as confident free space.}
-(a)~A pedestrian at $18$\,m, behind a lamp post, into direct sun; the
-ground truth contains it. (b)~The predicted occupancy over the same volume
-contains nothing inside the circle, and the model assigns the free class
-there at confidence $1.00$. Its softmax offers no signal, because a
-confident prediction of \emph{free} is exactly what a missed object looks
-like. (c)~Observability for the same frame: the post casts a
-zero-observability wedge and the pedestrian sits inside it. (d)~The
-consequence, over the sealed test split. Confidence ranks error better at
-voxel and frame granularity; at object granularity --- the question
-\emph{was anything here at all} --- the ordering inverts. Panels (a)--(c)
-are one token; (d) is \nObj\ objects.}
-\label{fig:hero}
-\end{figure*}
 
 \begin{figure}[t]
 \centering
@@ -252,6 +253,24 @@ seeing the network's output.}
 
 % -------------------------------------------------------------------
 \section{Related Work}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig3_whynotmask.pdf}
+\caption{\textbf{Why not \texttt{mask\_camera}, argued on the data.}
+All four panels are the same frame. \texttt{mask\_camera} is the obvious
+objection to this paper and it does not survive contact with its own
+definition: it is binary, it is constructed offline from the full sensor
+suite including the LiDAR the model never receives, and it is not available
+at inference, so inside the mask it is constant and ranks nothing. Range
+from ego is continuous and free, and ignores occlusion, which is the entire
+phenomenon. Observability is continuous, independent of the model and of its
+confidence, and resolves occlusion by first-hit ray marching --- but it
+needs an external occupancy field to do so, and rebuilding it from the
+model's own prediction drops it below plain softmax
+(\cref{sec:deployable}). The panel states both.}
+\label{fig:maskcam}
+\end{figure*}
 
 \subsection{Camera-only occupancy prediction}
 Dense 3D occupancy has become the representation of choice for camera-only
@@ -401,23 +420,6 @@ image both read $1$. Observability is continuous over that same support
 own job, which is deciding where labels are valid.
 
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{fig3_whynotmask.pdf}
-\caption{\textbf{Why not \texttt{mask\_camera}, argued on the data.}
-All four panels are the same frame. \texttt{mask\_camera} is the obvious
-objection to this paper and it does not survive contact with its own
-definition: it is binary, it is constructed offline from the full sensor
-suite including the LiDAR the model never receives, and it is not available
-at inference, so inside the mask it is constant and ranks nothing. Range
-from ego is continuous and free, and ignores occlusion, which is the entire
-phenomenon. Observability is continuous, independent of the model and of its
-confidence, and resolves occlusion by first-hit ray marching --- but it
-needs an external occupancy field to do so, and rebuilding it from the
-model's own prediction drops it below plain softmax
-(\cref{sec:deployable}). The panel states both.}
-\label{fig:maskcam}
-\end{figure*}
 
 % -------------------------------------------------------------------
 \section{Experiments}
@@ -562,6 +564,22 @@ $-0.0477$ $[-0.0828, -0.0135]$ \emph{below} MSP, and
 $-0.0936$ $[-0.1113, -0.0761]$ below its own evaluation-time counterpart.
 A55 fails on its pre-registered criterion.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig5_deployability.pdf}
+\caption{\textbf{Why the deployable occluder fails.}
+(a)~Observability resolved against the ground-truth volume.
+(b)~The same frame resolved against the model's own predicted occupancy,
+which holds $37\times$ more occupied voxels here and therefore casts far
+more shadow. (c)~The measured mechanism over 10{,}790 objects: observability
+at \emph{missed} objects is unchanged by the substitution, while at
+\emph{detected} objects it collapses, so the separation between the two
+shrinks by a quarter. (d)~The cost in object-level AUROC. The deployable
+form falls below plain softmax. This is over-occlusion, not the circularity
+one would predict.}
+\label{fig:deploy}
+\end{figure*}
+
 \paragraph{Which side of the comparison moves.} The intuitive explanation
 is that a missed object, being predicted free, stops occluding, so the ray
 passes through and observability is falsely \emph{high} exactly where we
@@ -599,6 +617,27 @@ geometry independent of the occupancy model --- a monocular depth network,
 a prior map, a second modality --- is not ruled out by this result. We have
 not tried one, and we do not claim it would work.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig6_quadrant.pdf}
+\caption{\textbf{Confidence and observability are different axes, populated
+with real objects.}
+(a)~Test objects split at the population medians. The taxonomy one would
+draw is not what the data gives: the worst cell is low confidence with low
+observability, not high confidence with low observability. What the data
+does support is the paper's claim. Holding confidence \emph{high} and
+varying observability gives $23.6\%$ against $3.7\%$ missed, a $6.3\times$
+difference at matched confidence, so the two axes are not redundant. Note
+also that the median maximum-softmax value over all objects is $1.00$:
+more than half carry the saturated value, which is the problem the paper
+starts from.
+(b)~Per class. Observability wins decisively on car and truck, ties on
+pedestrian and bus, and loses on construction vehicle, bicycle and
+trailer. Neither signal dominates, and we report the losses at the same
+size as the wins.}
+\label{fig:quadrant}
+\end{figure*}
+
 \subsection{The two signals are not redundant}
 If observability were merely a noisy restatement of confidence, holding one
 fixed would flatten the other. It does not (\cref{fig:quadrant}a). Among
@@ -621,21 +660,6 @@ $\text{occ}_{\text{gt}}$ optimistic. We have not quantified this and state
 it because it cuts against us.
 
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{fig5_deployability.pdf}
-\caption{\textbf{Why the deployable occluder fails.}
-(a)~Observability resolved against the ground-truth volume.
-(b)~The same frame resolved against the model's own predicted occupancy,
-which holds $37\times$ more occupied voxels here and therefore casts far
-more shadow. (c)~The measured mechanism over 10{,}790 objects: observability
-at \emph{missed} objects is unchanged by the substitution, while at
-\emph{detected} objects it collapses, so the separation between the two
-shrinks by a quarter. (d)~The cost in object-level AUROC. The deployable
-form falls below plain softmax. This is over-occlusion, not the circularity
-one would predict.}
-\label{fig:deploy}
-\end{figure*}
 
 \subsection{The combined score}
 Where a combined score appears it is a logistic regression on four features,
@@ -776,26 +800,6 @@ them.
 
 % -------------------------------------------------------------------
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{fig6_quadrant.pdf}
-\caption{\textbf{Confidence and observability are different axes, populated
-with real objects.}
-(a)~Test objects split at the population medians. The taxonomy one would
-draw is not what the data gives: the worst cell is low confidence with low
-observability, not high confidence with low observability. What the data
-does support is the paper's claim. Holding confidence \emph{high} and
-varying observability gives $23.6\%$ against $3.7\%$ missed, a $6.3\times$
-difference at matched confidence, so the two axes are not redundant. Note
-also that the median maximum-softmax value over all objects is $1.00$:
-more than half carry the saturated value, which is the problem the paper
-starts from.
-(b)~Per class. Observability wins decisively on car and truck, ties on
-pedestrian and bus, and loses on construction vehicle, bicycle and
-trailer. Neither signal dominates, and we report the losses at the same
-size as the wins.}
-\label{fig:quadrant}
-\end{figure*}
 
 \section{Limitations}
 \label{sec:limitations}
