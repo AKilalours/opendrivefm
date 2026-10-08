@@ -130,18 +130,13 @@ def main():
     bx.set_title("(b)  and neither wins everywhere", fontsize=8.6,
                  loc="left", pad=20)
 
-    fig.text(0.085, -0.03,
-             f"(a) {len(obs):,} test objects split at the population medians, "
-             f"$O$ {o_t:.2f} and MSP {c_t:.2f} \u2014 more than half of all "
-             f"objects carry the maximum softmax value, which is itself the "
-             f"problem; shading tracks the miss rate.  (b) bars are the "
-             f"paired scene-bootstrap mean, rules the 95% interval.",
-             fontsize=7, color=MUTED, ha="left", va="top")
-
     out = os.path.join(ROOT, "outputs", "figures")
     for ext in ("pdf", "png"):
+        # no bbox_inches="tight": it expands the canvas to whatever ink
+        # overflows the figure box, which silently rescales the whole figure
+        # when LaTeX fits it to \textwidth.
         fig.savefig(os.path.join(out, f"fig6_quadrant.{ext}"),
-                    bbox_inches="tight", dpi=400, facecolor="white")
+                    dpi=600, facecolor="white")
     plt.close(fig)
     for m, _, _, name, _, _ in cells:
         print(f"  {name:<14} n={int(m.sum()):>6,}  missed {100*miss[m].mean():5.1f}%")

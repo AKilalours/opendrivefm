@@ -129,9 +129,9 @@ observability map are one sealed-test frame, token
 \label{fig:hero}
 \end{figure*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{fig_whyconf.pdf}
+\includegraphics[width=0.92\textwidth]{fig_whyconf.pdf}
 \caption{\textbf{Confidence can only rate a prediction that exists.} A
 wrong prediction leaves a low-confidence trace, so softmax flags it. A
 \emph{missing} prediction leaves a maximally confident vote for
@@ -141,7 +141,7 @@ consults the model, so the two cases are identical to it and the second one
 is still visible. Probabilities are illustrative; the measured version of
 this argument is \cref{tab:perclass} and \cref{fig:quadrant}.}
 \label{fig:whyconf}
-\end{figure}
+\end{figure*}
 
 % MAD opens on animators drawing an animatic. The equivalent concrete
 % opening here is the failure itself, not a literature survey.
@@ -756,21 +756,20 @@ nothing about them.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig6_quadrant.pdf}
-\caption{\textbf{Confidence and observability are different axes, populated
-with real objects.}
-(a)~Test objects split at the population medians. The taxonomy one would
-draw is not what the data gives: the worst cell is low confidence with low
-observability, not high confidence with low observability. What the data
-does support is the paper's claim. Holding confidence \emph{high} and
-varying observability gives $23.6\%$ against $3.7\%$ missed, a $6.3\times$
-difference at matched confidence, so the two axes are not redundant. Note
-also that the median maximum-softmax value over all objects is $1.00$:
-more than half carry the saturated value, which is the problem the paper
-starts from.
-(b)~Per class. Observability wins decisively on car and truck, ties on
-pedestrian and bus, and loses on construction vehicle, bicycle and
-trailer. Neither signal dominates, and we report the losses at the same
-size as the wins.}
+\caption{\textbf{Confidence and observability are different axes,
+populated with real objects.} (a)~Test objects split at the population
+medians, $O$ $0.36$ and MSP $1.00$ --- more than half of all objects carry
+the maximum softmax value, which is the problem the paper starts from;
+shading tracks the miss rate. The taxonomy one would draw is not what the
+data gives: the worst cell is low confidence with low observability, not
+high confidence with low observability. What the data does support is the
+paper's claim. Holding confidence \emph{high} and varying observability
+gives $23.6\%$ against $3.7\%$ missed, a $6.3\times$ difference at matched
+confidence, so the two axes are not redundant. (b)~Per class; bars are the
+paired scene-bootstrap mean and rules the 95\% interval. Observability
+wins decisively on car and truck, ties on pedestrian and bus, and loses on
+construction vehicle, bicycle and trailer. Neither signal dominates, and
+we report the losses at the same size as the wins.}
 \label{fig:quadrant}
 \end{figure*}
 

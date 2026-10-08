@@ -161,7 +161,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     for ext in ("pdf", "png"):
         fig.savefig(os.path.join(OUT, f"fig1_granularity.{ext}"),
-                    bbox_inches="tight", dpi=400,
+                    dpi=600,
                     facecolor="white", edgecolor="none")
     plt.close(fig)
 
