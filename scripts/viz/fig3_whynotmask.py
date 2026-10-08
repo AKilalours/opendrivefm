@@ -35,7 +35,7 @@ def main():
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "Nimbus Roman", "DejaVu Serif"],
-        "font.size": 7.6, "text.color": INK, "axes.labelcolor": INK,
+        "font.size": 8.2, "text.color": INK, "axes.labelcolor": INK,
         "xtick.color": INK, "ytick.color": INK,
         "pdf.fonttype": 42, "ps.fonttype": 42,
     })
@@ -50,24 +50,24 @@ def main():
     A.imshow(mk.any(2).T, origin="lower", extent=ext, cmap="gray",
              vmin=0, vmax=1, interpolation="nearest")
     A.set_title("(a)  mask_camera: binary, no occlusion",
-                fontsize=8, loc="left", pad=3)
+                fontsize=8.4, loc="left", pad=3)
 
     # (b) observability, BEV, same frame
     B = ax[0, 1]
     im = B.imshow(obs.max(2).T, origin="lower", extent=ext, cmap="viridis",
                   vmin=0, vmax=1, interpolation="nearest")
     B.set_title("(b)  $O(v;\\mathcal{G})$: continuous, occlusion-aware",
-                fontsize=8, loc="left", pad=3)
+                fontsize=8.4, loc="left", pad=3)
     cb = fig.colorbar(im, ax=B, fraction=0.046, pad=0.02)
-    cb.set_ticks([0, 0.5, 1.0]); cb.ax.tick_params(labelsize=6.4, length=2)
+    cb.set_ticks([0, 0.5, 1.0]); cb.ax.tick_params(labelsize=7, length=2)
     cb.outline.set_linewidth(0.5)
 
     for a in (A, B):
         a.plot(0, 0, marker="^", ms=4.5, color="white", mec=INK, mew=0.6, zorder=6)
         a.set_xticks([-40, 0, 40]); a.set_yticks([-40, 0, 40])
-        a.tick_params(labelsize=6.4, length=2)
-        a.set_xlabel("y (m)", fontsize=6.8, labelpad=1)
-        a.set_ylabel("x (m)", fontsize=6.8, labelpad=1)
+        a.tick_params(labelsize=7, length=2)
+        a.set_xlabel("y (m)", fontsize=7, labelpad=1)
+        a.set_ylabel("x (m)", fontsize=7, labelpad=1)
         for s in a.spines.values():
             s.set_linewidth(0.6)
 
@@ -82,12 +82,12 @@ def main():
     C.plot(cen, h / h.sum(), color=C_GEOM, lw=1.3, zorder=4,
            label="$O(v;\\mathcal{G})$")
     C.set_xlim(-0.04, 1.04); C.set_yscale("log"); C.set_ylim(2e-4, 1.6)
-    C.set_xlabel("value", fontsize=7.2, labelpad=1.5)
-    C.set_ylabel("fraction of voxels (log)", fontsize=7.2, labelpad=2)
-    C.legend(frameon=False, fontsize=6.8, loc="upper right",
+    C.set_xlabel("value", fontsize=7.8, labelpad=1.5)
+    C.set_ylabel("fraction of voxels (log)", fontsize=7.8, labelpad=2)
+    C.legend(frameon=False, fontsize=7, loc="upper right",
              handlelength=1.4, borderaxespad=0.2)
     C.set_title(f"(c)  support, {st['frames']} sealed-test frames",
-                fontsize=8, loc="left", pad=3)
+                fontsize=8.4, loc="left", pad=3)
 
     # (d) measured error rate by observability decile, inside mask_camera = 1
     D = ax[1, 1]
@@ -101,15 +101,15 @@ def main():
         D.plot(x[revi], r[revi], "o", ms=7.5, mfc="none", mec=C_MASK,
                mew=1.3, zorder=5)
     D.set_xlim(0, 1); D.set_xlabel("$O(v;\\mathcal{G})$ decile",
-                                   fontsize=7.2, labelpad=1.5)
-    D.set_ylabel("per-voxel error rate", fontsize=7.2, labelpad=2)
+                                   fontsize=7.8, labelpad=1.5)
+    D.set_ylabel("per-voxel error rate", fontsize=7.8, labelpad=2)
     D.set_title("(d)  inside mask_camera = 1, error still varies with $O$",
-                fontsize=8, loc="left", pad=3)
+                fontsize=8.4, loc="left", pad=3)
     D.text(0.97, 0.94, f"{st['reversals']} reversals",
-           transform=D.transAxes, ha="right", va="top", fontsize=6.8,
+           transform=D.transAxes, ha="right", va="top", fontsize=7,
            color=C_MASK)
     for a in (C, D):
-        a.tick_params(labelsize=6.4, length=2)
+        a.tick_params(labelsize=7, length=2)
         for s in ("top", "right"):
             a.spines[s].set_visible(False)
         for s in ("left", "bottom"):
@@ -118,7 +118,7 @@ def main():
     os.makedirs(os.path.join(ROOT, "outputs/figures"), exist_ok=True)
     out = os.path.join(ROOT, "outputs/figures/fig3_whynotmask.pdf")
     fig.savefig(out, dpi=600)
-    fig.savefig(out.replace(".pdf", ".png"), dpi=300)
+    fig.savefig(out.replace(".pdf", ".png"), dpi=600)
     print("token", tok, "| frames", st["frames"], "| reversals", st["reversals"])
     print("wrote", out)
 

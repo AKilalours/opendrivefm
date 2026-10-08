@@ -144,7 +144,7 @@ def main():
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "Nimbus Roman", "DejaVu Serif"],
-        "font.size": 7.6, "text.color": INK,
+        "font.size": 8.2, "text.color": INK,
         "pdf.fonttype": 42, "ps.fonttype": 42,
     })
     fig, ax = plt.subplots(1, 4, figsize=(7.0, 1.52))
@@ -184,32 +184,34 @@ def main():
         ax[i].add_patch(Rectangle((u0 - pad, v0 - pad), u1 - u0 + 2 * pad,
                                   v1 - v0 + 2 * pad, fill=False, lw=1.3,
                                   ec=col, ls=(0, (3.5, 2.5)), zorder=7))
-        ax[i].annotate(lab, xy=((u0 + u1) / 2, v0 - pad), xycoords="data",
-                       xytext=(0, 26), textcoords="offset points",
-                       ha="center", va="bottom", fontsize=6.4, color=col,
+        ax[i].annotate(lab, xy=((u0 + u1) / 2, v1 + pad), xycoords="data",
+                       xytext=(0, -30), textcoords="offset points",
+                       ha="center", va="top", fontsize=7, color=col,
+                       bbox=dict(fc="white" if col == C_HOT else "black",
+                                 ec="none", alpha=0.72, pad=1.6),
                        arrowprops=dict(arrowstyle="->", color=col, lw=0.9),
                        zorder=8)
 
     for i, t_ in enumerate(["(a)  input", "(b)  ground truth",
                             "(c)  prediction", "(d)  observability"]):
-        ax[i].set_title(t_, fontsize=7.8, loc="left", pad=2.5)
+        ax[i].set_title(t_, fontsize=8.4, loc="left", pad=2.5)
 
     cax = fig.add_axes([0.800, 0.072, 0.140, 0.026])
     sm = plt.cm.ScalarMappable(cmap="viridis",
                                norm=plt.Normalize(0, 1))
     cb = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.set_ticks([0, 1]); cb.ax.tick_params(labelsize=5.6, length=1.6, pad=1)
-    cb.set_label("$O(v;\\mathcal{G})$", fontsize=6.0, labelpad=1.5)
+    cb.set_ticks([0, 1]); cb.ax.tick_params(labelsize=7, length=1.6, pad=1)
+    cb.set_label("$O(v;\\mathcal{G})$", fontsize=7, labelpad=1.5)
     cb.outline.set_linewidth(0.4)
 
     fig.text(0.006, 0.022,
              f"{meta['cat'].split('.')[-1]} at {meta['rng']} m  ·  "
              f"{meta['n']} ground-truth voxels  ·  predicted free throughout  ·  "
              f"max O = {meta['obs']:.2f}  ·  {use.replace('_',' ').lower()}  ·  "
-             f"token {tok[:8]}", fontsize=5.8, color="#5a5a5a")
+             f"token {tok[:8]}", fontsize=7, color="#5a5a5a")
 
     out = os.path.join(ROOT, "outputs/figures/fig2_qualitative.pdf")
-    fig.savefig(out, dpi=600); fig.savefig(out.replace(".pdf", ".png"), dpi=300)
+    fig.savefig(out, dpi=600); fig.savefig(out.replace(".pdf", ".png"), dpi=600)
     print("token", tok, meta, "| cam", use)
     print("wrote", out)
 

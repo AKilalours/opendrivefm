@@ -36,7 +36,7 @@ def main():
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "Nimbus Roman", "DejaVu Serif"],
-        "font.size": 8, "text.color": INK,
+        "font.size": 8.4, "text.color": INK,
         "pdf.fonttype": 42, "ps.fonttype": 42,
     })
     fig, (ax, bx) = plt.subplots(1, 2, figsize=(7.0, 2.85),
@@ -59,21 +59,21 @@ def main():
         ax.add_patch(plt.Rectangle((cxp, cyp), 1, 1, facecolor=C_HOT,
                                    alpha=shade, edgecolor="#ffffff", lw=2))
         ax.text(cxp + .5, cyp + .74, name, ha="center", va="center",
-                fontsize=8.4, color=col,
+                fontsize=8.8, color=col,
                 fontweight="bold" if col == C_HOT else "normal")
         ax.text(cxp + .5, cyp + .56, sub, ha="center", va="center",
-                fontsize=6.2, color=MUTED, style="italic")
+                fontsize=7, color=MUTED, style="italic")
         ax.text(cxp + .5, cyp + .34, f"{mr:.1f}%", ha="center", va="center",
                 fontsize=12.5, color=INK, fontweight="bold")
         ax.text(cxp + .5, cyp + .17, f"missed   n = {n:,}", ha="center",
-                va="center", fontsize=6.2, color=MUTED)
+                va="center", fontsize=7, color=MUTED)
     ax.set_xlim(0, 2); ax.set_ylim(0, 2)
-    ax.set_xticks([0.5, 1.5]); ax.set_xticklabels(["low", "high"], fontsize=7.5)
-    ax.set_yticks([0.5, 1.5]); ax.set_yticklabels(["low", "high"], fontsize=7.5)
+    ax.set_xticks([0.5, 1.5]); ax.set_xticklabels(["low", "high"], fontsize=8.1)
+    ax.set_yticks([0.5, 1.5]); ax.set_yticklabels(["low", "high"], fontsize=8.1)
     ax.set_xlabel("observability  $O_{\\mathrm{GT}}$   \"was there evidence?\"",
-                  fontsize=7.8, labelpad=3)
+                  fontsize=8.4, labelpad=3)
     ax.set_ylabel("confidence  (MSP)\n\"is my prediction reliable?\"",
-                  fontsize=7.8, labelpad=3)
+                  fontsize=8.4, labelpad=3)
     ax.tick_params(length=0)
     for sp in ax.spines.values():
         sp.set_visible(False)
@@ -85,10 +85,10 @@ def main():
                 annotation_clip=False, zorder=7)
     ax.text(0.5, 1.045, f"at matched high confidence, "
             f"{hi_lo/hi_hi:.1f}$\\times$ the miss rate",
-            transform=ax.transAxes, ha="center", va="bottom", fontsize=6.8,
+            transform=ax.transAxes, ha="center", va="bottom", fontsize=7,
             color=INK, fontweight="bold")
     ax.set_title("(a)  The two axes are not the same question",
-                 fontsize=8.2, loc="left", pad=20)
+                 fontsize=8.6, loc="left", pad=20)
 
     # ---- (b) per class, where it wins and where it loses ---------------
     d = json.load(open(os.path.join(ROOT,
@@ -106,12 +106,12 @@ def main():
     for yy, c, v in zip(y, d, vals):
         off = 0.012 if v > 0 else -0.012
         bx.text(v + off, yy, f"{v:+.3f}", va="center",
-                ha="left" if v > 0 else "right", fontsize=6.6, color=INK)
+                ha="left" if v > 0 else "right", fontsize=7, color=INK)
     bx.set_yticks(y)
     bx.set_yticklabels([f"{nm.get(c['cls'], c['cls'])}  ({c['n']:,})"
-                        for c in d], fontsize=7)
+                        for c in d], fontsize=7.6)
     bx.set_xlim(-0.345, 0.285)
-    bx.set_xlabel("AUROC:  observability $-$ confidence", fontsize=7.8,
+    bx.set_xlabel("AUROC:  observability $-$ confidence", fontsize=8.4,
                   labelpad=24)
     bx.xaxis.grid(True, color=GRID, lw=0.5, zorder=0); bx.set_axisbelow(True)
     for sp in ("top", "right", "left"):
@@ -121,13 +121,13 @@ def main():
     # bottom-left and top-right. The first draft had them swapped.
     bx.annotate("geometry wins", xy=(0.5, -0.165), xycoords="axes fraction",
                 xytext=(14, 0), textcoords="offset points", ha="left",
-                va="center", fontsize=6.8, color=C_GEOM, fontweight="bold",
+                va="center", fontsize=7, color=C_GEOM, fontweight="bold",
                 annotation_clip=False)
     bx.annotate("confidence wins", xy=(0.5, -0.165), xycoords="axes fraction",
                 xytext=(-14, 0), textcoords="offset points", ha="right",
-                va="center", fontsize=6.8, color=C_CONF, fontweight="bold",
+                va="center", fontsize=7, color=C_CONF, fontweight="bold",
                 annotation_clip=False)
-    bx.set_title("(b)  and neither wins everywhere", fontsize=8.2,
+    bx.set_title("(b)  and neither wins everywhere", fontsize=8.6,
                  loc="left", pad=20)
 
     fig.text(0.085, -0.03,
@@ -136,7 +136,7 @@ def main():
              f"objects carry the maximum softmax value, which is itself the "
              f"problem; shading tracks the miss rate.  (b) bars are the "
              f"paired scene-bootstrap mean, rules the 95% interval.",
-             fontsize=5.7, color=MUTED, ha="left", va="top")
+             fontsize=7, color=MUTED, ha="left", va="top")
 
     out = os.path.join(ROOT, "outputs", "figures")
     for ext in ("pdf", "png"):

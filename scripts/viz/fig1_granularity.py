@@ -52,7 +52,7 @@ def main():
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "Nimbus Roman", "DejaVu Serif"],
-        "font.size": 8,
+        "font.size": 8.4,
         "axes.edgecolor": GRID,
         "axes.labelcolor": INK,
         "text.color": INK,
@@ -75,16 +75,16 @@ def main():
         ax1.barh(y + (h + gap) / 2, conf, height=h, color=C_CONF, zorder=3)
         ax1.barh(y - (h + gap) / 2, geom, height=h, color=C_GEOM, zorder=3)
         ax1.text(conf + 0.008, y + (h + gap) / 2, f"{conf:.3f}",
-                 va="center", ha="left", fontsize=7, color=INK)
+                 va="center", ha="left", fontsize=7.6, color=INK)
         ax1.text(geom + 0.008, y - (h + gap) / 2, f"{geom:.3f}",
-                 va="center", ha="left", fontsize=7, color=INK,
+                 va="center", ha="left", fontsize=7.6, color=INK,
                  fontweight="bold" if geom > conf else "normal")
 
     ax1.set_yticks(range(len(rows)))
-    ax1.set_yticklabels([r[0] for r in reversed(rows)], fontsize=8)
+    ax1.set_yticklabels([r[0] for r in reversed(rows)], fontsize=8.4)
     ax1.set_xlim(0.5, 1.0)
     ax1.set_ylim(-1.05, len(rows) - 0.38)
-    ax1.set_xlabel("AUROC  (ranks model error)", fontsize=8, labelpad=2)
+    ax1.set_xlabel("AUROC  (ranks model error)", fontsize=8.4, labelpad=2)
     ax1.axvline(0.5, color=GRID, lw=0.8, zorder=1)
     ax1.xaxis.grid(True, color=GRID, lw=0.5, zorder=0)
     ax1.set_axisbelow(True)
@@ -96,8 +96,8 @@ def main():
     d = obj["contrasts"]["observability - MSP"]
     ax1.annotate(
         f"geometry wins\n+{d[0]:.3f}  [{d[1]:+.3f}, {d[2]:+.3f}]",
-        xy=(rows[2][2] + 0.004, 0 - (h + gap) / 2 - 0.17), xytext=(0.762, -0.66),
-        fontsize=6.4, color=C_GEOM, ha="center", va="center",
+        xy=(rows[2][2] + 0.004, 0 - (h + gap) / 2 - 0.17), xytext=(0.790, -0.80),
+        fontsize=7, color=C_GEOM, ha="center", va="center",
         arrowprops=dict(arrowstyle="-", lw=0.7, color=C_GEOM,
                         shrinkA=1, shrinkB=1),
     )
@@ -106,11 +106,11 @@ def main():
         plt.Rectangle((0, 0), 1, 1, color=C_CONF, label="confidence"),
         plt.Rectangle((0, 0), 1, 1, color=C_GEOM, label="observability"),
     ], loc="lower left", bbox_to_anchor=(-0.30, 1.02), frameon=False,
-        fontsize=7, handlelength=1.0, handleheight=0.75, ncol=2,
+        fontsize=7.6, handlelength=1.0, handleheight=0.75, ncol=2,
         columnspacing=1.2, handletextpad=0.4)
 
     ax1.set_title("(a)  Confidence ranks voxels.\n      Geometry ranks objects.",
-                  fontsize=8, loc="left", x=-0.30, pad=18, color=INK,
+                  fontsize=8.4, loc="left", x=-0.30, pad=18, color=INK,
                   linespacing=1.35)
 
     # ---------------------------------------------------------------- panel b
@@ -123,15 +123,15 @@ def main():
              marker="o", ms=4.2, mfc=C_GEOM, mec="#fcfcfb", mew=1.0)
     ax2.fill_between(xs, 0, ys, color=C_GEOM, alpha=0.08, zorder=2)
 
-    ax2.text(xs[0] + 0.12, ys[0], f"{ys[0]:.1f}%", fontsize=7,
+    ax2.text(xs[0] + 0.12, ys[0], f"{ys[0]:.1f}%", fontsize=7.6,
              va="center", ha="left", color=INK)
-    ax2.text(xs[-1] - 0.12, ys[-1] + 3.0, f"{ys[-1]:.1f}%", fontsize=7,
+    ax2.text(xs[-1] - 0.12, ys[-1] + 3.0, f"{ys[-1]:.1f}%", fontsize=7.6,
              va="bottom", ha="right", color=INK, fontweight="bold")
 
     ax2.set_xticks(xs)
-    ax2.set_xticklabels(["0", ".21", ".38", ".78", "<1", "=1"], fontsize=7)
-    ax2.set_xlabel("observability band  (upper edge)", fontsize=8, labelpad=2)
-    ax2.set_ylabel("objects the model\nnever predicts", fontsize=8, labelpad=2)
+    ax2.set_xticklabels(["0", ".21", ".38", ".78", "<1", "=1"], fontsize=7.6)
+    ax2.set_xlabel("observability band  (upper edge)", fontsize=8.4, labelpad=2)
+    ax2.set_ylabel("objects the model\nnever predicts", fontsize=8.4, labelpad=2)
     ax2.set_ylim(0, 56)
     ax2.set_xlim(-0.35, len(bands) - 0.65)
     ax2.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.0f}%"))
@@ -142,7 +142,7 @@ def main():
     ax2.tick_params(length=2)
 
     ax2.set_title(f"(b)  Monotone 6/6, n = {miss['objects']:,} objects",
-                  fontsize=8, loc="left", pad=4, color=INK)
+                  fontsize=8.4, loc="left", pad=4, color=INK)
     # A54: missed_detection_test.json's "frames" field counts frames SCANNED,
     # not frames in the split, and reports 6,016 -- the same number as the
     # all-scenes run. The test half holds 3,008. The figure printed the wrong
@@ -156,7 +156,7 @@ def main():
     ax2.text(1.0, -0.41, f"{nfr:,} frames  ·  "
                          f"{obj['scenes']} held-out test scenes  ·  split {digest}",
              transform=ax2.transAxes, ha="right", va="top",
-             fontsize=5.8, color=MUTED)
+             fontsize=7, color=MUTED)
 
     os.makedirs(OUT, exist_ok=True)
     for ext in ("pdf", "png"):
