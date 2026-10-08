@@ -4124,3 +4124,23 @@ deviation of O inside mask_camera = 1.
 Figure 5 (new numbering) is assets/fig_whyconf_src.png, a hand-drawn
 schematic with no data in it; the two probabilities shown are labelled
 illustrative in the figure.
+
+## A59 - Figures 4 and 6 rebuilt (2026-10-08)
+
+Figure 4 (qualitative) moved from four bird's-eye panels to four
+image-space panels on one frame. The prediction and observability panels
+are depth-buffered projections of the voxel grid into the chosen camera
+(nearest voxel wins each pixel block, bounded nearest-neighbour fill of at
+most 4 blocks so no surface is invented). Frame and object selected by
+rule: the largest strictly missed dynamic object in the sealed test split
+with max O < 0.05. Selected ecd49e3c38624c77b8aac8df445d49ba, a rigid bus
+at 43.3 m, 472 annotated voxels, max O = 0.00, no dynamic class predicted
+anywhere in its box and >= 90% of the box predicted free.
+
+Figure 6 (deployability) gains a difference panel O_pred - O_GT, so the
+over-occlusion is visible rather than only asserted, and drops the AUROC
+inset into the caption. Frame 90c191b41e6641c9bd4a66b3cb90bf74, selected
+as the test token with a predicted-occluder volume maximising the
+predicted-minus-GT occupied fraction: 79.0% against 5.4%.
+
+Both figures previously used dc03fe4e. No frame is now used twice.

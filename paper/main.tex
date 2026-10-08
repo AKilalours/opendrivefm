@@ -242,17 +242,19 @@ Confidence cannot flag what the model never predicted.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig2_qualitative.pdf}
-\caption{\textbf{One frame, and the failure this paper is about.}
-(a)~The camera that should see the pedestrian: it stands behind a lamp post,
-into direct sun. (b)~Occ3D ground truth, dynamic classes in red; the
-pedestrian is there. (c)~The FB-OCC prediction over the same volume: nothing
-inside the circle, and the model assigns the free class there at confidence
-$1.00$. Its softmax offers no signal at all, because a confident prediction
-of \emph{free} is exactly what a missed object looks like. (d)~Observability
-for the same frame. The lamp post casts a zero-observability wedge, and the
-pedestrian sits inside it, $\mathrm{obs}=0.00$. The geometry knows the
-volume is unobserved before the network runs, and knows it without ever
-seeing the network's output.}
+\caption{\textbf{A whole bus, predicted as free space, with maximal
+confidence.} One sealed-test frame, token \texttt{ecd49e3c}, in image space.
+(a)~The camera the object falls in. (b)~Occ3D ground truth, dynamic boxes
+projected; the rigid bus at 43.3\,m, thick box, occupies 472 annotated
+voxels. (c)~FB-OCC's predicted occupancy over the same volume, nearest
+surface, coloured by class: no dynamic class is predicted anywhere inside
+that box and the model assigns \emph{free} there at confidence $1.00$.
+Softmax offers no signal, because a confident prediction of free is exactly
+what a missed object looks like. (d)~Geometric observability sampled on the
+ground-truth surface. The marked region is the darkest in the frame,
+$O=0.00$, while the open road either side of it saturates. The geometry
+knows the volume is unobserved before the network runs, and knows it
+without ever reading the network's output.}
 \label{fig:qualitative}
 \end{figure*}
 
@@ -650,15 +652,18 @@ advantage, and the next subsection isolates why.
 \centering
 \includegraphics[width=\textwidth]{fig5_deployability.pdf}
 \caption{\textbf{What changes when the occluder is predicted.}
-(a)~Observability resolved against the ground-truth volume.
-(b)~The same frame resolved against the model's own predicted occupancy,
-which holds $37\times$ more occupied voxels here and therefore casts far
-more shadow. (c)~The measured mechanism over 10{,}790 objects: observability
-at \emph{missed} objects is unchanged by the substitution, while at
+(a)~Observability resolved against the ground-truth volume, one sealed-test
+frame, token \texttt{90c191b4}. (b)~The same frame resolved against the model's
+own predicted occupancy, same colour scale: that field calls 79.0\% of
+voxels occupied against 5.4\% in the ground truth, so it casts far more
+shadow. (c)~Their difference. Red is observability \emph{lost} to the
+substitution, and it dominates: this is over-occlusion, not the circularity
+one would predict. (d)~The measured mechanism over 10{,}790 objects.
+Observability at \emph{missed} objects is unchanged, while at
 \emph{detected} objects it collapses, so the separation between the two
-shrinks by a quarter. (d)~The cost in object-level AUROC. The deployable
-form falls below plain softmax. This is over-occlusion, not the circularity
-one would predict.}
+shrinks by a quarter and the ranking degrades. Object-level AUROC falls
+from $0.765$ with $\mathcal{G}_{GT}$ to $0.671$ with $\mathcal{G}_{pred}$,
+below the $0.718$ of plain softmax.}
 \label{fig:deploy}
 \end{figure*}
 

@@ -1,235 +1,217 @@
 #!/usr/bin/env python3
-"""Figure 2: one frame, four views, and the failure the paper is about.
+"""Figure 4. One sealed-test frame, in image space.
 
-A pedestrian that the camera rig cannot see is absent from the predicted
-occupancy field, and the model is maximally confident about the free space
-it puts there. Observability marks the same cell as unobserved.
+(a) the camera the object falls in
+(b) ground-truth 3D boxes projected
+(c) the model's predicted occupancy projected, painter's algorithm
+(d) geometric observability projected the same way
 
-Everything is real: the camera frame, the Occ3D ground truth, the FB-OCC
-prediction and the observability map, all for one token on the sealed test
-split. Nothing is drawn by hand.
-
-  python3 scripts/viz/fig2_qualitative.py [--token TOK]
+The object is selected by scripts/viz/pick_tokens2.py: the largest strictly
+missed dynamic object in the sealed test split whose maximum observability
+is below 0.05. Nothing here is drawn by hand.
 """
-from __future__ import annotations
-import argparse, glob, importlib.util, json, os
-
+import glob, importlib.util, json, os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Circle
-from matplotlib.colors import ListedColormap, BoundaryNorm
+from matplotlib.patches import Rectangle
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RES, RNG, Z0, FREE = 0.4, 40.0, -1.0, 17
-DEFAULT_TOKEN = "dc03fe4e0a374592af7701c66d5276c4"
-
-C_GEOM, C_HOT, INK, MUTED, GRID = "#1268a8", "#b3261e", "#1a1a1a", "#6b6b6b", "#d9d9d6"
-
-
-def _md():
-    spec = importlib.util.spec_from_file_location(
-        "md", os.path.join(ROOT, "scripts/eval/missed_detection.py"))
-    m = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return m
+RES, RNG_M, Z0, FREE = 0.4, 40.0, -1.0, 17
+INK, C_GT, C_HOT = "#1a1a1a", "#25c04a", "#ff2d2d"
+CB = {"CAM_FRONT": 0., "CAM_FRONT_LEFT": 55., "CAM_FRONT_RIGHT": -55.,
+      "CAM_BACK_LEFT": 110., "CAM_BACK_RIGHT": -110., "CAM_BACK": 180.}
+# nuScenes-Occ3D class colours, 0..16
+PAL = np.array([
+    [0, 0, 0], [255, 120, 50], [255, 192, 203], [255, 255, 0], [0, 150, 245],
+    [0, 255, 255], [255, 127, 0], [255, 0, 0], [255, 240, 150], [135, 60, 0],
+    [160, 32, 240], [255, 0, 255], [139, 137, 137], [75, 0, 75], [150, 240, 80],
+    [230, 230, 250], [0, 175, 0]], np.float32) / 255.
 
 
-DYNC = [2, 3, 4, 5, 6, 7, 9, 10]
-OBJC = [1, 8]
-STATC = [11, 12, 13, 14, 15, 16]
+def project(ijk, cam, md):
+    """voxel indices -> pixel coords and depth, in the given camera"""
+    g = np.stack(ijk, 1).astype(np.float64) + 0.5
+    p = np.empty_like(g)
+    p[:, 0] = g[:, 0] * RES - RNG_M
+    p[:, 1] = g[:, 1] * RES - RNG_M
+    p[:, 2] = g[:, 2] * RES + Z0
+    Rs = md.qrot(np.asarray(cam["sensor2ego_rotation"], np.float64))
+    ts = np.asarray(cam["sensor2ego_translation"], np.float64)
+    K = np.asarray(cam["intrinsic"], np.float64)
+    C = (p - ts) @ Rs
+    ok = C[:, 2] > 1.0
+    C = C[ok]
+    uv = (K @ C.T).T
+    uv = uv[:, :2] / uv[:, 2:3]
+    return uv, C[:, 2], ok, float(K[0, 0])
 
 
-def tri_volume(cls):
-    """Column priority: a dynamic voxel anywhere in a column wins.
+def surface(ax, ijk, rgb, cam, md, W, H, D=9, alpha=0.55, fill=4.0):
+    """Depth-buffered projection: nearest voxel wins each pixel block.
 
-    Taking the lowest non-free class instead renders the road surface over
-    every column and the prediction panel comes out a uniform grey, which
-    is how the first draft of this figure hid its own subject.
+    Voxel centres project to isolated points, so after the z-buffer pass a
+    bounded nearest-neighbour fill closes the gaps between them. The fill is
+    capped at `fill` blocks, so it never invents surface where none projects.
     """
-    dyn = np.isin(cls, DYNC).any(2)
-    obj = np.isin(cls, OBJC).any(2)
-    sta = np.isin(cls, STATC).any(2)
-    t = np.zeros(cls.shape[:2], np.int16)
-    t[sta] = 1
-    t[obj] = 2
-    t[dyn] = 3
-    return t
-
-
-TRI_CMAP = ListedColormap(["#ffffff", "#e3e3df", "#b9b9b2", "#d1495b"])
-TRI_NORM = BoundaryNorm([-.5, .5, 1.5, 2.5, 3.5], 4)
-
-
-def draw_bev(ax, img, cmap, norm=None, vmin=None, vmax=None):
-    ax.imshow(img, origin="lower", extent=[RNG, -RNG, -RNG, RNG],
-              cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, interpolation="nearest")
-    ax.set_xlim(19, -19)        # lateral, left of the vehicle on the left
-    ax.set_ylim(-5, 33)         # forward
-    ax.set_xticks([]); ax.set_yticks([])
-    for s in ax.spines.values():
-        s.set_color(GRID); s.set_linewidth(0.6)
-    ax.plot(0, 0, marker="^", ms=5, color=INK, zorder=6)   # ego
+    from scipy import ndimage
+    uv, z, ok, _ = project(ijk, cam, md)
+    rgb = rgb[ok]
+    u = np.round(uv[:, 0] / D).astype(int)
+    v = np.round(uv[:, 1] / D).astype(int)
+    h, w = int(np.ceil(H / D)), int(np.ceil(W / D))
+    m = (u >= 0) & (u < w) & (v >= 0) & (v < h)
+    u, v, z, rgb = u[m], v[m], z[m], rgb[m]
+    o = np.argsort(-z)
+    col = np.zeros((h, w, 3), np.float32)
+    hit = np.zeros((h, w), bool)
+    col[v[o], u[o]] = rgb[o]
+    hit[v, u] = True
+    dist, idx = ndimage.distance_transform_edt(~hit, return_indices=True)
+    near = dist <= fill
+    col = col[idx[0], idx[1]]
+    buf = np.zeros((h, w, 4), np.float32)
+    buf[..., :3] = col
+    buf[..., 3] = np.where(near, alpha, 0.0)
+    ax.imshow(buf, extent=[0, W, H, 0], interpolation="bilinear", zorder=3)
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--token", default=DEFAULT_TOKEN)
-    a = ap.parse_args()
-    md = _md()
-    tok = a.token
-
+    sp = importlib.util.spec_from_file_location(
+        "md", os.path.join(ROOT, "scripts/eval/missed_detection.py"))
+    md = importlib.util.module_from_spec(sp); sp.loader.exec_module(md)
+    tk = json.load(open(os.path.join(ROOT, "outputs/artifacts/figure_tokens.json")))
+    tok, meta = tk["fig3_token"], tk["fig3_object"]
     index = json.load(open(os.path.join(ROOT, "data/pack/index.json")))
-    row = next(r for r in index if r["token"] == tok)
-    fi = index.index(row)
-    gt_map = {os.path.basename(os.path.dirname(q)): q for q in glob.glob(
-        os.path.join(ROOT, "data/occ3d/Occupancy3D-nuScenes-trainval/gts",
-                     "*", "*", "labels.npz"))}
+    row = next(r for r in index if r["token"] == tok); fi = index.index(row)
 
-    g = np.load(gt_map[tok]); gcls = g["semantics"].astype(np.int16)
-    p = np.load(os.path.join(ROOT, "data/preds/preds_voxel", tok + ".npz"))
-    pcls = p["cls"].astype(np.int16)
-    pconf = p["conf"].astype(np.float32) / 255.0
-    obs = np.load(os.path.join(ROOT, "data/pack/obs_max",
-                               tok + ".npy")).astype(np.float32) / 255.0
+    gc = np.load(glob.glob(os.path.join(
+        ROOT, "data/occ3d/Occupancy3D-nuScenes-trainval/gts", "*", tok,
+        "labels.npz"))[0])["semantics"].astype(np.int16)
+    pc = np.load(os.path.join(ROOT, "data/preds/preds_voxel",
+                              tok + ".npz"))["cls"].astype(np.int16)
+    ob = np.load(os.path.join(ROOT, "data/pack/obs_max",
+                              tok + ".npy")).astype(np.float32) / 255.
 
     ann = np.load(os.path.join(ROOT, "data/pack/annotations_val.npz"),
                   allow_pickle=True)
     names = ann["category_names"]; fr = ann["frame"]
     order = np.argsort(fr, kind="stable")
     bounds = np.searchsorted(fr[order], np.arange(len(index) + 1))
+    cam0 = row["cams"]["CAM_FRONT"]
+    Re = md.qrot(np.asarray(cam0["ego2global_rotation"], np.float64))
+    te = np.asarray(cam0["ego2global_translation"], np.float64)
 
-    cam = row["cams"]["CAM_FRONT"]        # ego pose only; display cam chosen below
-    Re = md.qrot(np.asarray(cam["ego2global_rotation"], np.float64))
-    te = np.asarray(cam["ego2global_translation"], np.float64)
-
-    # the object: the worst missed dynamic object in this frame
-    best = None
+    boxes, target = [], None
     for k in order[bounds[fi]:bounds[fi + 1]]:
         cid = md.CAT2OCC.get(str(names[ann["category"][k]]))
         if cid is None or cid not in md.DYN:
             continue
         c = Re.T @ (ann["translation"][k].astype(np.float64) - te)
         R = Re.T @ md.qrot(np.asarray(ann["rotation"][k], np.float64))
-        vx = md.box_voxels(c, ann["size"][k].astype(np.float64), R, 0.0)
+        sz = ann["size"][k].astype(np.float64)
+        vx = md.box_voxels(c, sz, R, 0.0)
         if vx is None:
             continue
-        gm = gcls[vx] == cid
-        if gm.sum() < 6:
-            continue
-        if np.isin(pcls[vx], list(md.DYN)).any():
-            continue
-        score = float((pcls[vx] == FREE).mean()) * gm.sum()
-        if best is None or score > best["score"]:
-            best = dict(score=score, c=c, cid=cid, vx=vx, R=R,
-                        size=ann["size"][k].astype(np.float64),
-                        obs=float(obs[vx][gm].max()),
-                        conf=float(pconf[vx].max()),
-                        free=float((pcls[vx] == FREE).mean()),
-                        rng=float(np.hypot(c[0], c[1])),
-                        nvox=int(gm.sum()),
-                        pts=int(ann["num_lidar_pts"][k]))
-    assert best is not None, "no missed dynamic object in this frame"
-    cx, cy = best["c"][0], best["c"][1]
+        gm = gc[vx] == cid
+        miss = (not np.isin(pc[vx], list(md.DYN)).any()) and float((pc[vx] == FREE).mean()) >= 0.9
+        boxes.append((c, R, sz, miss and int(gm.sum()) == meta["n"]))
+        if miss and int(gm.sum()) == meta["n"]:
+            target = (c, R, sz)
+    cx, cy = target[0][0], target[0][1]
+    bearing = np.degrees(np.arctan2(cy, cx))
+    use = min(CB, key=lambda c: abs((bearing - CB[c] + 180) % 360 - 180))
+    cam = row["cams"][use]
+    fn = cam["filename"]
+    jp = fn if os.path.exists(fn) else os.path.join(
+        ROOT, "dataset/nuscenes", fn.split("nuscenes/")[-1])
+    im = plt.imread(jp); H, W = im.shape[:2]
+
+    def corners(c, R, sz):
+        hw, hl, hh = sz / 2
+        q = np.array([[sx * hl, sy * hw, sz_ * hh] for sx in (-1, 1)
+                      for sy in (-1, 1) for sz_ in (-1, 1)])
+        Rs = md.qrot(np.asarray(cam["sensor2ego_rotation"], np.float64))
+        ts = np.asarray(cam["sensor2ego_translation"], np.float64)
+        K = np.asarray(cam["intrinsic"], np.float64)
+        Cm = ((R @ q.T).T + c - ts) @ Rs
+        if not (Cm[:, 2] > 0.5).all():
+            return None
+        uv = (K @ Cm.T).T
+        return uv[:, :2] / uv[:, 2:3]
 
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "Nimbus Roman", "DejaVu Serif"],
-        "font.size": 8, "text.color": INK,
+        "font.size": 7.6, "text.color": INK,
         "pdf.fonttype": 42, "ps.fonttype": 42,
     })
-    fig, axes = plt.subplots(1, 4, figsize=(7.0, 2.05))
-    fig.subplots_adjust(wspace=0.07, left=0.005, right=0.995, top=0.86, bottom=0.10)
+    fig, ax = plt.subplots(1, 4, figsize=(7.0, 1.52))
+    fig.subplots_adjust(left=0.004, right=0.996, top=0.90, bottom=0.135,
+                        wspace=0.02)
+    for a in ax:
+        a.imshow(im); a.set_xlim(0, W); a.set_ylim(H, 0)
+        a.set_xticks([]); a.set_yticks([])
+        for s in a.spines.values():
+            s.set_linewidth(0.5); s.set_color("#b5b5b5")
 
-    # ---- (a) the camera that SHOULD see it ---------------------------------
-    bearing = np.degrees(np.arctan2(cy, cx))
-    CAM_BEARING = {"CAM_FRONT": 0.0, "CAM_FRONT_LEFT": 55.0,
-                   "CAM_FRONT_RIGHT": -55.0, "CAM_BACK_LEFT": 110.0,
-                   "CAM_BACK_RIGHT": -110.0, "CAM_BACK": 180.0}
-    def _d(b):
-        return abs((bearing - b + 180.0) % 360.0 - 180.0)
-    use = min(CAM_BEARING, key=lambda c: _d(CAM_BEARING[c]))
-    dcam = row["cams"][use]
-    CAMTITLE = "(a)  " + use.replace("_", " ").title().replace("Cam ", "")
-    fn = dcam["filename"]
-    jp = fn if os.path.exists(fn) else os.path.join(
-        ROOT, "dataset/nuscenes", fn.split("nuscenes/")[-1])
-    im = plt.imread(jp)
-    axes[0].imshow(im)
+    tgt_uv = corners(*target)
 
-    # project the ground-truth box into that camera
-    K = np.asarray(dcam["intrinsic"], np.float64)
-    Rs = md.qrot(np.asarray(dcam["sensor2ego_rotation"], np.float64))
-    ts = np.asarray(dcam["sensor2ego_translation"], np.float64)
-    hw, hl, hh = (best["size"][0] / 2, best["size"][1] / 2, best["size"][2] / 2)
-    corn = np.array([[sx * hl, sy * hw, sz * hh]
-                     for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)])
-    W = (best["R"] @ corn.T).T + best["c"]          # ego frame
-    Cm = (W - ts) @ Rs                              # ego -> camera
-    if (Cm[:, 2] > 0.1).all():
-        uv = (K @ Cm.T).T
-        uv = uv[:, :2] / uv[:, 2:3]
-        u0, v0 = uv[:, 0].min(), uv[:, 1].min()
-        u1, v1 = uv[:, 0].max(), uv[:, 1].max()
-        axes[0].add_patch(Rectangle((u0, v0), u1 - u0, v1 - v0, fill=False,
-                                    lw=1.1, ec=C_HOT, zorder=5))
-        axes[0].annotate("", xy=((u0 + u1) / 2, v0 - 4),
-                         xytext=((u0 + u1) / 2, max(v0 - 60, 8)),
-                         arrowprops=dict(arrowstyle="->", lw=0.8, color=C_HOT))
-    axes[0].set_xticks([]); axes[0].set_yticks([])
-    for s in axes[0].spines.values():
-        s.set_color(GRID); s.set_linewidth(0.6)
-    axes[0].set_title(CAMTITLE, fontsize=8, loc="left", pad=3)
+    # (b) ground truth
+    for c, R, sz, is_t in boxes:
+        uv = corners(c, R, sz)
+        if uv is None:
+            continue
+        u0, v0, u1, v1 = uv[:, 0].min(), uv[:, 1].min(), uv[:, 0].max(), uv[:, 1].max()
+        ax[1].add_patch(Rectangle((u0, v0), u1 - u0, v1 - v0, fill=False,
+                                  lw=1.6 if is_t else 0.9, ec=C_GT, zorder=5))
 
-    # ---- (b,c,d) the three grids -------------------------------------------
-    gb, pb = tri_volume(gcls), tri_volume(pcls)
-    ob = obs.max(axis=2)
+    # (c) the model's predicted occupancy, nearest surface
+    ijk = np.nonzero(pc != FREE)
+    surface(ax[2], ijk, PAL[np.clip(pc[ijk], 0, 16)], cam, md, W, H)
 
-    draw_bev(axes[1], gb, TRI_CMAP, TRI_NORM)
-    axes[1].set_title("(b)  ground truth", fontsize=8, loc="left", pad=3)
+    # (d) observability, sampled on the ground-truth surface
+    ijk = np.nonzero(gc != FREE)
+    surface(ax[3], ijk, plt.get_cmap("viridis")(ob[ijk])[:, :3],
+            cam, md, W, H, alpha=0.72)
 
-    draw_bev(axes[2], pb, TRI_CMAP, TRI_NORM)
-    axes[2].set_title("(c)  prediction", fontsize=8, loc="left", pad=3)
+    for i, lab in ((2, "predicted free, conf 1.00"), (3, "$O = 0.00$")):
+        col = C_HOT if i == 2 else "white"
+        u0, v0 = tgt_uv[:, 0].min(), tgt_uv[:, 1].min()
+        u1, v1 = tgt_uv[:, 0].max(), tgt_uv[:, 1].max()
+        pad = 6
+        ax[i].add_patch(Rectangle((u0 - pad, v0 - pad), u1 - u0 + 2 * pad,
+                                  v1 - v0 + 2 * pad, fill=False, lw=1.3,
+                                  ec=col, ls=(0, (3.5, 2.5)), zorder=7))
+        ax[i].annotate(lab, xy=((u0 + u1) / 2, v0 - pad), xycoords="data",
+                       xytext=(0, 26), textcoords="offset points",
+                       ha="center", va="bottom", fontsize=6.4, color=col,
+                       arrowprops=dict(arrowstyle="->", color=col, lw=0.9),
+                       zorder=8)
 
-    draw_bev(axes[3], ob, "magma", vmin=0.0, vmax=1.0)
-    axes[3].set_title("(d)  observability", fontsize=8, loc="left", pad=3)
+    for i, t_ in enumerate(["(a)  input", "(b)  ground truth",
+                            "(c)  prediction", "(d)  observability"]):
+        ax[i].set_title(t_, fontsize=7.8, loc="left", pad=2.5)
 
-    for ax in axes[1:]:
-        ax.add_patch(Circle((cy, cx), 2.6, fill=False, lw=1.1,
-                            ec=C_HOT, zorder=8))
+    cax = fig.add_axes([0.800, 0.072, 0.140, 0.026])
+    sm = plt.cm.ScalarMappable(cmap="viridis",
+                               norm=plt.Normalize(0, 1))
+    cb = fig.colorbar(sm, cax=cax, orientation="horizontal")
+    cb.set_ticks([0, 1]); cb.ax.tick_params(labelsize=5.6, length=1.6, pad=1)
+    cb.set_label("$O(v;\\mathcal{G})$", fontsize=6.0, labelpad=1.5)
+    cb.outline.set_linewidth(0.4)
 
-    axes[2].annotate("free space,\nconfidence %.2f" % best["conf"],
-                     xy=(cy + 2.8, cx + 1.4), xytext=(17.5, 31.0),
-                     fontsize=6.4, color=C_HOT, ha="left", va="top",
-                     arrowprops=dict(arrowstyle="->", lw=0.7, color=C_HOT,
-                                     shrinkA=2, shrinkB=1))
-    axes[3].annotate("obs = %.2f" % best["obs"],
-                     xy=(cy + 2.8, cx + 1.4), xytext=(17.5, 31.0),
-                     fontsize=6.4, color="#ffffff", ha="left", va="top",
-                     arrowprops=dict(arrowstyle="->", lw=0.7, color="#ffffff",
-                                     shrinkA=2, shrinkB=1))
+    fig.text(0.006, 0.022,
+             f"{meta['cat'].split('.')[-1]} at {meta['rng']} m  ·  "
+             f"{meta['n']} ground-truth voxels  ·  predicted free throughout  ·  "
+             f"max O = {meta['obs']:.2f}  ·  {use.replace('_',' ').lower()}  ·  "
+             f"token {tok[:8]}", fontsize=5.8, color="#5a5a5a")
 
-    cname = {2: "bicycle", 3: "bus", 4: "car", 5: "construction vehicle",
-             6: "motorcycle", 7: "pedestrian", 9: "trailer",
-             10: "truck"}[best["cid"]]
-    fig.text(0.005, -0.04,
-             f"{cname} at {best['rng']:.1f} m  ·  {best['nvox']} ground-truth "
-             f"voxels, {best['pts']} LiDAR returns  ·  "
-             f"{100*best['free']:.0f}% of its box predicted free  ·  "
-             f"scene {row['scene']}, token {tok[:12]}",
-             fontsize=5.8, color=MUTED, ha="left", va="top")
-
-    out = os.path.join(ROOT, "outputs", "figures")
-    os.makedirs(out, exist_ok=True)
-    for ext in ("pdf", "png"):
-        fig.savefig(os.path.join(out, f"fig2_qualitative.{ext}"),
-                    bbox_inches="tight", dpi=400, facecolor="white")
-    plt.close(fig)
-    print(f"{cname} rng={best['rng']:.1f} obs={best['obs']:.3f} "
-          f"conf={best['conf']:.3f} free={best['free']:.2f} "
-          f"nvox={best['nvox']} pts={best['pts']}")
-    print("wrote outputs/figures/fig2_qualitative.{pdf,png}")
+    out = os.path.join(ROOT, "outputs/figures/fig2_qualitative.pdf")
+    fig.savefig(out, dpi=600); fig.savefig(out.replace(".pdf", ".png"), dpi=300)
+    print("token", tok, meta, "| cam", use)
+    print("wrote", out)
 
 
 if __name__ == "__main__":
