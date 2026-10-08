@@ -4105,3 +4105,22 @@ hand-drawn schematic shell (assets/fig1_shell.png) that contains only
 blocks, arrows and formulas. Every slot in the shell is detected by colour
 and filled with a render from data/pack or outputs/artifacts. The two bar
 panels read baselines.json and baselines_object.json at build time.
+
+## A58 - Figure 4 rebuilt on measured support (2026-10-08)
+
+scripts/eval/maskvsobs_stats.py, seed 20261108, 60 sealed-test frames.
+Per-voxel error rate by observability decile, restricted to
+mask_camera = 1, with a 400-draw paired-frame bootstrap:
+
+  0.1579 0.0642 0.0863 0.0853 0.0868 0.0858 0.0866 0.0821 0.0784 0.0597
+
+Three deciles rise on their predecessor. The relation is therefore not
+monotone, consistent with H1 (rho = -0.433), and the figure marks the three
+reversals rather than drawing a smooth trend. Ratio max/min = 2.6x.
+Frame for panels (a,b): 4ae9c033164e4e01a0392672686d095c, selected by
+scripts/viz/pick_tokens2.py as the test frame maximising the standard
+deviation of O inside mask_camera = 1.
+
+Figure 5 (new numbering) is assets/fig_whyconf_src.png, a hand-drawn
+schematic with no data in it; the two probabilities shown are labelled
+illustrative in the figure.

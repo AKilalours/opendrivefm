@@ -65,6 +65,9 @@
 \def\confName{CVPR}
 \def\confYear{2027}
 
+\newcommand{\nMvoFrames}{60}
+\newcommand{\nMvoRev}{3}
+\newcommand{\nMvoRatio}{$2.6\times$}
 \begin{document}
 
 \title{SightOcc: Geometric Observability for Missed Objects\\
@@ -125,6 +128,20 @@ observability map are one sealed-test frame, token
 \texttt{312cd4d3}; the two bar panels are the full test split.}
 \label{fig:hero}
 \end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_whyconf.pdf}
+\caption{\textbf{Confidence can only rate a prediction that exists.} A
+wrong prediction leaves a low-confidence trace, so softmax flags it. A
+\emph{missing} prediction leaves a maximally confident vote for
+\texttt{free}, which is indistinguishable from correctly observed empty
+road, so softmax cannot flag it at all. Geometric observability never
+consults the model, so the two cases are identical to it and the second one
+is still visible. Probabilities are illustrative; the measured version of
+this argument is \cref{tab:perclass} and \cref{fig:quadrant}.}
+\label{fig:whyconf}
+\end{figure}
 
 % MAD opens on animators drawing an animatic. The equivalent concrete
 % opening here is the failure itself, not a literature survey.
@@ -254,18 +271,19 @@ third.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig3_whynotmask.pdf}
-\caption{\textbf{Why not \texttt{mask\_camera}, argued on the data.}
-All four panels are the same frame. \texttt{mask\_camera} is the obvious
-objection to this paper and it does not survive contact with its own
-definition: it is binary, it is constructed offline from the full sensor
-suite including the LiDAR the model never receives, and it is not available
-at inference, so inside the mask it is constant and ranks nothing. Range
-from ego is continuous and free, and ignores occlusion, which is the entire
-phenomenon. Observability is continuous, independent of the model and of its
-confidence, and resolves occlusion by first-hit ray marching --- but it
-needs an external occupancy field to do so, and rebuilding it from the
-model's own prediction drops it below plain softmax
-(\cref{sec:deployable}). The panel states both.}
+\caption{\textbf{\texttt{mask\_camera} and $O(v;\mathcal{G})$ are not the
+same object.} (a,~b)~One sealed-test frame, token \texttt{4ae9c033}, bird's
+eye. The dataset mask is binary and is built offline from the full sensor
+suite, including the LiDAR the model never receives; observability is
+continuous and resolves occlusion by first-hit ray marching, so the shadow
+wedges behind buildings are explicit. (c)~Over \nMvoFrames\ sealed-test
+frames the mask takes two values and observability occupies the interval,
+log scale. (d)~Restricting to voxels the mask already calls observed, the
+per-voxel error rate still varies with $O$ by a factor of
+\nMvoRatio: the mask is constant there and ranks nothing. The relation is
+not monotone --- \nMvoRev\ deciles rise, circled --- which is the H1 result
+reported in \cref{tab:ledger}, and the effect is concentrated in the lowest
+decile. Error bars are paired-frame bootstrap, 95\%.}
 \label{fig:maskcam}
 \end{figure*}
 
