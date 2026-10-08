@@ -252,3 +252,154 @@
          A Review and Outlook},
   author={Xu, Yanan and others},
   journal={arXiv preprint arXiv:2405.02595}, year={2024}}
+
+% =====================================================================
+% Added 2026-10-08. Two confidence tiers, both real, neither invented:
+%
+%   [ID]  arXiv identifier or CVF page seen directly in a search result
+%         during this session. Title and number are confirmed; the author
+%         string still needs one pass against the paper.
+%   [CAN] canonical, heavily cited work whose existence, authors and venue
+%         are not in doubt. Confirm the year and page numbers.
+%
+% Nothing here was written to fill a count. Delete any entry you end up
+% not citing rather than leaving it in to inflate the list.
+% =====================================================================
+
+% ---- camera-only occupancy and semantic scene completion -------------
+@inproceedings{cao2022monoscene,          % [ID] arXiv:2112.00726
+  title={MonoScene: Monocular 3D Semantic Scene Completion},
+  author={Cao, Anh-Quan and de Charette, Raoul},
+  booktitle={CVPR}, year={2022}}
+
+@inproceedings{li2023voxformer,           % [ID] CVPR 2023 open access
+  title={VoxFormer: Sparse Voxel Transformer for Camera-based 3D Semantic
+         Scene Completion},
+  author={Li, Yiming and Yu, Zhiding and Choy, Christopher and
+          Xiao, Chaowei and Alvarez, Jose M. and Fidler, Sanja and
+          Feng, Chen and Anandkumar, Anima},
+  booktitle={CVPR}, year={2023}}
+
+@inproceedings{zhang2023occformer,        % [ID] arXiv:2304.05316
+  title={OccFormer: Dual-path Transformer for Vision-based 3D Semantic
+         Occupancy Prediction},
+  author={Zhang, Yunpeng and Zhu, Zheng and Du, Dalong},
+  booktitle={ICCV}, year={2023}}
+
+@inproceedings{wang2023openoccupancy,     % [ID] arXiv:2303.03991
+  title={OpenOccupancy: A Large Scale Benchmark for Surrounding Semantic
+         Occupancy Perception},
+  author={Wang, Xiaofeng and others},
+  booktitle={ICCV}, year={2023}}
+
+@article{liu2023sparseocc,                % [ID] arXiv:2312.17118
+  title={Fully Sparse 3D Panoptic Occupancy Prediction},
+  author={Liu, Haisong and others},
+  journal={arXiv preprint arXiv:2312.17118}, year={2023}}
+
+@article{zheng2024monoocc,                % [ID] arXiv:2403.08766
+  title={MonoOcc: Digging into Monocular Semantic Occupancy Prediction},
+  author={Zheng, Yupeng and others},
+  journal={arXiv preprint arXiv:2403.08766}, year={2024}}
+
+@article{lightocc2024,                    % [ID] arXiv:2412.05976
+  title={LightOcc: Lightweight Spatial Embedding for Efficient
+         Vision-based 3D Occupancy Prediction},
+  author={Anonymous and others},
+  journal={arXiv preprint arXiv:2412.05976}, year={2024}}
+
+@article{occworldsemi2025,                % [ID] arXiv:2502.07309
+  title={Semi-Supervised Vision-Centric 3D Occupancy World Model for
+         Autonomous Driving},
+  author={Anonymous and others},
+  journal={arXiv preprint arXiv:2502.07309}, year={2025}}
+
+% ---- bird's-eye-view backbones these systems are built on ------------
+@article{huang2021bevdet,                 % [ID] arXiv:2112.11790
+  title={BEVDet: High-performance Multi-camera 3D Object Detection in
+         Bird-Eye-View},
+  author={Huang, Junjie and Huang, Guan and Zhu, Zheng and Du, Dalong},
+  journal={arXiv preprint arXiv:2112.11790}, year={2021}}
+
+@inproceedings{li2023bevdepth,            % [ID] arXiv:2206.10092
+  title={BEVDepth: Acquisition of Reliable Depth for Multi-view 3D Object
+         Detection},
+  author={Li, Yinhao and Ge, Zheng and Yu, Guanyi and Yang, Jinrong and
+          Wang, Zengran and Shi, Yukang and Sun, Jianjian and Li, Zeming},
+  booktitle={AAAI}, year={2023}}
+
+% ---- failure prediction, OOD and calibration -------------------------
+@inproceedings{liu2020energy,             % [ID] arXiv:2010.03759
+  title={Energy-based Out-of-distribution Detection},
+  author={Liu, Weitang and Wang, Xiaoyun and Owens, John D. and Li, Yixuan},
+  booktitle={NeurIPS}, year={2020}}
+
+@article{granese2021doctor,               % [ID] arXiv:2106.02395
+  title={DOCTOR: A Simple Method for Detecting Misclassification Errors},
+  author={Granese, Federica and Romanelli, Marco and Gorla, Daniele and
+          Palamidessi, Catuscia and Piantanida, Pablo},
+  journal={NeurIPS}, year={2021}}
+
+@article{zhu2024revisiting,               % [ID] arXiv:2403.02886
+  title={Revisiting Confidence Estimation: Towards Reliable Failure
+         Prediction},
+  author={Zhu, Fei and Cheng, Zhen and Zhang, Xu-Yao and Liu, Cheng-Lin},
+  journal={TPAMI}, year={2024}}
+
+@inproceedings{corbiere2019confidnet,     % [CAN]
+  title={Addressing Failure Prediction by Learning Model Confidence},
+  author={Corbi{\`e}re, Charles and Thome, Nicolas and Bar-Hen, Avner and
+          Cord, Matthieu and P{\'e}rez, Patrick},
+  booktitle={NeurIPS}, year={2019}}
+
+@inproceedings{geifman2019selectivenet,   % [CAN]
+  title={SelectiveNet: A Deep Neural Network with an Integrated Reject
+         Option},
+  author={Geifman, Yonatan and El-Yaniv, Ran},
+  booktitle={ICML}, year={2019}}
+
+@inproceedings{liang2018odin,             % [CAN]
+  title={Enhancing the Reliability of Out-of-distribution Image Detection
+         in Neural Networks},
+  author={Liang, Shiyu and Li, Yixuan and Srikant, R.},
+  booktitle={ICLR}, year={2018}}
+
+@inproceedings{lee2018mahalanobis,        % [CAN]
+  title={A Simple Unified Framework for Detecting Out-of-Distribution
+         Samples and Adversarial Attacks},
+  author={Lee, Kimin and Lee, Kibok and Lee, Honglak and Shin, Jinwoo},
+  booktitle={NeurIPS}, year={2018}}
+
+@inproceedings{jiang2018trust,            % [CAN]
+  title={To Trust Or Not To Trust A Classifier},
+  author={Jiang, Heinrich and Kim, Been and Guan, Melody Y. and
+          Gupta, Maya},
+  booktitle={NeurIPS}, year={2018}}
+
+@inproceedings{kendall2017uncertainties,  % [CAN]
+  title={What Uncertainties Do We Need in Bayesian Deep Learning for
+         Computer Vision?},
+  author={Kendall, Alex and Gal, Yarin},
+  booktitle={NeurIPS}, year={2017}}
+
+@article{angelopoulos2021conformal,       % [CAN]
+  title={A Gentle Introduction to Conformal Prediction and
+         Distribution-Free Uncertainty Quantification},
+  author={Angelopoulos, Anastasios N. and Bates, Stephen},
+  journal={arXiv preprint arXiv:2107.07511}, year={2021}}
+
+% ---- datasets and benchmarks ----------------------------------------
+@inproceedings{behley2019semantickitti,   % [CAN]
+  title={SemanticKITTI: A Dataset for Semantic Scene Understanding of
+         LiDAR Sequences},
+  author={Behley, Jens and Garbade, Martin and Milioto, Andres and
+          Quenzel, Jan and Behnke, Sven and Stachniss, Cyrill and
+          Gall, Juergen},
+  booktitle={ICCV}, year={2019}}
+
+@inproceedings{sun2020waymo,              % [CAN]
+  title={Scalability in Perception for Autonomous Driving: Waymo Open
+         Dataset},
+  author={Sun, Pei and Kretzschmar, Henrik and Dotiwalla, Xerxes and
+          others},
+  booktitle={CVPR}, year={2020}}

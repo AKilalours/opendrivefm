@@ -275,36 +275,62 @@ model's own prediction drops it below plain softmax
 \subsection{Camera-only occupancy prediction}
 Dense 3D occupancy has become the representation of choice for camera-only
 perception because it describes arbitrary geometry rather than a fixed set
-of boxes. BEVFormer~\cite{li2022bevformer} established the spatiotemporal
-attention backbone that most later work inherits; TPVFormer~\cite{huang2023tpvformer}
-replaces the single bird's-eye plane with three orthogonal views;
-SurroundOcc~\cite{wei2023surroundocc} predicts the volume directly from
-multi-camera features with no temporal window; and
+of boxes. The lineage runs through the lifting operation of
+Lift-Splat-Shoot~\cite{philion2020lss} and the bird's-eye-view detectors
+built on it~\cite{huang2021bevdet, li2023bevdepth, chambon2024pointbev,
+harley2023simplebev}, then through BEVFormer's spatiotemporal
+attention~\cite{li2022bevformer}, which most later work inherits.
+MonoScene~\cite{cao2022monoscene} and VoxFormer~\cite{li2023voxformer}
+approach the volume as semantic scene completion;
+TPVFormer~\cite{huang2023tpvformer} replaces the single bird's-eye plane
+with three orthogonal views; OccFormer~\cite{zhang2023occformer} uses a
+dual-path transformer; SurroundOcc~\cite{wei2023surroundocc} predicts the
+volume directly from multi-camera features with no temporal window; and
 FB-OCC~\cite{li2023fbocc} combines forward and backward view transformation
-and fuses sixteen frames of history. Occ3D~\cite{tian2023occ3d} supplies the
-benchmark all of them are measured on, including the \texttt{mask\_camera}
-flag we examine in \cref{fig:maskcam}.
+with sixteen frames of history. Later work pushes on efficiency and
+sparsity~\cite{liu2023sparseocc, lightocc2024, zheng2024monoocc,
+kim2025protoocc}, on multi-modal fusion~\cite{li2024gafusion}, and on
+forecasting the volume forward in time~\cite{wang2024occworld,
+occworldsemi2025}; the area has been
+surveyed~\cite{occsurvey2024}. Occ3D~\cite{tian2023occ3d} supplies the
+benchmark most of them are measured on, alongside
+OpenOccupancy~\cite{wang2023openoccupancy} and the LiDAR-sequence
+annotations of SemanticKITTI~\cite{behley2019semantickitti}, on
+nuScenes~\cite{caesar2020nuscenes} and Waymo
+Open~\cite{sun2020waymo} data. It is Occ3D that supplies the
+\texttt{mask\_camera} flag we examine in \cref{fig:maskcam}.
 
 These systems are evaluated by mIoU, which is an average over voxels. An
 average over voxels cannot express that some of those voxels were never
 visible, and that is the gap this paper works in.
 
 \subsection{Uncertainty and failure prediction}
-The standard baseline is the maximum softmax probability~\cite{hendrycks2017msp},
-which remains hard to beat on in-distribution misclassification. Temperature
-scaling~\cite{guo2017calibration} fixes the calibration of that score without
-changing its ordering, so it cannot appear in a ranking table at all, a point
-we return to in \cref{sec:ablations}. Deep
-ensembles~\cite{lakshminarayanan2017ensembles} and MC
-dropout~\cite{gal2016dropout} estimate epistemic uncertainty at a multiple of
-inference cost. Selective prediction~\cite{geifman2017selective} evaluates
-such scores by the risk remaining after abstaining on the least certain
-fraction, which is the form that matters for a system allowed to slow down
-rather than guess.
+The standard baseline is the maximum softmax
+probability~\cite{hendrycks2017msp}, which remains hard to beat on
+in-distribution misclassification and is still competitive against much
+later proposals~\cite{zhu2024revisiting}. Temperature
+scaling~\cite{guo2017calibration} fixes the calibration of that score
+without changing its ordering, so it cannot appear in a ranking table at
+all. Deep ensembles~\cite{lakshminarayanan2017ensembles} and MC
+dropout~\cite{gal2016dropout} estimate epistemic uncertainty at a multiple
+of inference cost, and the aleatoric/epistemic split itself has been
+examined for vision~\cite{kendall2017uncertainties}. A second family scores
+a sample rather than recalibrating it: distance in feature
+space~\cite{lee2018mahalanobis}, agreement with a trusted
+neighbourhood~\cite{jiang2018trust}, temperature-and-perturbation
+rescaling~\cite{liang2018odin}, free energy~\cite{liu2020energy}, and
+soft-probability tests for misclassification~\cite{granese2021doctor}. A
+third learns to predict its own failures~\cite{corbiere2019confidnet} or to
+abstain as part of training~\cite{geifman2019selectivenet}. Selective
+prediction~\cite{geifman2017selective} supplies the evaluation we adopt,
+the risk remaining after abstaining on the least certain fraction, and
+conformal methods~\cite{angelopoulos2021conformal} the distribution-free
+alternative.
 
-Every one of these reads the network. Each is therefore a statement about a
-prediction the network produced, which is precisely the limitation
-\cref{fig:teaser} measures.
+Every one of these reads the network.
+
+Each is therefore a statement about a prediction the network produced,
+which is precisely the limitation \cref{fig:teaser} measures.
 
 \subsection{Visibility as a label mask, and as a signal}
 Visibility already appears in this literature, but almost always as a
