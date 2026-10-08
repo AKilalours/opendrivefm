@@ -153,8 +153,14 @@ vote for the free class. On the held-out scenes used throughout this paper,
 \missHi\ of annotated dynamic objects standing in volumes with no camera
 evidence are not predicted by the model at all. \Cref{fig:hero} shows one of them.
 
-This matters because of what consumes the occupancy field. A planner reads
-it as a statement about the world, not as a statement about the camera rig:
+This matters because of what consumes the occupancy field. End-to-end
+planners read occupancy and its descendants as a statement about the
+world~\cite{hu2023uniad, chen2024vadv2} and are benchmarked on how well
+they act on it~\cite{dauner2024navsim}, and the functional-safety framing
+for exactly this hazard class --- a system behaving as designed on input it
+was never equipped to interpret --- has its own
+standard~\cite{iso21448}. A planner reads the field as a statement about
+the world, not as a statement about the camera rig:
 a cell marked free is a cell the vehicle may drive through. The
 representation has no channel in which to say \emph{I have no evidence
 here}, so absence of evidence is delivered to the planner as evidence of
@@ -254,6 +260,15 @@ seeing the network's output.}
 % -------------------------------------------------------------------
 \section{Related Work}
 
+Three literatures meet in this paper and none of them owns the question we
+ask. Camera-only occupancy supplies the model whose failures we study.
+Uncertainty estimation supplies the baseline we compare against, and every
+method in it reads the network. Visibility and evidential occupancy supply
+the quantity we compute, but treat it as an input to a model or a mask on
+a loss rather than as a signal evaluated \emph{against} the model's own
+confidence. We review each in turn and state the gap at the end of the
+third.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig3_whynotmask.pdf}
@@ -327,6 +342,12 @@ the risk remaining after abstaining on the least certain fraction, and
 conformal methods~\cite{angelopoulos2021conformal} the distribution-free
 alternative.
 
+Dense prediction has its own reliability literature reaching much the same
+conclusion: calibration and misclassification detection behave differently
+for segmentation than for classification~\cite{derooij2023segreliability,
+dreissig2023lidarcalib}, and benchmarks exist for what a segmenter does
+with content it cannot explain~\cite{blum2019fishyscapes}.
+
 Every one of these reads the network.
 
 Each is therefore a statement about a prediction the network produced,
@@ -359,7 +380,16 @@ the geometry source stated explicitly and both choices reported. We make
 no priority claim about observability itself.
 
 % -------------------------------------------------------------------
-\section{Observability}
+\section{Geometric Observability}
+
+This section defines the measure and, as importantly, states what it needs
+in order to be computed. The definition has three parts: how well a camera
+resolves a voxel (\cref{eq:coverage}), whether that camera's line of sight
+reaches it (\cref{eq:firsthit}), and how the cameras combine
+(\cref{eq:obs}). The second part requires a field saying which voxels block
+light, and \emph{where that field comes from} is what separates an
+evaluation diagnostic from a runtime signal. We make the dependence
+explicit in the notation and carry it through every experiment.
 
 \subsection{Definition}
 Let a voxel $v$ be observed by camera $i$ with coverage
@@ -456,6 +486,16 @@ own job, which is deciding where labels are valid.
 % -------------------------------------------------------------------
 \section{Experiments}
 
+The experiments answer four questions in order. Does the measure beat the
+dataset's own camera mask at ranking error (\cref{sec:h2})? Does its value
+depend on the granularity of the failure being ranked
+(\cref{sec:inversion})? Is it redundant with the model's confidence, or a
+second axis? And does it survive the only occupancy field a vehicle
+actually has (\cref{sec:deployable})? The fourth answer is negative and it
+gets the same space as the others. Every number is computed on a split
+sealed before method development, and every hypothesis carries an
+acceptance criterion registered before its data existed.
+
 \subsection{Setup}
 \paragraph{Model and data.}
 FB-OCC r50 with temporal fusion on Occ3D-nuScenes, $200\times200\times16$
@@ -470,9 +510,15 @@ half was opened once. A single module is the source of truth for the
 split, and every script and every CI gate reads it from there.
 
 \paragraph{Statistics.}
-AUROC by exact histogram on quantised scores; paired scene bootstrap for
-all intervals; risk-coverage and AURC for selective prediction; ECE in 15
-bins.
+AUROC~\cite{hanley1982roc} by exact histogram on quantised scores; the
+paired scene bootstrap~\cite{efron1986bootstrap} for every interval, which
+resamples whole scenes rather than voxels because voxels within a scene are
+not independent; risk-coverage and AURC for selective
+prediction~\cite{elyaniv2010selective, geifman2017selective}; ECE in 15
+bins~\cite{naeini2015ece}. Hypotheses and acceptance criteria were
+registered before the corresponding data existed, in the sense
+of~\cite{nosek2018preregistration}, in an append-only log released with the
+code.
 
 \subsection{Observability outranks the camera mask}
 \label{sec:h2}
@@ -650,10 +696,14 @@ lost evidence.
 
 That distinction matters for what comes next. An evidence-erasure failure
 would be circular and unfixable; an over-occlusion failure is a property of
-\emph{this} occupancy field, and a sparser, better-calibrated source of
-geometry independent of the occupancy model --- a monocular depth network,
-a prior map, a second modality --- is not ruled out by this result. We have
-not tried one, and we do not claim it would work.
+\emph{this} occupancy field, and a sparser, better-calibrated source of geometry independent of the
+occupancy model is not ruled out by this result. Monocular metric-depth
+foundation models are the obvious candidate~\cite{bochkovskii2024depthpro,
+hu2024metric3dv2, depthanyprior2025}: they run at inference, and crucially
+they do not inherit the occupancy model's errors, so a pedestrian that
+model drops still has a surface in the depth map. A prior map or a second
+modality would serve the same role. We have tried none of them and claim
+nothing about them.
 
 \begin{figure*}[t]
 \centering
