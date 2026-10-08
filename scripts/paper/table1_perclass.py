@@ -31,7 +31,7 @@ def main():
         L.append(r"\definecolor{sw%s}{HTML}{%s}" % (k.replace(" ", ""), v))
     L += [
         r"\begin{table}[t]\centering\footnotesize",
-        r"\setlength{\tabcolsep}{2.6pt}",
+        r"\setlength{\tabcolsep}{2.05pt}",
         r"\caption{\textbf{Per class, object level, sealed test split.} "
         r"\emph{missed} is the fraction of annotated objects the model never "
         r"predicts. AUROC columns rank that event. \textsc{oracle} counts "
