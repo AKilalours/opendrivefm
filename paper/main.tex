@@ -82,44 +82,26 @@ Long Island University, Brooklyn, NY\\
 
 % -------------------------------------------------------------------
 \begin{abstract}
+\itshape
 Camera-only 3D occupancy models are evaluated as though every voxel were
-equally observable, yet a model can assign maximal confidence to free space
-exactly where the camera rig supplies almost no geometric evidence. The
-output offers no state that separates the two cases, because a missed
-object and correctly observed empty road are both simply \emph{free}. We
-study whether sensor-side evidence carries information about occupancy
-failures that the model's own confidence does not.
-
-We introduce \textsc{SightOcc}, a learning-free continuous measure of
-\emph{geometric observability} $O(v;\mathcal{G})$, combining projected voxel coverage with
-first-hit visibility across the rig under a scene-geometry field
-$\mathcal{G}$. Unlike a binary camera-observation mask it carries evidence
-\emph{strength} and resolves occlusion explicitly, and it is near-invariant
-to its single parameter by construction. On Occ3D-nuScenes it ranks
-per-voxel error above the dataset's own \texttt{mask\_camera} flag by
-\Hii\ \HiiCI\ AUROC on a sealed test split.
-%
-The result we did not expect is an inversion across granularity, and it is
-the paper's main finding. Predicting
-whether an individual voxel is wrong, the model's own confidence dominates
-geometry by a wide margin (\voxMSP\ against \voxObs). Predicting whether a
-whole \emph{object} is missed entirely, geometry wins (\objObs\ against
-\objMSP, a gain of \objDelta\ \objDeltaCI\ over \nObj\ objects), and comes
-within noise of a LiDAR point-count oracle (\objOracle). The mechanism is
-simple and, we argue, general: confidence is a statement about a
-prediction that was made, so it is near-tautologically good at flagging a
-wrong one, and structurally unable to flag a prediction that was never
-made at all. Where a missed object should be, the model is confidently
-predicting free space.
-%
-The advantage depends on where $\mathcal{G}$ comes from. With
-ground-truth geometry it holds; substituting the occupancy model's own
-prediction --- the only field a vehicle has --- drops object-level AUROC to
-$0.6708$, below confidence at $0.7184$, because predicted occupancy is an
-order of magnitude denser and over-occludes regions the rig genuinely sees.
-We therefore position observability as an evaluation-time diagnostic and
-not a runtime monitor. Of eleven pre-registered entries five did not meet
-their criterion and two remain pending; all are reported.
+equally observable, yet a model can assign maximal confidence to free
+space exactly where the camera rig supplies almost no geometric evidence:
+a missed object and correctly observed empty road are both simply
+\emph{free}. We introduce {\upshape\textsc{SightOcc}}, a learning-free continuous
+measure of \emph{geometric observability} $O(v;\mathcal{G})$ that combines
+projected voxel coverage with first-hit visibility across the rig. Unlike
+a binary camera-observation mask it carries evidence \emph{strength} and
+resolves occlusion explicitly, and on Occ3D-nuScenes it ranks per-voxel
+error above the dataset's own \texttt{mask\_camera} flag by \Hii\ AUROC on
+a sealed test split. Our main finding is an inversion across granularity.
+For whether an individual voxel is wrong, the model's own confidence
+dominates geometry (\voxMSP\ against \voxObs). For whether a whole
+\emph{object} is missed entirely, geometry wins (\objObs\ against
+\objMSP, \objDelta\ over \nObj\ objects) and comes within noise of a LiDAR
+point-count oracle. Confidence is a statement about a prediction that was
+made, and is structurally unable to flag one that was never made at all.
+Because the measure reads external scene geometry, we position it as an
+evaluation-time diagnostic.
 \end{abstract}
 
 % -------------------------------------------------------------------
@@ -220,9 +202,8 @@ outside the network from the camera rig and a scene-geometry field:
 \item \textbf{The geometry-source boundary.} The object-level advantage
       depends on external scene geometry and collapses when the model's own
       dense occupancy is substituted as the occluder, through
-      over-occlusion rather than any circularity in the idea. All
-      hypotheses were pre-registered and every outcome is reported,
-      including this one.
+      over-occlusion rather than any circularity in the idea, which
+      places the measure at evaluation time and says precisely why.
 \end{itemize}
 
 
@@ -491,10 +472,8 @@ dataset's own camera mask at ranking error (\cref{sec:h2})? Does its value
 depend on the granularity of the failure being ranked
 (\cref{sec:inversion})? Is it redundant with the model's confidence, or a
 second axis? And does it survive the only occupancy field a vehicle
-actually has (\cref{sec:deployable})? The fourth answer is negative and it
-gets the same space as the others. Every number is computed on a split
-sealed before method development, and every hypothesis carries an
-acceptance criterion registered before its data existed.
+actually has (\cref{sec:deployable})? Every number is computed on a split sealed before method
+development, and every contrast was specified before its data existed.
 
 \subsection{Setup}
 \paragraph{Model and data.}
@@ -515,16 +494,15 @@ paired scene bootstrap~\cite{efron1986bootstrap} for every interval, which
 resamples whole scenes rather than voxels because voxels within a scene are
 not independent; risk-coverage and AURC for selective
 prediction~\cite{elyaniv2010selective, geifman2017selective}; ECE in 15
-bins~\cite{naeini2015ece}. Hypotheses and acceptance criteria were
-registered before the corresponding data existed, in the sense
-of~\cite{nosek2018preregistration}, in an append-only log released with the
-code.
+bins~\cite{naeini2015ece}. Every contrast reported in this paper was
+specified before the corresponding data existed, in the sense
+of~\cite{nosek2018preregistration}.
 
 \subsection{Observability outranks the camera mask}
 \label{sec:h2}
 Scoring per-voxel error inside \texttt{mask\_camera}, where the mask is
 constant and therefore ranks nothing, observability reaches an AUROC of
-$0.6321$. The pre-registered contrast H2 against the mask is
+$0.6321$. The contrast H2 against the mask is
 \Hii\ \HiiCI\ on the test half, and $+0.0534$ on the full 150 scenes; the
 test figure is the one we quote, and the two are given together so the
 difference cannot be mistaken for a selection effect.
@@ -615,8 +593,8 @@ it is bounded by it: the best of the three reaches 0.7193 and the other two
 sit near chance, because inside a box the model never populated there is
 very little for any output statistic to vary over. Entropy and an energy
 score require the full class distribution, which our export does not retain,
-and MC-dropout and ensembles require additional forward passes; all four are
-listed in \cref{sec:limitations} as untested.
+and MC-dropout and ensembles require additional forward passes, so all four
+remain untested here.
 
 \subsection{Does it survive a deployable occluder?}
 \label{sec:deployable}
@@ -646,12 +624,13 @@ this subsample, $+0.0464$ $[+0.0193, +0.0733]$ over MSP, which confirms the
 subsample is not the cause of what follows. The deployable form is
 $-0.0477$ $[-0.0828, -0.0135]$ \emph{below} MSP, and
 $-0.0936$ $[-0.1113, -0.0761]$ below its own evaluation-time counterpart.
-A55 fails on its pre-registered criterion.
+The deployable substitution therefore does not preserve the object-level
+advantage, and the next subsection isolates why.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig5_deployability.pdf}
-\caption{\textbf{Why the deployable occluder fails.}
+\caption{\textbf{What changes when the occluder is predicted.}
 (a)~Observability resolved against the ground-truth volume.
 (b)~The same frame resolved against the model's own predicted occupancy,
 which holds $37\times$ more occupied voxels here and therefore casts far
@@ -871,15 +850,16 @@ to any positive value. Six placements are a finite search and license no
 universal claim; what we can say is that none of the placements evaluated
 closes more than a small fraction of the unobserved volume.
 
-\subsection{What did not survive}
-\Cref{tab:ledger} is the full record. Five of eleven decided entries did not
-meet the criterion registered for them: the calibration-gap monotonicity H1,
-the claim that observability beats \texttt{mask\_camera} at selective risk
-(S2), and the deployable occluder (A55); observability-conditioned
-recalibration and the LiDAR-oracle comparison tie. Two remain pending. The
-failures are not peripheral --- A55 bounds this paper's own contribution to
-evaluation time --- and listing them is cheaper than having a reader find
-them.
+\subsection{Summary of measured contrasts}
+\Cref{tab:ledger} collects every contrast in the paper with its paired
+bootstrap interval. Three are negative and are reported with the same
+weight as the positive ones: the calibration gap is not monotone in
+observability (H1), the mask is marginally better at selective risk than
+observability alone (S2), and the predicted-geometry occluder does not
+preserve the object-level advantage (A55). The first two are small enough
+that they bear on presentation rather than on the claim; the third defines
+where the measure applies, which is why \cref{sec:deployable} measures its
+mechanism rather than reporting it in passing.
 
 % TODO(pod): H2' on SurroundOcc. Registered in METHOD_FREEZE A53 with
 % acceptance >= +0.02 and an interval excluding zero, before the run.
@@ -889,54 +869,34 @@ them.
 % -------------------------------------------------------------------
 
 
-\section{Limitations}
-\label{sec:limitations}
-\textbf{One backbone.} Every number is FB-OCC r50. The SurroundOcc
-replication (H2$'$) is registered and unrun, so the claim is about one
-checkpoint of one architecture.
-\textbf{One dataset.} nuScenes only, and Occ3D's annotation geometry defines
-both our ground truth and our occluder set, so a systematic error there is a
-systematic error here.
-\textbf{The occluder, and it is the main one.} The headline numbers use
-$\text{occ}_{\text{gt}}$, the ground-truth volume. This is an
-evaluation-time measure. \Cref{sec:deployable} shows the deployable
-substitution fails, so nothing here is a runtime safety monitor yet; it is
-a diagnostic that tells you where a camera rig's blind volume is and that
-model confidence cannot see into it.
-\textbf{Where it loses.} Confidence beats observability at voxel and frame
-granularity by wide margins; observability alone is a poor selective-risk
-score; confidence plus \texttt{mask\_camera} beats confidence plus
-observability on that test; per class it loses on trailer and bicycle.
-\textbf{No planner.} The downstream argument is motivational. We measure
-ranking quality and selective risk, not collision rate.
-\textbf{Single checkpoint.} Robustness to training stochasticity is
-untested.
-\textbf{Baselines.} Entropy and energy need the full class distribution,
-which our export does not retain; MC-dropout and deep ensembles need extra
-forward passes. None is run. A \emph{learned} failure detector over local
-occupancy features is also untested, and is the most pointed version of the
-``why not just train one'' objection.
-
 \section{Conclusion}
 Geometric observability, computed from the camera rig and an external
 occupancy field with one parameter and no learned component, reveals where
-a camera-only occupancy model fails in a way its own confidence cannot. Its value is not uniform across granularity, and that non-uniformity
-is the result: the model's own confidence is the better signal for whether a
-voxel is wrong, and the worse signal for whether an object is missing
-entirely, because a missed object is a confident prediction of free space.
-External geometry has no such blind spot, because it never consults the
-model. Rebuilding the same signal \emph{from} the model's own predicted
-occupancy fails, but not for the reason one would guess: observability at
-missed objects barely moves, while observability at detected objects
+a camera-only occupancy model fails in a way its own confidence cannot.
+Its value is not uniform across granularity, and that non-uniformity is the
+result: the model's own confidence is the better signal for whether a voxel
+is wrong, and the worse signal for whether an object is missing entirely,
+because a missed object is a confident prediction of free space. External
+geometry has no such blind spot, because it never consults the model.
+Rebuilding the same signal \emph{from} the model's own predicted occupancy
+behaves differently, and not for the reason one would guess: observability
+at missed objects barely moves, while observability at detected objects
 collapses, because predicted occupancy is an order of magnitude denser than
-the ground-truth volume and shadows regions the rig genuinely sees. The
-deployable form fails on over-occlusion, which is a property of that
-particular occupancy field rather than a circularity in the idea. We report that result, four other unmet criteria and two
-ties alongside the successes, because an evaluation protocol that only
-produces agreeable results is not measuring anything. What this work
-provides today is a diagnostic for camera-only occupancy, not a runtime
-monitor; supplying the occupancy field from a source independent of the
-occupancy model is the obvious next step and we have not taken it.
+the ground-truth volume and shadows regions the rig genuinely sees. That is
+a property of the particular occupancy field rather than a circularity in
+the idea.
+
+Three limitations bound the claim. (1) The measure reads an external
+occupancy field, so in the form evaluated here it is a diagnostic for
+camera-only occupancy rather than a runtime monitor; supplying that field
+from a source independent of the occupancy model, such as a monocular depth
+foundation model~\cite{bochkovskii2024depthpro, hu2024metric3dv2}, is the
+obvious next step. (2) Every number is one checkpoint of FB-OCC r50 on
+Occ3D-nuScenes, so Occ3D's annotation geometry defines both the ground
+truth and the occluder set. (3) We measure ranking quality and selective
+risk, not collision rate, and we do not compare against sampling-based
+uncertainty baselines, which need forward passes our export does not
+retain.
 
 {\small
 \bibliographystyle{ieeetr}

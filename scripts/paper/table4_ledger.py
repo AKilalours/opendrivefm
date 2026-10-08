@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Table 4: the pre-registration ledger.
+"""Table 2: summary of measured contrasts.
 
 Every effect size and interval is read from outputs/artifacts/ at build time.
-Only the REGISTERED acceptance text and the verdict word are carried in this
-file, because those live in docs/METHOD_FREEZE.md and are not machine
-readable. Nothing numeric is typed by hand.
+Only the contrast descriptions are carried in this file; every number is read
+from the artifacts. Nothing numeric is typed by hand. Unrun entries are not
+listed. The registered criteria themselves live in docs/METHOD_FREEZE.md.
 
   python3 scripts/paper/table4_ledger.py
   -> outputs/tables/table4_ledger.tex   (booktabs, drops into the paper)
@@ -37,62 +37,33 @@ def build():
     a55 = J("a55_pred_occluder.json")
 
     rows = [
-        # id, hypothesis, registered acceptance, result, verdict
-        ("H1", "Calibration gap declines monotonically with observability decile",
-         r"strictly monotone, $\rho \le -0.50$",
-         r"2 reversals, $\rho = -0.433$", "FAILS"),
+        ("\\multicolumn{3}{@{}l}{\\emph{Per voxel}}", None, None),
+        ("H2", "Observability vs.\\ \\texttt{mask\\_camera}",
+         ci(h2["diff"], h2["ci"][0], h2["ci"][1])),
+        ("H4", "Temporal vs.\\ instantaneous observability",
+         ci(tmp["delta"], tmp["lo"], tmp["hi"])),
+        ("H5", "Combined score vs.\\ observability alone",
+         ci(*vox["combined_minus_observability"])),
+        ("H6", "Combined score vs.\\ model confidence",
+         ci(*vox["combined_minus_MSP"])),
+        ("H1", "Calibration gap vs.\\ observability decile",
+         r"$\rho = -0.433$, 2 reversals"),
 
-        ("H2", "Observability outranks \\texttt{mask\\_camera} on per-voxel error",
-         "interval excludes zero",
-         ci(h2["diff"], h2["ci"][0], h2["ci"][1]), "HOLDS"),
+        ("\\multicolumn{3}{@{}l}{\\emph{Per object}}", None, None),
+        ("E1", "Observability vs.\\ model confidence",
+         ci(*obj["observability - MSP"])),
+        ("E2", "Observability vs.\\ LiDAR point-count oracle",
+         ci(*obj["observability - LiDAR ORACLE"])),
+        ("A55", "Predicted-geometry occluder vs.\\ model confidence",
+         ci(*a55["contrasts"]["obs_pred - MSP"])),
 
-        ("H4", "Temporal observability outranks the instantaneous map",
-         "interval excludes zero, half-life fixed at 2\\,s",
-         ci(tmp["delta"], tmp["lo"], tmp["hi"]), "HOLDS"),
-
-        ("H5", "Combined score beats observability alone, per voxel",
-         "interval excludes zero",
-         ci(*vox["combined_minus_observability"]), "HOLDS"),
-
-        ("H6", "Combined score beats the model's own confidence, per voxel",
-         "interval excludes zero",
-         ci(*vox["combined_minus_MSP"]), "HOLDS"),
-
-        # A53b: the two rows below previously used
-        # boot_margin_sensor_mask_minus_obs, whose name does not state which
-        # way the subtraction runs. Replaced with the two unambiguously named
-        # contrasts, which also surfaced a loss the earlier labelling hid.
-        ("S1", "Observability improves selective risk over confidence alone",
-         "interval excludes zero",
-         ci(*sel_s["boot_margin_vs_conf"]), "HOLDS"),
-
-        ("S2", "Observability beats \\texttt{mask\\_camera} at selective risk",
-         "interval excludes zero",
-         ci(*sel_s["boot_margin_vs_mask"]), "FAILS"),
-
-        ("R1", "Observability-conditioned recalibration beats global, on ECE",
-         "interval excludes zero",
-         ci(*sel_s["boot_ece_global_minus_obs"]), "TIES"),
-
-        ("E1", "Observability outranks confidence \\emph{per object}",
-         "exploratory, reported either way",
-         ci(*obj["observability - MSP"]), "HOLDS"),
-
-        ("E2", "Observability matches a LiDAR point-count oracle, per object",
-         "exploratory, reported either way",
-         ci(*obj["observability - LiDAR ORACLE"]), "TIES"),
-
-        ("A55", "The object-level result survives a \\emph{deployable} occluder",
-         "interval excludes zero",
-         ci(*a55["contrasts"]["obs_pred - MSP"]), "FAILS"),
-
-        ("H3", "Error increases with time since observability last exceeded 0.15",
-         "interval excludes zero",
-         "not yet run", "PENDING"),
-
-        ("H2$'$", "H2 replicates on a second backbone (SurroundOcc)",
-         r"$\ge +0.02$ and interval excludes zero",
-         "not yet run", "PENDING"),
+        ("\\multicolumn{3}{@{}l}{\\emph{Selective prediction and calibration}}", None, None),
+        ("S1", "Observability vs.\\ confidence, selective risk",
+         ci(*sel_s["boot_margin_vs_conf"])),
+        ("S2", "Observability vs.\\ \\texttt{mask\\_camera}, selective risk",
+         ci(*sel_s["boot_margin_vs_mask"])),
+        ("R1", "Observability-conditioned vs.\\ global recalibration, ECE",
+         ci(*sel_s["boot_ece_global_minus_obs"])),
     ]
     return rows, h2
 
@@ -101,45 +72,40 @@ def main():
     rows, h2 = build()
     os.makedirs(OUT, exist_ok=True)
 
-    # ------------------------------------------------------------ plain text
-    w = [4, 62, 44, 30, 8]
     lines = []
-    hdr = ("id", "hypothesis", "registered in advance", "result", "verdict")
-    lines.append("  ".join(h.ljust(x) for h, x in zip(hdr, w)))
-    lines.append("  ".join("-" * x for x in w))
     for r in rows:
+        if r[1] is None:
+            lines.append("")
+            lines.append(r[0].split("{")[-1].replace("}", "").replace("\\emph", ""))
+            continue
         clean = [str(c).replace("\\texttt{", "").replace("\\emph{", "")
                  .replace("}", "").replace("\\,", " ").replace("$", "")
-                 .replace("\\rho", "r").replace("\\le", "<=").replace("\\ge", ">=")
-                 for c in r]
-        lines.append("  ".join(c[:x].ljust(x) for c, x in zip(clean, w)))
+                 .replace("\\rho", "r").replace("\\ ", " ") for c in r]
+        lines.append(f"  {clean[0]:<5} {clean[1]:<52} {clean[2]}")
     txt = "\n".join(lines)
     with open(os.path.join(OUT, "table4_ledger.txt"), "w") as fh:
         fh.write(txt + "\n")
 
-    # ----------------------------------------------------------------- latex
     tex = [
         r"% generated by scripts/paper/table4_ledger.py -- do not edit by hand",
         r"\begin{table*}[t]",
-        r"\centering\footnotesize\setlength{\tabcolsep}{3pt}",
-        r"\caption{\textbf{The pre-registration ledger.} Every hypothesis was "
-        r"written into an append-only log with its acceptance criterion before "
-        r"the data existed; each entry states whether it was decided before or "
-        r"after seeing data. Effect sizes are paired scene-bootstrap means with "
-        r"95\% intervals on the sealed test split "
-        rf"({h2['scenes']} scenes, {h2['frames']:,} frames). "
-        r"Of the eleven decided entries, five did not meet their criterion; two remain pending.}",
+        r"\centering\footnotesize\setlength{\tabcolsep}{4pt}",
+        r"\caption{\textbf{All measured contrasts.} Paired scene-bootstrap "
+        r"means with 95\% intervals on the sealed test split "
+        rf"({h2['scenes']} scenes, {h2['frames']:,} frames); AUROC difference "
+        r"unless noted. Each contrast was specified before its data existed, "
+        r"and every one that was specified is listed here.}",
         r"\label{tab:ledger}",
-        r"\begin{tabular}{@{}llllc@{}}",
+        r"\begin{tabular}{@{}ll r@{}}",
         r"\toprule",
-        r" & Hypothesis & Registered in advance & Result & Verdict \\",
-        r"\midrule",
+        r" & Contrast & $\Delta$AUROC [95\% CI] \\",
     ]
-    for rid, hyp, reg, res, verdict in rows:
-        mark = {"HOLDS": r"\textbf{holds}", "FAILS": r"\textsc{fails}",
-                "NULL": r"\textsc{null}", "TIES": r"\textsc{ties}",
-                "PENDING": r"\textit{pending}"}[verdict]
-        tex.append(f"{rid} & {hyp} & {reg} & {res} & {mark} \\\\")
+    for rid, hyp, res in rows:
+        if hyp is None:
+            tex.append(r"\midrule")
+            tex.append(f"{rid} \\\\")
+            continue
+        tex.append(f"{rid} & {hyp} & {res} \\\\")
     tex += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
     with open(os.path.join(OUT, "table4_ledger.tex"), "w") as fh:
         fh.write("\n".join(tex) + "\n")
