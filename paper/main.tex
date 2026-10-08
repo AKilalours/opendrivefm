@@ -222,7 +222,7 @@ outside the network from the camera rig and a scene-geometry field:
       dense occupancy is substituted as the occluder, through
       over-occlusion rather than any circularity in the idea. All
       hypotheses were pre-registered and every outcome is reported,
-      including this one (\cref{tab:ledger}).
+      including this one.
 \end{itemize}
 
 
@@ -789,6 +789,7 @@ a vehicle.
 
 \subsection{Ablations}
 \label{sec:ablations}
+\input{../outputs/tables/table4_ledger}
 \paragraph{Temporal accumulation.} Propagating past observability through
 ego poses with an exponential half-life, and scoring on the same voxels:
 half-lives of $0.5$, $1$, $2$ and $4$\,s give $+0.0080$, $+0.0083$,
@@ -879,7 +880,6 @@ recalibration and the LiDAR-oracle comparison tie. Two remain pending. The
 failures are not peripheral --- A55 bounds this paper's own contribution to
 evaluation time --- and listing them is cheaper than having a reader find
 them.
-\input{../outputs/tables/table4_ledger}
 
 % TODO(pod): H2' on SurroundOcc. Registered in METHOD_FREEZE A53 with
 % acceptance >= +0.02 and an interval excluding zero, before the run.
