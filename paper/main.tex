@@ -110,18 +110,19 @@ evaluation-time diagnostic.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig0_hero.pdf}
-\caption{\textbf{When confidence is blind: a missed object appears as confident free space.}
-(a)~A pedestrian at $18$\,m, behind a lamp post, into direct sun; the
-ground truth contains it. (b)~The predicted occupancy over the same volume
-contains nothing inside the circle, and the model assigns the free class
-there at confidence $1.00$. Its softmax offers no signal, because a
-confident prediction of \emph{free} is exactly what a missed object looks
-like. (c)~Observability for the same frame: the post casts a
-zero-observability wedge and the pedestrian sits inside it. (d)~The
-consequence, over the sealed test split. Confidence ranks error better at
-voxel and frame granularity; at object granularity --- the question
-\emph{was anything here at all} --- the ordering inverts. Panels (a)--(c)
-are one token; (d) is \nObj\ objects.}
+\caption{\textbf{\textsc{SightOcc}: geometric observability from the camera
+rig alone.} The six rig images and the calibration define, for every voxel,
+a projected coverage $c_i(v)$ --- how much image area the voxel subtends in
+camera $i$ --- and a first-hit visibility $s_i(v;\mathcal{G})$ --- whether
+the ray from that camera reaches it through the scene-geometry field
+$\mathcal{G}$. Their product, maximised over cameras, is
+$O(v;\mathcal{G})$. No training and one parameter. Nothing in the pipeline
+reads the occupancy model, which is why the measure can rank failures the
+model's own confidence cannot: at object granularity observability reaches
+\objObs\ AUROC against \objMSP\ for confidence, while at voxel granularity
+the ordering is the other way round. Rig images, geometry volume and
+observability map are one sealed-test frame, token
+\texttt{312cd4d3}; the two bar panels are the full test split.}
 \label{fig:hero}
 \end{figure*}
 

@@ -4086,3 +4086,22 @@ near-invariant to it by construction, and the residual dependence is
 smaller than the effect being reported. Recorded as a defence of the
 parameter, not a tuning of it -- no value other than 965 is used anywhere
 else in the paper.
+
+## A57 - figure token selection (2026-10-08)
+
+Four figures previously shared one frame (dc03fe4e), so the same camera
+image appeared 3x and the same observability heatmap 4x across the paper.
+Figure tokens are now selected by script, not by eye.
+
+scripts/viz/pick_tokens.py, seed 20261108. Pool: sealed-test tokens whose
+full six-camera rig is present in the local nuScenes mirror and which have
+an observability volume (n = 80; the mirror is partial, which is the binding
+constraint). Rule: the token whose zero-observability fraction is closest to
+the pool median. Selected 312cd4d3bef1476a9211d3dab50dd0b7 at 0.6292 against
+a pool median of 0.5868. Recorded in outputs/artifacts/figure_tokens.json.
+
+Figure 1 is composited by scripts/viz/fig1_pipeline_fill.py onto a
+hand-drawn schematic shell (assets/fig1_shell.png) that contains only
+blocks, arrows and formulas. Every slot in the shell is detected by colour
+and filled with a render from data/pack or outputs/artifacts. The two bar
+panels read baselines.json and baselines_object.json at build time.
