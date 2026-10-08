@@ -42,7 +42,7 @@ def main():
     fig, (ax, bx) = plt.subplots(1, 2, figsize=(7.0, 2.85),
                                  gridspec_kw={"width_ratios": [1.05, 1]})
     fig.subplots_adjust(wspace=0.42, left=0.085, right=0.985,
-                        top=0.86, bottom=0.16)
+                        top=0.875, bottom=0.255)
 
     cells = [((msp >= c_t) & (obs < o_t),  0, 1, "BLIND SPOT",
               "sure, no evidence", C_HOT),
@@ -79,14 +79,16 @@ def main():
         sp.set_visible(False)
     hi_lo = 100 * miss[(msp >= c_t) & (obs < o_t)].mean()
     hi_hi = 100 * miss[(msp >= c_t) & (obs >= o_t)].mean()
-    ax.annotate("", xy=(1.0, 1.5), xytext=(2.0, 1.5),
-                arrowprops=dict(arrowstyle="<->", lw=1.0, color=INK))
-    ax.text(1.5, 1.93, f"at matched high confidence, "
-                       f"{hi_lo/hi_hi:.1f}$\\times$ the miss rate",
-            ha="center", va="top", fontsize=6.8, color=INK,
-            fontweight="bold")
+    ax.annotate("", xy=(0.52, 1.035), xytext=(0.98, 1.035),
+                xycoords="axes fraction", textcoords="axes fraction",
+                arrowprops=dict(arrowstyle="<->", lw=0.9, color=INK),
+                annotation_clip=False, zorder=7)
+    ax.text(0.5, 1.045, f"at matched high confidence, "
+            f"{hi_lo/hi_hi:.1f}$\\times$ the miss rate",
+            transform=ax.transAxes, ha="center", va="bottom", fontsize=6.8,
+            color=INK, fontweight="bold")
     ax.set_title("(a)  The two axes are not the same question",
-                 fontsize=8.2, loc="left", pad=16)
+                 fontsize=8.2, loc="left", pad=20)
 
     # ---- (b) per class, where it wins and where it loses ---------------
     d = json.load(open(os.path.join(ROOT,
@@ -108,22 +110,25 @@ def main():
     bx.set_yticks(y)
     bx.set_yticklabels([f"{nm.get(c['cls'], c['cls'])}  ({c['n']:,})"
                         for c in d], fontsize=7)
-    bx.set_xlim(-0.33, 0.27)
+    bx.set_xlim(-0.345, 0.285)
     bx.set_xlabel("AUROC:  observability $-$ confidence", fontsize=7.8,
-                  labelpad=3)
+                  labelpad=24)
     bx.xaxis.grid(True, color=GRID, lw=0.5, zorder=0); bx.set_axisbelow(True)
     for sp in ("top", "right", "left"):
         bx.spines[sp].set_visible(False)
     bx.tick_params(axis="y", length=0)
     # the sort puts the most negative at the bottom, so the labels go
     # bottom-left and top-right. The first draft had them swapped.
-    bx.text(0.985, 0.96, "geometry wins", transform=bx.transAxes, ha="right",
-            va="top", fontsize=6.8, color=C_GEOM, fontweight="bold")
-    bx.text(0.015, 0.04, "confidence wins", transform=bx.transAxes,
-            ha="left", va="bottom", fontsize=6.8, color=C_CONF,
-            fontweight="bold")
+    bx.annotate("geometry wins", xy=(0.5, -0.165), xycoords="axes fraction",
+                xytext=(14, 0), textcoords="offset points", ha="left",
+                va="center", fontsize=6.8, color=C_GEOM, fontweight="bold",
+                annotation_clip=False)
+    bx.annotate("confidence wins", xy=(0.5, -0.165), xycoords="axes fraction",
+                xytext=(-14, 0), textcoords="offset points", ha="right",
+                va="center", fontsize=6.8, color=C_CONF, fontweight="bold",
+                annotation_clip=False)
     bx.set_title("(b)  and neither wins everywhere", fontsize=8.2,
-                 loc="left", pad=5)
+                 loc="left", pad=20)
 
     fig.text(0.085, -0.03,
              f"(a) {len(obs):,} test objects split at the population medians, "
