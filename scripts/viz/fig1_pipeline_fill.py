@@ -19,31 +19,32 @@ from scipy import ndimage
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SHELL = os.path.join(ROOT, "assets/fig1_shell.png")
 OUT = os.path.join(ROOT, "outputs/figures")
-SS = 3                      # supersample factor for each rendered slot
+SS = 2                      # supersample factor for each rendered slot
 INK = "#1a1a1a"
 CAM_ORDER = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT",
              "CAM_BACK", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
 
 
 def slots(img):
-    a = np.array(img.convert("RGB")).astype(int)
+    """Locate the shell's empty placeholder rectangles by colour."""
+    a = np.array(img.convert("RGB")).astype(np.int16)
     m = np.abs(a - 232).max(2) <= 6
     lab, n = ndimage.label(m)
+    sizes = ndimage.sum_labels(m, lab, np.arange(1, n + 1))
     boxes = []
-    for i in range(1, n + 1):
-        ys, xs = np.where(lab == i)
-        if len(ys) < 3000:
+    for i, sl in enumerate(ndimage.find_objects(lab)):
+        if sl is None or sizes[i] < 3000 * (img.width / 2172.0) ** 2:
             continue
-        boxes.append((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1))
-    cams = sorted([b for b in boxes if b[2] - b[0] < 200], key=lambda b: (b[1], b[0]))
-    rest = sorted([b for b in boxes if b[2] - b[0] >= 200], key=lambda b: b[0])
+        boxes.append((sl[1].start, sl[0].start, sl[1].stop, sl[0].stop))
+    thr = 200 * img.width / 2172.0
+    cams = sorted([b for b in boxes if b[2] - b[0] < thr], key=lambda b: (b[1], b[0]))
+    rest = sorted([b for b in boxes if b[2] - b[0] >= thr], key=lambda b: b[0])
     return dict(A=cams, B=rest[0], C=rest[1], D=rest[2], E=rest[3])
 
 
 def fig_to_img(fig, w, h):
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=100, facecolor="white",
-                bbox_inches=None, pad_inches=0)
+    fig.savefig(buf, format="png", dpi=100, facecolor="white", pad_inches=0)
     plt.close(fig)
     buf.seek(0)
     return Image.open(buf).convert("RGB").resize((w, h), Image.LANCZOS)
@@ -113,6 +114,9 @@ def main():
     obj = json.load(open(os.path.join(ROOT, "outputs/artifacts/baselines_object.json")))["auroc"]
 
     shell = Image.open(SHELL).convert("RGB")
+    if shell.width < 4000:            # upscale before compositing so the
+        shell = shell.resize((shell.width * 2, shell.height * 2),
+                             Image.LANCZOS)   # slot renders print sharp
     S = slots(shell)
 
     # ---- A1..A6 : the six real rig images, in the shell's label order
@@ -131,7 +135,7 @@ def main():
     fig = plt.figure(figsize=(w * SS / 100, h * SS / 100), dpi=100)
     ax = fig.add_subplot(111, projection="3d")
     fig.subplots_adjust(0, 0, 1, 1)
-    st = 3
+    st = 4
     o = occ[::st, ::st, :]
     xs, ys, zs = np.nonzero(o)
     keep = (xs > 4) & (xs < o.shape[0] - 4) & (ys > 4) & (ys < o.shape[1] - 4)
@@ -143,7 +147,7 @@ def main():
     ax.set_zlim(0, max(6, zs.max()))
     ax.set_box_aspect((1, 1, 0.34)); ax.view_init(elev=30, azim=-58)
     ax.set_axis_off(); ax.set_proj_type("ortho")
-    shell.paste(fit_center(autocrop(fig_to_img(fig, w * 2, h * 2)), w, h), (x0, y0))
+    shell.paste(fit_center(autocrop(fig_to_img(fig, w, h)), w, h), (x0, y0))
 
     # ---- C : the observability volume, BEV, max over z
     obs = np.load(os.path.join(ROOT, "data/pack/obs_max", tok + ".npy")).astype(np.float32) / 255.
@@ -174,7 +178,8 @@ def main():
 
     os.makedirs(OUT, exist_ok=True)
     shell.save(os.path.join(OUT, "fig0_hero.png"), dpi=(600, 600))
-    shell.save(os.path.join(OUT, "fig0_hero.pdf"), "PDF", resolution=600.0)
+    shell.save(os.path.join(OUT, "fig0_hero.pdf"), "PDF",
+               resolution=shell.width / 7.0)
     print("token", tok)
     print("voxel ", {k: round(vox[k], 4) for k in ("MSP", "observability", "mask_camera")})
     print("object", {k: round(v, 4) for k, v in obj.items()

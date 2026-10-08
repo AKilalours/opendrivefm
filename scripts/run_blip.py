@@ -14,7 +14,8 @@ os.environ["BLIP_PATH"] = os.path.abspath("blip-base")
 import sys; sys.path.insert(0, ".")
 from vlm_scene_understanding import caption_scene, load_vlm
 
-BUNDLE = json.load(open('/home/claude/outputs/console/bundle.json'))
+BUNDLE = json.load(open(os.path.join(os.environ.get("ODFM_OUT", "outputs"),
+                        "console", "bundle.json")))
 CAMS = ["CAM_FRONT", "CAM_FRONT_LEFT", "CAM_FRONT_RIGHT",
         "CAM_BACK", "CAM_BACK_LEFT", "CAM_BACK_RIGHT"]
 
