@@ -1,4 +1,4 @@
-# OpenDriveFM / SightOcc - 5 LinkedIn posts + matching image prompts
+# OpenDriveFM / SightOcc - 6 LinkedIn posts + matching image prompts
 
 Every number below is measured on the sealed 75-scene test split
 (3,008 frames, 40,863 dynamic objects, FB-OCC r50 on Occ3D-nuScenes).
@@ -19,6 +19,83 @@ House style for all five, matching the reference infographics:
 > 3D, no photographs. All numbers set in tabular serif. One short italic
 > takeaway line centred at the bottom. Small attribution text bottom right.
 > 4:3 aspect ratio.
+
+---
+
+# 0. THE CORE IDEA (lead post for the series)
+
+### Prompt
+
+> Title: "Observability". Subtitle: "A camera either resolved that space,
+> or it did not. The network does not get a vote."
+> Three panels left to right, connected by thin arrows.
+>
+> PANEL 1 "The question nobody asks": a plan-view line-art car with six
+> camera cones radiating outward in warm tan, overlapping near the vehicle.
+> Three simple obstacle blocks labelled building, hedge, truck each throw a
+> grey wedge-shaped shadow outward. Inside the largest shadow, a small
+> dashed outline of a bus with the label "predicted free, p = 1.00". Panel
+> caption underneath: "every rig has a blind volume; the model reports the
+> same answer inside it and outside it".
+>
+> PANEL 2 "The measure": two small rounded sub-boxes side by side joined by
+> a circled multiply symbol. Left sub-box "coverage", with a tiny diagram
+> of a voxel cube projecting onto an image plane as a shrinking square and
+> the note "how much image area, falls off as 1/d squared". Right sub-box
+> "visibility", with a tiny diagram of a ray from a camera origin stopping
+> at the first filled cell, the cells behind it greyed, and the note "does
+> the ray get there first". Below both, a single boxed line in larger
+> serif: "O = max over cameras of coverage x visibility". Three small tags
+> beneath it: "no training", "one parameter", "never reads the model".
+>
+> PANEL 3 "What it buys": a clean slope chart with two lines across three
+> x-positions labelled per voxel, per frame, per object. Tan line labelled
+> "model confidence" at 0.880, 0.862, 0.719. Slate line labelled
+> "observability" at 0.632, 0.807, 0.762. Circle the crossing between frame
+> and object. Beneath the chart, two stacked stat rows: "beats the dataset
+> camera mask by +0.048 AUROC" and "within noise of a LiDAR point-count
+> oracle, 0.762 against 0.774".
+>
+> Bottom line: "Confidence rates the prediction. Geometry rates the
+> evidence."
+> Small caption in the lower left: "40,863 objects, 3,008 frames, 75 sealed
+> test scenes."
+
+### Post
+
+Every self-driving camera rig has a volume of space it cannot see, and the
+model gives you the same answer inside it as outside it.
+
+That is the whole project in one sentence.
+
+A camera-only occupancy model predicts a class for every voxel around the
+car. Where it has no evidence, it does not abstain. It predicts free space,
+and it does so at maximum confidence. Across 40,863 objects in my test
+split the median softmax value is exactly 1.00.
+
+So I stopped asking the network and asked the rig instead.
+
+Observability is two things multiplied. How much image area a voxel
+subtends in a camera, which falls off as one over distance squared. And
+whether the ray from that camera actually reaches it before a building, a
+hedge or a truck gets in the way. Take the best any single camera manages.
+
+No training. One parameter. It never reads the model's output, which is
+exactly why it can see what the model's confidence cannot.
+
+The result is a crossover. Ranking whether an individual voxel is wrong,
+confidence wins by a wide margin, 0.880 against 0.632. Ranking whether a
+whole object was missed entirely, geometry wins, 0.762 against 0.719, and
+lands within noise of a LiDAR point-count oracle at 0.774.
+
+Confidence is a statement about a prediction that exists. A missed object
+is the absence of one.
+
+Two different questions. Most stacks only instrument the first.
+
+Which one is your monitoring actually answering?
+
+#AutonomousDriving #ComputerVision #Perception #3DOccupancy #MLSafety
 
 ---
 
