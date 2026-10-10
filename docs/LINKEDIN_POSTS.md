@@ -83,17 +83,17 @@ hedge or a truck gets in the way. Take the best any single camera manages.
 No training. One parameter. It never reads the model's output, which is
 exactly why it can see what the model's confidence cannot.
 
-The result is a crossover. Ranking whether an individual voxel is wrong,
-confidence wins by a wide margin, 0.880 against 0.632. Ranking whether a
-whole object was missed entirely, geometry wins, 0.762 against 0.719, and
-lands within noise of a LiDAR point-count oracle at 0.774.
+Ranking whether an individual voxel is wrong, confidence wins by a wide
+margin, 0.880 against 0.632. Ranking whether a whole object was missed
+entirely, geometry wins, 0.762 against 0.719, and lands within noise of a
+LiDAR point-count oracle at 0.774.
 
-Confidence is a statement about a prediction that exists. A missed object
-is the absence of one.
+This is not an argument for or against any sensor suite. Tesla runs pure
+vision. Waymo, Zoox, Motional, Plus and Bot Auto all carry LiDAR. Every one
+of those rigs still has a blind volume, and the question is whether the
+stack has a number for where it is.
 
-Two different questions. Most stacks only instrument the first.
-
-Which one is your monitoring actually answering?
+Does yours?
 
 #AutonomousDriving #ComputerVision #Perception #3DOccupancy #MLSafety
 
@@ -145,12 +145,17 @@ prediction the network made. A missed object is the absence of a
 prediction. There is nothing for softmax to be unsure about, so it reports
 a confident vote for free space.
 
-Geometry never consults the model, so it does not share the blind spot.
+Granularity is why this matters more for some stacks than others. A voxel
+error is a rendering artifact. A missed object at highway speed is a
+stopping-distance problem, which is the regime Plus and Bot Auto operate
+in. Bot Auto ran 231 miles of I-45 from Houston to Dallas in April with
+nobody in the cab. At that speed the question is not how wrong a voxel is.
+It is whether anything was flagged at all.
 
 If your failure detector is a function of the model's output, what happens
 when the model produces no output at all?
 
-#AutonomousDriving #ComputerVision #Perception #MLSafety #3DOccupancy
+#AutonomousDriving #ComputerVision #Perception #MLSafety #Trucking
 
 ---
 
@@ -195,7 +200,10 @@ I also looked at where the unobserved volume actually sits. It is not
 exotic. 43.9% of it is behind man-made structure, 27.9% behind vegetation,
 10.4% behind other vehicles.
 
-Buildings, bushes and trucks. The ordinary furniture of a city street.
+Buildings, bushes and parked trucks. The ordinary furniture of a dense city
+street, which is exactly the operating domain Waymo, Zoox and Motional have
+chosen. A highway has long sightlines. A San Francisco intersection has a
+delivery van parked in front of a crosswalk.
 
 One more number. Among objects in the lowest observability band, 47.3% are
 never predicted at all. In the highest band, 4.7%.
@@ -203,10 +211,10 @@ never predicted at all. In the highest band, 4.7%.
 The geometry knows which is which before the network runs, because it is
 computed from the calibration and the scene, not from the model.
 
-When your system reports high confidence, do you know whether it had
-anything to be confident about?
+When your system reports high confidence in an urban scene, do you know
+whether it had anything to be confident about?
 
-#AutonomousVehicles #Perception #SensorFusion #SafetyCritical #AIResearch
+#AutonomousVehicles #Robotaxi #Perception #SensorFusion #AIResearch
 
 ---
 
@@ -263,11 +271,13 @@ So the honest claim is narrower than I wanted. This is an evaluation-time
 diagnostic, not a runtime monitor, until the geometry comes from a source
 independent of the occupancy model.
 
-Writing that sentence was harder than running the experiment.
+The safety teams at Waymo, Zoox, Motional, Plus and Bot Auto all live on
+this distinction between what a metric shows offline and what survives on
+a vehicle. I would rather state the boundary than have a reviewer find it.
 
-What is a negative result you kept in the paper instead of burying?
+What is a negative result you kept instead of burying?
 
-#ResearchIntegrity #MachineLearning #AutonomousDriving #PhDLife #OpenScience
+#ResearchIntegrity #AutonomousDriving #MachineLearning #SafetyCritical #OpenScience
 
 ---
 
@@ -317,15 +327,16 @@ and the per-voxel error rate still varies by 2.6 times across observability
 deciles. The mask is flat there. Geometry is not.
 
 Head to head on ranking per-voxel error, continuous observability beats the
-binary mask by 0.0484 AUROC, interval [0.0390, 0.0584] on a split that was
-sealed before any of this was developed.
+binary mask by 0.0484 AUROC, interval [0.0390, 0.0584] on a split sealed
+before any of this was developed.
 
 None of which means the mask fails at its job. Its job is deciding where
-labels are valid, and it does that well.
+labels are valid, and it does that well. Worth remembering that nuScenes
+came out of Motional, and the whole field including me has been building on
+it for years. A label-validity flag quietly becoming a reliability metric
+is a failure of our reading, not of their dataset.
 
-It is just not a reliability signal, and it was never built to be one.
-
-What is a dataset artifact you have seen quietly repurposed as a metric?
+What is a dataset artifact you have seen repurposed as a metric?
 
 #ComputerVision #Datasets #Benchmarking #AutonomousDriving #MLEngineering
 
