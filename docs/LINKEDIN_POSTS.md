@@ -68,37 +68,39 @@ model gives you the same answer inside it as outside it.
 
 That is the whole project in one sentence.
 
-A camera-only occupancy model predicts a class for every voxel around the
-car. Where it has no evidence, it does not abstain. It predicts free space,
-and it does so at maximum confidence. Across 40,863 objects in my test
-split the median softmax value is exactly 1.00.
+I did not arrive at this on my own. OpenDriveFM runs on nuScenes, which
+Motional gave the field and which most of us learned 3D perception on.
+Tesla's occupancy networks are the reason camera-only occupancy is a
+serious research direction at all. Waymo opened a dataset that set the bar
+for what rigorous AV evaluation looks like. Zoox, Plus AI and Bot Auto are
+proving the hard part, which is that this has to work on real roads at real
+speed. I have read their published work for two years. This project exists
+because they made the problem legible.
 
-So I stopped asking the network and asked the rig instead.
+Here is the gap I went after.
 
-Observability is two things multiplied. How much image area a voxel
-subtends in a camera, which falls off as one over distance squared. And
-whether the ray from that camera actually reaches it before a building, a
-hedge or a truck gets in the way. Take the best any single camera manages.
+A camera-only occupancy model predicts a class for every voxel. Where it
+has no evidence it does not abstain. It predicts free space at maximum
+confidence. Across 40,863 objects in my sealed test split the median
+softmax value is exactly 1.00.
 
-No training. One parameter. It never reads the model's output, which is
-exactly why it can see what the model's confidence cannot.
+So I stopped asking the network and asked the rig.
 
-Ranking whether an individual voxel is wrong, confidence wins by a wide
-margin, 0.880 against 0.632. Ranking whether a whole object was missed
-entirely, geometry wins, 0.762 against 0.719, and lands within noise of a
-LiDAR point-count oracle at 0.774.
+Observability is image area a voxel subtends, times whether the ray reaches
+it before a building or a truck does. No training. One parameter. It never
+reads the model, which is precisely why it sees what confidence cannot.
 
-This is not an argument for or against any sensor suite. Tesla runs pure
-vision. Waymo, Zoox, Motional, Plus and Bot Auto all carry LiDAR. Every one
-of those rigs still has a blind volume, and the question is whether the
-stack has a number for where it is.
+Per voxel, confidence wins, 0.880 to 0.632. Per object, meaning the thing
+was missed entirely, geometry wins, 0.762 to 0.719, within noise of a LiDAR
+oracle at 0.774.
 
-Does yours?
+Full paper and code are coming.
+
+Which question is your monitoring actually answering?
 
 #AutonomousDriving #ComputerVision #Perception #3DOccupancy #MLSafety
 
 ---
-
 # 1. The granularity inversion
 
 ### Prompt
@@ -122,43 +124,43 @@ Does yours?
 
 ### Post
 
-A camera-only occupancy model can be 100% confident about a bus it never saw.
+A camera-only occupancy model can be 100 percent confident about a bus it
+never saw.
 
-Not 99%. The median maximum-softmax value across all 40,863 objects in my
+Not 99. The median maximum-softmax value across all 40,863 objects in my
 test split is exactly 1.00.
 
-Here is the part that surprised me.
+Tesla's occupancy network talks convinced a lot of us that dense volumetric
+prediction from cameras alone was the right output format. I agree. What I
+wanted to know was how such a model fails, and whether its own confidence
+tells you.
 
-I built a learning-free measure of geometric observability: how much image
-area a voxel subtends in each camera, multiplied by whether the ray reaches
-it before anything else blocks it. No network. One parameter.
+So I built a learning-free measure of geometric observability. Image area a
+voxel subtends in each camera, multiplied by whether the ray reaches it
+before anything else blocks it. One parameter. No network.
 
-Then I raced it against the model's own confidence at three granularities.
+Then I raced it against the model's confidence at three granularities.
 
-Per voxel, confidence wins easily. 0.880 AUROC against 0.632.
+Per voxel, confidence wins easily. 0.880 AUROC to 0.632.
 
-Per object, meaning "did the model miss this thing entirely", the ordering
+Per object, meaning did the model miss this thing entirely, the ordering
 flips. Geometry 0.762, confidence 0.719.
 
-The reason is structural, not empirical. Confidence is a statement about a
-prediction the network made. A missed object is the absence of a
-prediction. There is nothing for softmax to be unsure about, so it reports
-a confident vote for free space.
+What makes this different from the uncertainty literature is the one design
+choice. Every baseline I compared against is a function of the model's
+output. Mine is the only signal that never reads it.
 
-Granularity is why this matters more for some stacks than others. A voxel
-error is a rendering artifact. A missed object at highway speed is a
-stopping-distance problem, which is the regime Plus and Bot Auto operate
-in. Bot Auto ran 231 miles of I-45 from Houston to Dallas in April with
-nobody in the cab. At that speed the question is not how wrong a voxel is.
-It is whether anything was flagged at all.
+That is not a trick. It is the reason it works. Confidence is a statement
+about a prediction that was made. A missed object is the absence of one.
+There is nothing for softmax to be uncertain about, so it votes free space,
+confidently.
 
 If your failure detector is a function of the model's output, what happens
 when the model produces no output at all?
 
-#AutonomousDriving #ComputerVision #Perception #MLSafety #Trucking
+#AutonomousDriving #ComputerVision #Perception #MLSafety #3DOccupancy
 
 ---
-
 # 2. The blind spot
 
 ### Prompt
@@ -181,43 +183,43 @@ when the model produces no output at all?
 
 ### Post
 
-Split 40,863 driving objects by two questions and one cell should scare you.
+Split 40,863 driving objects by two questions and one cell should stop you.
 
 Question one: is the model confident?
 Question two: did the cameras actually have evidence?
 
-High confidence, good evidence: 3.7% of those objects are missed entirely.
-
-High confidence, no evidence: 23.6% missed.
+High confidence, good evidence: 3.7 percent missed entirely.
+High confidence, no evidence: 23.6 percent missed.
 
 Same confidence. 6.3 times the miss rate.
 
-That gap is the whole argument. Confidence and observability are not
-measuring the same thing, so a stack that monitors only the first is blind
-to the second.
+I kept thinking about long-haul while I measured this. Plus AI and Bot Auto
+are solving perception at highway speed, where the occluder in front of you
+is a 53 foot trailer and the thing you need to see is well past it. Motional
+and Zoox face the dense-urban version, where the occluder is a parked van
+and the thing behind it is a person.
 
-I also looked at where the unobserved volume actually sits. It is not
-exotic. 43.9% of it is behind man-made structure, 27.9% behind vegetation,
-10.4% behind other vehicles.
+Different operating domains. Same geometry.
 
-Buildings, bushes and parked trucks. The ordinary furniture of a dense city
-street, which is exactly the operating domain Waymo, Zoox and Motional have
-chosen. A highway has long sightlines. A San Francisco intersection has a
-delivery van parked in front of a crosswalk.
+I checked where the unobserved volume actually sits on my test split. It is
+not exotic. 43.9 percent behind man-made structure, 27.9 percent behind
+vegetation, 10.4 percent behind other vehicles.
 
-One more number. Among objects in the lowest observability band, 47.3% are
-never predicted at all. In the highest band, 4.7%.
+Buildings, bushes and trucks. The ordinary furniture of a road.
 
-The geometry knows which is which before the network runs, because it is
-computed from the calibration and the scene, not from the model.
+One more. Among objects in the lowest observability band, 47.3 percent are
+never predicted at all. In the highest band, 4.7 percent.
 
-When your system reports high confidence in an urban scene, do you know
-whether it had anything to be confident about?
+The useful part is that the geometry knows which is which before the network
+runs, because it comes from the calibration and the scene rather than from
+the model. It costs one calculation, not a sensor.
 
-#AutonomousVehicles #Robotaxi #Perception #SensorFusion #AIResearch
+When your stack reports high confidence, do you know whether it had anything
+to be confident about?
+
+#AutonomousVehicles #Trucking #Perception #SensorFusion #SafetyCritical
 
 ---
-
 # 3. The result I did not want
 
 ### Prompt
@@ -245,42 +247,39 @@ whether it had anything to be confident about?
 The most useful experiment I ran this year is the one that failed.
 
 My observability measure needs a geometry field to decide what occludes
-what. In evaluation I use ground-truth occupancy, which a vehicle does not
-have. So the obvious question is whether it survives when you substitute
-the model's own predicted occupancy.
+what. In evaluation I use ground-truth occupancy. A vehicle does not have
+that. So the honest question is whether it survives when you substitute the
+model's own predicted occupancy.
 
 It does not.
 
 Object-level AUROC: 0.765 with ground-truth geometry, 0.718 for plain
 confidence, 0.671 with predicted geometry. The deployable version lands
-below the baseline it was supposed to beat.
+below the baseline it was meant to beat.
 
-I had a tidy story ready. A missed object is predicted as free, so it stops
+I had a tidy story ready. A missed object is predicted free, so it stops
 occluding, so the ray passes through and observability is falsely high.
-Elegant, and wrong.
+Elegant. Wrong.
 
 I measured it. On missed objects observability barely moves, 0.1987 to
-0.2017. On detected objects it collapses, 0.5402 to 0.4586.
+0.2017. On detected objects it collapses, 0.5402 to 0.4586. The real cause
+is that predicted occupancy calls far more of the volume occupied than the
+truth does, on one frame 79.0 percent against 5.4 percent. It over-occludes
+regions the cameras genuinely see.
 
-The real cause is that predicted occupancy calls far more of the volume
-occupied than the ground truth does, on one frame 79.0% against 5.4%. It
-over-occludes regions the cameras genuinely see. The separation between
-seen and unseen shrinks by a quarter and the ranking degrades with it.
+I kept it in the paper with the interval attached.
 
-So the honest claim is narrower than I wanted. This is an evaluation-time
-diagnostic, not a runtime monitor, until the geometry comes from a source
-independent of the occupancy model.
-
-The safety teams at Waymo, Zoox, Motional, Plus and Bot Auto all live on
-this distinction between what a metric shows offline and what survives on
-a vehicle. I would rather state the boundary than have a reviewer find it.
+That habit I picked up from reading Waymo and Motional's benchmark work.
+The reason their datasets are trusted is that the protocol is stated before
+the result, and the result is reported either way. If I want the measure
+taken seriously, it has to be held to the same standard, including when the
+answer is no.
 
 What is a negative result you kept instead of burying?
 
-#ResearchIntegrity #AutonomousDriving #MachineLearning #SafetyCritical #OpenScience
+#ResearchIntegrity #MachineLearning #AutonomousDriving #OpenScience #AIResearch
 
 ---
-
 # 4. One bit is not enough
 
 ### Prompt
@@ -307,41 +306,38 @@ What is a negative result you kept instead of burying?
 
 "Occ3D already ships a camera mask. Why build anything?"
 
-Fair, and it was the first thing I tested.
+Fair, and it was the first thing I tested. That mask exists because the
+nuScenes and Occ3D authors did careful work, and I use it constantly.
 
-mask_camera marks whether a voxel is observed. Three things make it a
-different object from what I am measuring.
+Three things make it a different object from what I am measuring.
 
 It is binary. Inside the mask it is constant, so it cannot rank anything,
-and ranking is the entire task.
+and ranking is the whole task.
 
-It is built offline from the full sensor suite, including the LiDAR the
+It is built offline from the full sensor suite, including the LiDAR a
 camera-only model never receives. It describes the annotation pipeline, not
 what the cameras resolved.
 
-It marks observation, not evidence strength. A voxel grazed by one camera
-at 40 metres and a voxel filling half an image both read 1.
+It marks observation, not evidence strength. A voxel grazed by one camera at
+40 metres and a voxel filling half an image both read 1.
 
 Then the measurement. Restrict to voxels the mask already calls observed,
 and the per-voxel error rate still varies by 2.6 times across observability
 deciles. The mask is flat there. Geometry is not.
 
 Head to head on ranking per-voxel error, continuous observability beats the
-binary mask by 0.0484 AUROC, interval [0.0390, 0.0584] on a split sealed
+binary mask by 0.0484 AUROC, interval 0.0390 to 0.0584, on a split sealed
 before any of this was developed.
 
 None of which means the mask fails at its job. Its job is deciding where
-labels are valid, and it does that well. Worth remembering that nuScenes
-came out of Motional, and the whole field including me has been building on
-it for years. A label-validity flag quietly becoming a reliability metric
-is a failure of our reading, not of their dataset.
+labels are valid and it does that well. It was simply never built to be a
+reliability signal, and the field has been quietly using it as one.
 
 What is a dataset artifact you have seen repurposed as a metric?
 
 #ComputerVision #Datasets #Benchmarking #AutonomousDriving #MLEngineering
 
 ---
-
 # 5. Two camps, one blind volume
 
 ### Prompt
@@ -366,39 +362,36 @@ What is a dataset artifact you have seen repurposed as a metric?
 
 ### Post
 
-The industry split on LiDAR is usually argued as a cost question. I think
-that framing misses the interesting part.
+The LiDAR debate is usually argued as a cost question. I think that framing
+misses the interesting part.
 
 Tesla runs pure vision. Waymo, Zoox, Motional, Plus AI and Bot Auto all
-carry LiDAR. Both camps ship real systems, so neither position is naive.
+carry LiDAR. Every one of them is shipping something real, which means
+neither position is naive and both have earned the argument.
 
 Here is what my measurements say the argument is actually about.
 
-Every camera rig has a blind volume. Not a bug, a geometric fact of where
-the lenses are and what is standing in front of them. On my test split that
-volume is dominated by ordinary occluders: buildings 43.9%, vegetation
-27.9%, other vehicles 10.4%.
+Every rig has a blind volume. Not a defect, a geometric fact of where the
+lenses sit and what is standing in front of them. On my test split that
+volume is dominated by ordinary occluders: buildings 43.9 percent,
+vegetation 27.9 percent, other vehicles 10.4 percent.
 
-The question is not whether the blind volume exists. It does for a LiDAR
-rig too. The question is whether the stack knows it is in one.
+The question is not whether the blind volume exists. It does for a LiDAR rig
+too, just smaller. The question is whether the stack knows it is inside one.
 
-A camera-only occupancy model does not. It predicts free space there, at
-maximum confidence, and nothing in its output distinguishes "empty road"
-from "no evidence either way". I measured 23.6% of high-confidence objects
-in low-observability volume as missed entirely, against 3.7% where the
-cameras had a view.
+A camera-only occupancy model does not. It predicts free space there at
+maximum confidence, and nothing in its output distinguishes empty road from
+no evidence either way. I measured 23.6 percent of high-confidence objects
+in low-observability volume as missed entirely, against 3.7 percent where
+the cameras had a view.
 
-Adding a second modality shrinks the blind volume. It does not by itself
-tell you where the remaining one is.
+Adding a modality shrinks the blind volume. It does not by itself tell you
+where the remaining one is. That is a separate computation, it is cheap, and
+it is the same computation whichever camp you are in.
 
-That seems like the more useful thing to compute, whichever camp you are
-in, and it costs one geometric calculation rather than a sensor.
-
-For the perception people here: does your stack have an explicit
+For the perception people here: does your stack carry an explicit
 representation of where it cannot see?
 
 #AutonomousVehicles #Robotics #Perception #LiDAR #ComputerVision
-
----
 
 ---
