@@ -8,7 +8,8 @@ Nothing is estimated. No post mentions a conference submission.
 
 ## SHARED IMAGE STYLE
 
-House style for all five, matching the reference infographics:
+House style for all six, matching the reference infographics. Paste this
+block in front of each numbered prompt below.
 
 > Editorial infographic, warm off-white background #F7F3EC, deep navy
 > #1C2A4A for titles and rules, muted slate blue #7D93B2 and warm tan
