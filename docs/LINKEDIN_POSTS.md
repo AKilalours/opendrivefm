@@ -1,4 +1,4 @@
-# OpenDriveFM / SightOcc - 6 LinkedIn posts + matching image prompts
+# OpenDriveFM / SightOcc - 7 LinkedIn posts + matching image prompts
 
 Every number below is measured on the sealed 75-scene test split
 (3,008 frames, 40,863 dynamic objects, FB-OCC r50 on Occ3D-nuScenes).
@@ -407,5 +407,129 @@ Vegas or a Class 8 truck on I-45.
 Does your stack carry an explicit representation of where it cannot see?
 
 #AutonomousVehicles #AutonomousTrucking #Perception #LiDAR #Robotics
+
+---
+
+# 6. MASTER POSTER (the whole project in one image)
+
+### Prompt
+
+> A single large editorial infographic poster, 16:9, titled "Geometric
+> Observability", subtitle "A camera either resolved that space, or it did
+> not. The network does not get a vote."
+>
+> LIGHT COLOUR SCHEME. Warm off-white page #F7F3EC. Every panel is a white
+> #FFFFFF rounded rectangle with a 1pt pale grey #DDD8CE border and a very
+> soft shadow. All body text deep navy #1C2A4A. Five desaturated pastel
+> accents used strictly by category: sage green #6E9A78 for cameras and
+> evidence, slate blue #5E7FA8 for geometry and rays, warm tan #C2A06B for
+> the model and its confidence, dusty rose #B5726B for failures and blind
+> volume, soft violet #8E7BA8 for results. Flat vector illustration, clean
+> thin strokes, small rounded icons, no photographs, no gradients, no neon,
+> no dark background. Serif display title, clean sans body text, all
+> numbers in tabular figures.
+>
+> LAYOUT: a narrow left legend column, a large central illustration, a
+> narrow right flow column, and a full-width strip across the bottom.
+>
+> LEFT COLUMN, three stacked cards.
+> Card A "WHAT GOES IN", four rows each with a small icon: "Six cameras,
+> images only"; "Rig calibration, intrinsics and extrinsics"; "Scene
+> geometry field G"; "No LiDAR, no training, no model output".
+> Card B "THE TWO INGREDIENTS", two rows: "COVERAGE c(v), how much image
+> area a voxel subtends, falls off as one over distance squared"; "FIRST
+> HIT VISIBILITY s(v), does the ray reach the voxel before anything else".
+> Card C "THE TWO FAILURES", two rows in dusty rose: "VOXEL ERROR, the
+> class is wrong"; "MISSED OBJECT, nothing was predicted there at all".
+>
+> CENTRE, the hero illustration on a soft off-white road plan view.
+> A clean top-down car at the centre with six labelled camera frusta
+> radiating outward in translucent sage green, overlapping near the
+> vehicle. Three obstacles cast long pale grey wedge shadows outward: a
+> building block at the upper left, a hedge at the lower left, a parked
+> truck at the right. Each wedge is labelled with its share of the blind
+> volume: "man-made 43.9%", "vegetation 27.9%", "other vehicles 10.4%".
+> Inside the truck's shadow, draw a dashed rose outline of a bus with a
+> leader line to a white callout box reading "ground truth: bus, 43 m" and
+> underneath in two coloured rows "model says: free, p = 1.00" in tan and
+> "observability: O = 0.00" in slate.
+> Under the car, a boxed equation in larger serif: "O(v;G) = max over
+> cameras of c(v) x s(v)", with three small pill tags beneath it: "no
+> training", "one parameter", "never reads the model".
+> A small continuous colour strip from deep slate to pale yellow sits in
+> the lower corner of the illustration labelled "observability 0 to 1".
+>
+> RIGHT COLUMN, a numbered vertical flow of six small cards joined by thin
+> downward arrows, each with an icon and two lines of text.
+> 1 CALIBRATE, "rig geometry fixes what each camera can resolve".
+> 2 PROJECT, "coverage per voxel per camera".
+> 3 MARCH, "ray casting gives first-hit visibility".
+> 4 COMBINE, "take the best any single camera manages".
+> 5 RANK, "score every voxel, frame and object for failure".
+> 6 READ, "evaluation-time diagnostic, geometry source stated".
+>
+> BOTTOM STRIP, full width, titled "WHERE IT WINS AND WHERE IT DOES NOT",
+> split into four equal cells.
+> Cell 1 "PER VOXEL": two small bars, confidence 0.880 in tan, observability
+> 0.632 in slate, caption "confidence wins".
+> Cell 2 "PER FRAME": confidence 0.862, observability 0.807, caption
+> "close".
+> Cell 3 "PER OBJECT": observability 0.762 in slate, confidence 0.719 in
+> tan, caption "geometry wins, within noise of a LiDAR oracle at 0.774",
+> with a small highlight ring around this cell.
+> Cell 4 "THE LIMIT": a single line of text in dusty rose, "swap in the
+> model's own predicted occupancy and it drops to 0.671, below confidence.
+> Over-occlusion, not circularity."
+>
+> Bottom rule line, centred and italic: "Confidence rates the prediction.
+> Geometry rates the evidence."
+> Lower left caption in small grey: "40,863 objects, 3,008 frames, 75
+> sealed test scenes, Occ3D-nuScenes." Lower right: author name.
+
+### Post
+
+A self-driving camera rig has a volume of space it physically cannot
+resolve, and the model reports the same thing inside it as outside it.
+
+I spent this year turning that sentence into a number.
+
+Here is the whole project on one page.
+
+The input is deliberately thin. Six camera images, the rig calibration, and
+a scene geometry field. No LiDAR. No training. It never touches the model's
+output, which turns out to be the entire point.
+
+Observability is two things multiplied. How much image area a voxel
+subtends in a camera, which falls off as one over distance squared. And
+whether the ray from that camera actually reaches it before a building, a
+hedge or a trailer gets in the way. Take the best any single camera
+manages. One parameter, fixed once.
+
+What it buys you is a crossover.
+
+Ranking whether an individual voxel is wrong, the model's own confidence
+wins comfortably, 0.880 against 0.632. Ranking whether a whole object was
+missed entirely, geometry wins, 0.762 against 0.719, landing within noise
+of a LiDAR point-count oracle at 0.774.
+
+The reason is structural. Confidence is a statement about a prediction that
+exists. A missed object is the absence of one, so softmax votes free space
+at maximum confidence and means nothing by it.
+
+The honest limit is on the page too. Substitute the model's own predicted
+occupancy as the geometry and it falls to 0.671, under the baseline, from
+over-occlusion rather than circularity. That bounds this to evaluation time
+until the geometry comes from somewhere independent.
+
+Credit where it is due. This runs on nuScenes from Motional. Tesla made
+camera-only occupancy a serious direction. Waymo set the evaluation bar.
+Zoox and Plus AI keep proving it on road. And Bot Auto, Xiaodi Hou's team
+running driverless Class 8 freight down I-45 between Houston and Dallas on
+a 200 mile overnight lane, is the clearest reminder that none of this
+matters until it holds up per mile on a real route.
+
+Does your stack have an explicit representation of where it cannot see?
+
+#AutonomousDriving #AutonomousTrucking #ComputerVision #Perception #MLSafety
 
 ---
