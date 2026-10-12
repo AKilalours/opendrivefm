@@ -141,21 +141,31 @@ yourself.
 Picture a loaded Class 8 truck on I-45 at two in the morning, somewhere
 between Houston and Dallas.
 
-That is the lane Bot Auto runs. Roughly 200 miles, overnight, with Ryan
-Transportation's freight on the deck. Xiaodi Hou started the company in
-2023 after co-founding TuSimple, raised a 20 million dollar Series A, and
-went at driver-out with a fraction of the capital this field assumed was
-required. Transportation as a service, one real route, made to pencil out
-per mile before anyone talks about the second one.
+That is the lane Bot Auto runs. Roughly 200 miles, overnight, Ryan
+Transportation's freight on the deck.
 
-I have never worked there. I have spent a year building research shaped by
-how that team thinks.
+I want to be direct about why that company shaped a year of my research.
 
-Because at highway speed the question stops being how accurate is the
-perception model. A loaded tractor-trailer needs a lot of road to stop, the
-thing in front of you is a 53 foot trailer, and what matters is well past
-it. The question becomes what does the system know about its own coverage,
-right now, for free.
+Xiaodi Hou co-founded TuSimple and served as its CTO. He could have raised
+on the name alone and spent five years widening scope. He did the opposite.
+Bot Auto started in 2023, raised a 20 million dollar Series A, and went
+after driver-out freight with a fraction of the capital this industry had
+convinced itself was mandatory. One route. Real cargo. Transportation as a
+service, priced per mile, made to work before anyone discusses route two.
+
+That is not a smaller version of the ambition. It is a harder one. Demos
+forgive you. A freight lane does not. The truck either arrives on schedule
+in Texas weather at night or the business does not exist. And they publish
+schedules in advance, which means the misses are visible too. Very few
+teams in autonomy operate with that much of their work exposed.
+
+I have never worked there. I just took the discipline seriously.
+
+Because at highway speed the useful question stops being how accurate is
+the perception model. A loaded tractor-trailer needs a lot of road to stop.
+The occluder ahead is a 53 foot trailer. What matters is well past it. The
+question becomes what does the system know about its own coverage, right
+now, for free.
 
 So I stopped asking the network and asked the rig.
 
@@ -166,20 +176,25 @@ cameras, the calibration, one parameter. No LiDAR. No training. It never
 reads the model's output, which is exactly why it catches what the model
 cannot.
 
+Across 40,863 objects, the median softmax value is 1.00. The model is
+maximally confident almost everywhere, including where it has no evidence.
+Hold confidence high and vary observability and the miss rate goes from 3.7
+percent to 23.6 percent. The blind volume is ordinary: buildings 43.9
+percent, vegetation 27.9 percent, other vehicles 10.4 percent.
+
 Ranking whether a voxel is wrong, confidence wins, 0.880 to 0.632. Ranking
-whether a whole object was missed entirely, geometry wins, 0.762 to 0.719.
-Confidence is a statement about a prediction that exists. A missed object
-is the absence of one.
+whether a whole object was missed, geometry wins, 0.762 to 0.719.
+
+Confidence rates a prediction that exists. A missed object is the absence
+of one.
 
 The limit is on the poster too. Substitute the model's own predicted
-occupancy as the geometry and it drops to 0.671, under the baseline, from
-over-occlusion rather than circularity. I am not going to hide that in a
-footnote.
+occupancy and it drops to 0.671, under the baseline, from over-occlusion.
+Publishing that was the Bot Auto lesson, not a research convention.
 
-Credit also to Motional for nuScenes, Tesla for making camera-only
-occupancy serious, Waymo for the evaluation bar, and Zoox and Plus AI for
-proving it on road. But the discipline on this poster, narrow scope,
-measured claims, publish the misses, came from watching Bot Auto.
+Thanks also to Motional for nuScenes, Tesla for making camera-only
+occupancy serious, Waymo for the evaluation bar, Zoox and Plus AI for
+proving it on road.
 
 Does your stack know where it cannot see?
 
