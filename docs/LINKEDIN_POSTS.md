@@ -197,7 +197,7 @@ when there is no output?
 
 ### Post
 
-Split 40,863 driving objects by two questions and one cell should stop you.
+Split 10,790 driving objects by two questions and one cell should stop you.
 
 Is the model confident? Did the cameras actually have evidence?
 
@@ -210,27 +210,35 @@ I kept thinking about I-45 while I measured this.
 
 Bot Auto runs an overnight lane between Houston and Dallas, roughly 200
 miles of interstate, at night, in Texas weather, with Ryan Transportation's
-freight on the deck. A loaded Class 8 truck needs a lot of road to stop. The
-occluder ahead of you is a 53 foot trailer, and the thing that matters is
-well past it.
+freight on the deck. A loaded Class 8 truck needs a lot of road to stop.
+The occluder ahead of you is a 53 foot trailer, and the thing that matters
+is well past it.
 
 In that domain, the gap between "I see nothing there" and "I cannot see
 there" is not an academic distinction. It is stopping distance.
 
-On my test split, the unobserved volume is not exotic. 43.9 percent sits
-behind man-made structure, 27.9 percent behind vegetation, 10.4 percent
-behind other vehicles.
+So I went looking for what actually does the occluding. Over 400 test
+frames, 43.9 percent of the unobserved volume sits behind man-made
+structure, 27.9 percent behind vegetation, 10.4 percent behind cars, 15.7
+percent behind vehicles of all classes.
+
+Nothing exotic. Buildings, bushes and traffic.
 
 To be straight about scope: nuScenes is urban, not highway. I cannot claim
 these exact fractions transfer to a Texas interstate. What transfers is the
-method. The geometry is computed from calibration and scene, so you can run
-it on any rig and get your own numbers before the network ever runs.
+method. The geometry comes from calibration and the scene, so any team can
+run it on their own rig and get their own numbers before the network ever
+runs.
 
-Among objects in my lowest observability band, 47.3 percent are never
-predicted at all. In the highest band, 4.7 percent.
+One more, this time across all 40,863 annotated objects. In the lowest
+observability band, 47.3 percent are never predicted at all. In the highest
+band, 4.7 percent.
 
-When your stack reports high confidence, do you know whether it had anything
-to be confident about?
+The model is not slightly less sure in those places. It is confidently
+wrong, and it cannot tell you which it is.
+
+When your stack reports high confidence, do you know whether it had
+anything to be confident about?
 
 #AutonomousTrucking #Freight #Perception #SafetyCritical #AutonomousVehicles
 
