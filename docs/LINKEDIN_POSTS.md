@@ -278,7 +278,8 @@ It does not.
 
 Object-level AUROC: 0.765 with ground-truth geometry, 0.718 for plain
 confidence, 0.671 with predicted geometry. The deployable version lands
-below the baseline it was meant to beat.
+below the baseline it was meant to beat, by 0.048 with a 95 percent
+interval of 0.014 to 0.083. Not noise.
 
 I had a tidy story ready. A missed object is predicted free, so it stops
 occluding, so the ray passes through and observability is falsely high.
@@ -290,15 +291,22 @@ is that predicted occupancy calls far more of the volume occupied than the
 truth does, on one frame 79.0 percent against 5.4 percent. It over-occludes
 regions the cameras genuinely see.
 
-It stayed in the paper, with the interval attached.
+So the claim got narrower. Evaluation-time diagnostic, not a runtime
+monitor, until the geometry comes from somewhere independent of the model.
+That sentence is in the paper, with the interval next to it.
 
-That instinct comes from watching how the serious operators talk. Waymo and
-Motional built trust by stating the protocol before the result. Bot Auto
-published a driver-out schedule and then moved against it in public, which
-is a harder thing to do than it sounds, because it means the misses are
-visible too.
+Why I did not bury it.
 
-If I want this measure taken seriously, it gets held to the same standard,
+On 29 April 2026 a Bot Auto truck left Houston overnight with nobody in it
+and arrived south of Dallas at 4:57 in the morning, 230 miles, a real Ryan
+Transportation load, no safety driver and no in-cab observer. Xiaodi Hou's
+line afterwards was not a victory lap. It was "Houston to Dallas is mile
+one."
+
+That is the posture. You state what you did, precisely, and you make the
+remaining distance visible.
+
+If I want a measurement taken seriously, it gets held to the same standard,
 including when the answer is no.
 
 What is a negative result you kept instead of burying?
