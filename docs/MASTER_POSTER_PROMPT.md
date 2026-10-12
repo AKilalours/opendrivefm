@@ -90,14 +90,15 @@ downward arrows, each with a line icon, a bold label and one short line:
 
 BOTTOM STRIP, full width, heading "OBSERVABILITY BANDS", styled as a
 horizontal spectrum bar running left to right from deep slate to pale
-yellow, divided into five segments with a small arrow above it labelled
-"more camera evidence". Under each segment, the percentage of objects the
-model never predicts at all:
-  band 0 : 47.3%
-  band .21 : 25.1%
-  band .38 : 15.6%
-  band .78 : 11.9%
-  band 1 : 4.7%
+yellow, divided into six segments with a small arrow above it labelled
+"more camera evidence". Under each segment, its upper edge, its object
+count, and the percentage of objects the model never predicts at all:
+  0     n = 8,010    47.3%
+  0.21  n = 6,368    25.3%
+  0.38  n = 6,771    15.5%
+  0.78  n = 6,506    11.6%
+  <1    n = 2,104     8.5%
+  =1    n = 11,104    4.7%
 Caption under the strip, small: "share of annotated objects with no
 prediction anywhere inside the box".
 
@@ -125,7 +126,8 @@ Image models garble small digits at poster scale. Check every one.
   per object          confidence 0.719   observability 0.762
   predicted geometry  0.671
   blind volume        man-made 43.9%   vegetation 27.9%   vehicles 10.4%
-  bands               47.3 / 25.1 / 15.6 / 11.9 / 4.7 percent
+  bands  (6)          47.3 / 25.3 / 15.5 / 11.6 / 8.5 / 4.7 percent
+  band counts         8,010 / 6,368 / 6,771 / 6,506 / 2,104 / 11,104
   the missed bus      p = 1.00   O = 0.00   43 m
   scale               40,863 objects, 3,008 frames, 75 sealed test scenes
 
