@@ -136,14 +136,22 @@ sealed test split is exactly 1.00.
 
 Tesla's occupancy network work convinced a lot of us that dense volumetric
 prediction from cameras was the right output format. I agree. What I wanted
-to know is how such a model fails and whether its own confidence tells you.
+to know is how such a model fails, and whether its own confidence tells you.
 
-Bot Auto is part of why I framed it that way. Xiaodi Hou has been blunt in
-public about autonomy being an engineering and economics problem rather than
-a demo problem, and about shipping driver-out freight on a real lane instead
-of widening the scope forever. If you believe that, then the question is not
-how good is the model. It is what does the system know about its own
-coverage, right now, cheaply.
+Bot Auto is part of why I framed it that way.
+
+Xiaodi Hou has argued publicly that miles per intervention is the wrong
+yardstick, because "every company defines intervention differently" and at
+scale it becomes "a statistical rarity, essentially noise." He pushes cost
+per mile instead, on the grounds that "CPM is a benchmark metric. It's
+honest. You can't game it."
+
+That critique stuck with me, because softmax confidence has the same
+disease.
+
+It looks like a reliability number. It is reported everywhere. And it is
+quietly unfalsifiable in the one case that matters most, because a model
+that predicts nothing reports no doubt.
 
 So I built a learning-free measure of geometric observability. Image area a
 voxel subtends in each camera, times whether the ray reaches it before
@@ -156,9 +164,10 @@ Geometry 0.762, confidence 0.719.
 
 What makes this different from the uncertainty literature is one design
 choice. Every baseline I compared against is a function of the model's
-output. Mine is the only signal that never reads it. Confidence is a
-statement about a prediction that was made. A missed object is the absence
-of one.
+output. Mine is the only signal that never reads it.
+
+Confidence is a statement about a prediction that was made. A missed object
+is the absence of one.
 
 If your failure detector is a function of the model's output, what happens
 when there is no output?
