@@ -138,39 +138,49 @@ yourself.
 
 ## THE DESCRIPTION
 
-A self-driving camera rig has a volume of space it physically cannot
-resolve, and the model reports the same thing inside it as outside it.
+Picture a loaded Class 8 truck on I-45 at two in the morning, somewhere
+between Houston and Dallas.
 
-This poster is a year of work on that one sentence.
+That is the lane Bot Auto runs. Roughly 200 miles, overnight, with Ryan
+Transportation's freight on the deck. Xiaodi Hou started the company in
+2023 after co-founding TuSimple, raised a 20 million dollar Series A, and
+went at driver-out with a fraction of the capital this field assumed was
+required. Transportation as a service, one real route, made to pencil out
+per mile before anyone talks about the second one.
 
-The inputs are deliberately thin. Six camera images, the rig calibration,
-and a field describing what blocks what. No LiDAR. No training. It never
-reads the model's output, which turns out to be the whole point.
+I have never worked there. I have spent a year building research shaped by
+how that team thinks.
 
-Observability multiplies two quantities. How much image area a voxel
-subtends, which falls off as one over distance squared. And whether the
-ray from that camera reaches it before a building, a hedge or a trailer
-does. Take the best any single camera manages.
+Because at highway speed the question stops being how accurate is the
+perception model. A loaded tractor-trailer needs a lot of road to stop, the
+thing in front of you is a 53 foot trailer, and what matters is well past
+it. The question becomes what does the system know about its own coverage,
+right now, for free.
 
-Then the crossover. Ranking whether a voxel is wrong, the model's own
-confidence wins, 0.880 to 0.632. Ranking whether a whole object was missed
-entirely, geometry wins, 0.762 to 0.719, within noise of a LiDAR
-point-count oracle.
+So I stopped asking the network and asked the rig.
 
+This poster is the answer. Observability multiplies how much image area a
+voxel subtends, which falls off as one over distance squared, by whether
+the ray reaches it before a building, a hedge or a trailer does. Six
+cameras, the calibration, one parameter. No LiDAR. No training. It never
+reads the model's output, which is exactly why it catches what the model
+cannot.
+
+Ranking whether a voxel is wrong, confidence wins, 0.880 to 0.632. Ranking
+whether a whole object was missed entirely, geometry wins, 0.762 to 0.719.
 Confidence is a statement about a prediction that exists. A missed object
 is the absence of one.
 
-The limit is on the poster too. Swap in the model's own predicted
-occupancy as the geometry and it falls to 0.671, under the baseline, from
-over-occlusion rather than circularity.
+The limit is on the poster too. Substitute the model's own predicted
+occupancy as the geometry and it drops to 0.671, under the baseline, from
+over-occlusion rather than circularity. I am not going to hide that in a
+footnote.
 
-Credit where it is due. This runs on nuScenes from Motional. Tesla made
-camera-only occupancy a serious direction. Waymo set the evaluation bar.
-Zoox and Plus AI keep proving it on road. And Bot Auto, Xiaodi Hou's team
-running driverless Class 8 freight down I-45 between Houston and Dallas,
-is the reminder that none of it counts until it holds up per mile on a
-real lane.
+Credit also to Motional for nuScenes, Tesla for making camera-only
+occupancy serious, Waymo for the evaluation bar, and Zoox and Plus AI for
+proving it on road. But the discipline on this poster, narrow scope,
+measured claims, publish the misses, came from watching Bot Auto.
 
 Does your stack know where it cannot see?
 
-#AutonomousDriving #AutonomousTrucking #ComputerVision #Perception #MLSafety
+#AutonomousTrucking #Freight #AutonomousDriving #Perception #ComputerVision
