@@ -407,39 +407,45 @@ The LiDAR debate is usually argued as a cost question. I think that framing
 misses the interesting part.
 
 Tesla runs pure vision. Waymo, Zoox, Motional and Plus AI carry LiDAR.
-Bot Auto is doing something that interests me more than the sensor list,
-which is building a driverless freight business that has to pencil out per
-mile on one real lane before it scales to a second.
+Bot Auto interests me for something other than its sensor list. In April
+one of their trucks ran 230 miles from Houston to south of Dallas
+overnight with nobody in the cab, no safety driver and no in-cab observer,
+carrying a real Ryan Transportation load. One lane, made to work before
+anyone discusses a second.
 
-Every one of them is shipping something real. Nobody here is naive.
+Every one of these teams is shipping something real. Nobody here is naive.
 
 Here is what my measurements say the argument is actually about.
 
 Every rig has a blind volume. Not a defect, a geometric fact of where the
-lenses sit and what is standing in front of them. On my test split that
-volume is dominated by ordinary occluders: buildings 43.9 percent,
-vegetation 27.9 percent, other vehicles 10.4 percent.
+lenses sit and what is standing in front of them. Over 400 test frames,
+that volume is dominated by ordinary occluders: man-made structure 43.9
+percent, vegetation 27.9 percent, cars 10.4 percent, all vehicle classes
+together 15.7 percent.
 
-The question is not whether the blind volume exists. It does for a LiDAR rig
-too, just smaller. The question is whether the stack knows it is inside one.
+The question is not whether the blind volume exists. It does for a LiDAR
+rig too, just smaller. The question is whether the stack knows it is inside
+one.
 
 A camera-only occupancy model does not. It predicts free space there at
 maximum confidence, and nothing in its output separates empty road from no
-evidence either way. I measured 23.6 percent of high-confidence objects in
-low-observability volume as missed entirely, against 3.7 percent where the
-cameras had a view.
+evidence either way. Across 10,790 test objects I measured 23.6 percent of
+high-confidence objects in low-observability volume as missed entirely,
+against 3.7 percent where the cameras had a view. Same confidence, 6.3
+times the miss rate.
 
 Adding a modality shrinks the blind volume. It does not tell you where the
-remaining one is. That is a separate computation, it is cheap, it runs
-before the network, and it is the same computation on a robotaxi in Las
-Vegas or a Class 8 truck on I-45.
+remaining one is.
+
+That is a separate computation. It is cheap, it runs before the network,
+and it is the same computation on a robotaxi in Las Vegas or a Class 8
+truck on I-45.
 
 Does your stack carry an explicit representation of where it cannot see?
 
 #AutonomousVehicles #AutonomousTrucking #Perception #LiDAR #Robotics
 
 ---
-
 # 6. MASTER POSTER (the whole project in one image)
 
 ### Prompt
