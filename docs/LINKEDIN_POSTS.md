@@ -341,7 +341,7 @@ What is a negative result you kept instead of burying?
 "Occ3D already ships a camera mask. Why build anything?"
 
 Fair, and it was the first thing I tested. That mask exists because the
-nuScenes and Occ3D authors did careful work and I use it constantly.
+nuScenes and Occ3D authors did careful work, and I use it constantly.
 
 Three things make it a different object from what I measure.
 
@@ -352,22 +352,27 @@ It is built offline from the full sensor suite, including the LiDAR a
 camera-only model never receives. It describes the annotation pipeline, not
 what the cameras resolved.
 
-It marks observation, not evidence strength. A voxel grazed by one camera at
-40 metres and a voxel filling half an image both read 1.
+It marks observation, not evidence strength. Here is what that costs you.
+With the nuScenes front camera, a 0.4 metre voxel is fully resolved out to
+16.3 metres. At 20 metres its coverage is 0.67. At 40 metres, 0.17. At 70
+metres, 0.05. The mask reads 1 for every one of them.
 
-Then the measurement. Restrict to voxels the mask already calls observed and
-the per-voxel error rate still varies by 2.6 times across observability
+Then the measurement. Restrict to voxels the mask already calls observed
+and the per-voxel error rate still varies by 2.6 times across observability
 deciles. The mask is flat there. Geometry is not.
 
 Head to head on ranking per-voxel error, continuous observability beats the
-binary mask by 0.0484 AUROC, interval 0.0390 to 0.0584, on a split sealed
-before any of this was developed.
+binary mask by 0.0484 AUROC, interval 0.0390 to 0.0584, on a split that was
+sealed before any of this was developed.
 
-This matters most to the teams running long sensing ranges. On a 200 mile
-interstate lane like Bot Auto's, a far-field voxel and a near-field voxel
-both read 1 under a binary mask, and they are nothing alike. Evidence
-strength falls off as one over distance squared, and at highway speed the
-far field is where your decisions get made.
+This matters most to teams running long sensing ranges. On the 230 mile
+Houston to Dallas run Bot Auto completed in April with nobody in the cab,
+the far field is where the decisions get made, and that is exactly where a
+binary mask stops telling you anything.
+
+None of which means the mask fails at its job. Its job is deciding where
+labels are valid and it does that well. It was simply never built to be a
+reliability signal, and the field has been quietly using it as one.
 
 What is a dataset artifact you have seen repurposed as a metric?
 
