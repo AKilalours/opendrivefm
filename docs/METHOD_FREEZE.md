@@ -4306,3 +4306,55 @@ unverified until the 50-frame gate in step 3 of the runbook passes. The gate
 conditions are unchanged: dynamic classes above ~1% in the histogram, grid
 orientation `a[::-1, ::-1]` checked against one FB-OCC frame, and mIoU in the
 neighbourhood of the published figure -- 37.84 for M2, not 37.1.
+
+---
+
+## A63 - the TSan job went red without a line of C++ changing (2026-10-26)
+
+A52 left the verification image green on 2026-10-07: release 3/3, TSan 4/4.
+Today the same image, built from the same `cpp/`, fails one test:
+
+    4/4 Test #4: test_spsc_ring_tsan ..............***Failed    0.01 sec
+    FATAL: ThreadSanitizer: unexpected memory mapping 0x6091e4d69000-0x6091e4d73000
+
+**This is not a race and not a regression.** TSan aborted before executing a
+single memory ordering, exactly as it did in A52 - and as in A52, the cause is
+the environment rather than the code.
+
+ThreadSanitizer maps its shadow memory at fixed addresses chosen for a 28-bit
+address-randomisation budget. GitHub's current `ubuntu-latest` runner image
+sets `vm.mmap_rnd_bits=32`, which can place the binary outside every range TSan
+recognises; it then refuses to run rather than report nonsense. Nothing in
+`cpp/` has changed since A52, and the release build still passes 3/3 in the
+same container, which is what rules out the code.
+
+### Fix
+
+    sudo sysctl -w vm.mmap_rnd_bits=28
+
+added as a step to both `cpp-thread-sanitizer` and `verification-image`. The
+sysctl is set on the host; containers share the host kernel, so the single call
+covers the native ctest and the dockerised one.
+
+Rejected alternatives:
+
+* `setarch -R` to disable randomisation per process. Works natively, but the
+  default Docker seccomp profile blocks `personality(2)`, so it would have to
+  be paired with `--security-opt seccomp=unconfined` - a weaker container for a
+  narrower fix.
+* Pinning `runs-on: ubuntu-22.04`. Freezes the problem rather than solving it,
+  and that image will be retired.
+* Dropping `test_spsc_ring_tsan`. The whole point of A39's job is that the
+  written verification missed three real defects. Deleting the test that cannot
+  currently run is how the fourth gets missed.
+
+### Honesty note, in A39's line
+
+**Unverified at the time of writing.** The fix is reasoned from the TSan
+shadow-memory layout and the runner's sysctl, not observed passing. It is
+correct only if the next CI run says so. If the job is still red, the next
+thing to check is whether the runner permits the sysctl at all, in which case
+the seccomp-relaxed `setarch` route becomes the fallback despite its cost.
+
+This is the fourth defect that CI job has surfaced that a written verification
+would not have, and the first that was nobody's fault.

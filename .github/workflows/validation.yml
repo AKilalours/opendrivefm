@@ -39,6 +39,17 @@ jobs:
       - uses: actions/checkout@v4
       # A lock-free SPSC queue and a seqlock can pass a functional test and
       # still be racy. TSan is what actually checks the memory orderings.
+      # ThreadSanitizer maps its shadow memory at fixed addresses and aborts
+      # with "unexpected memory mapping" when the kernel places the binary
+      # outside the ranges it expects. GitHub's ubuntu runners ship
+      # vm.mmap_rnd_bits=32; TSan's layout assumes 28 or fewer. This is a
+      # property of the runner image, not of this code: A52 left this job green
+      # on 2026-10-07 and nothing in cpp/ has changed since.
+      #
+      # The sysctl is set on the HOST. Containers share the host kernel, so one
+      # call covers both the native ctest below and anything run under docker.
+      - name: Lower ASLR entropy so ThreadSanitizer can map its shadow memory
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
       - name: Configure with TSan
         run: cmake -S cpp -B cpp/build-tsan -DCMAKE_BUILD_TYPE=Debug -DODFM_TSAN=ON
       - name: Build
@@ -138,6 +149,17 @@ jobs:
       # that wrote it. This job is what closes that gap, and it must run the
       # image rather than only building it: a Dockerfile that builds and then
       # fails every gate inside is not a verification image.
+      # ThreadSanitizer maps its shadow memory at fixed addresses and aborts
+      # with "unexpected memory mapping" when the kernel places the binary
+      # outside the ranges it expects. GitHub's ubuntu runners ship
+      # vm.mmap_rnd_bits=32; TSan's layout assumes 28 or fewer. This is a
+      # property of the runner image, not of this code: A52 left this job green
+      # on 2026-10-07 and nothing in cpp/ has changed since.
+      #
+      # The sysctl is set on the HOST. Containers share the host kernel, so one
+      # call covers both the native ctest below and anything run under docker.
+      - name: Lower ASLR entropy so ThreadSanitizer can map its shadow memory
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
       - name: Build from the committed tree, exactly as the header documents
         run: git archive HEAD | docker build -t odfm -
       - name: Run every check inside the container
