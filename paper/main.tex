@@ -12,6 +12,10 @@
 % ===================================================================
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% cvpr.sty loads xcolor itself, so the [table] option has to be registered
+% before the package is pulled in or LaTeX raises an option clash.
+\PassOptionsToPackage{table}{xcolor}
+
 \IfFileExists{cvpr.sty}{%
   \usepackage[review]{cvpr}%
 }{%
@@ -27,7 +31,7 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{rotating}
-\usepackage[table]{xcolor}
+\usepackage{xcolor}
 \usepackage{array}
 \usepackage{colortbl}
 \usepackage{microtype}
@@ -969,7 +973,11 @@ uncertainty baselines, which need forward passes our export does not
 retain.
 
 {\small
-\bibliographystyle{ieeetr}
+\IfFileExists{ieeenat_fullname.bst}{%
+  \bibliographystyle{ieeenat_fullname}%
+}{%
+  \bibliographystyle{ieeetr}%
+}
 \bibliography{../opendrivefm_refs}
 }
 
