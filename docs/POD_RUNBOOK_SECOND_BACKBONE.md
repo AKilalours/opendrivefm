@@ -55,8 +55,21 @@ the record shows it was set in advance.
     repo    https://github.com/Yzichen/FlashOCC
     cfg     projects/configs/flashocc/flashocc-r50-4d-stereo.py   (M2)
             projects/configs/flashocc/flashocc-r50.py             (M1)
-    ckpts   Google Drive, linked from the repo README model zoo. Use gdown.
-            Do NOT take the BEVDetOCC rows from that table: those are Baidu.
+    ckpts   Google Drive. File ids read from the README model zoo on
+            2026-10-26, Occ3D-nuScenes table:
+
+              M2  12WYaCdoZA8-A6_oh6vdLgOmqyEc3PNCe   mIoU 37.84
+              M1  1k9BzXB2nRyvXhqf7GQx3XNSej6Oq6I-B   mIoU 32.08
+
+            gdown 12WYaCdoZA8-A6_oh6vdLgOmqyEc3PNCe -O /opt/ckpts/flashocc-m2.pth
+            gdown 1k9BzXB2nRyvXhqf7GQx3XNSej6Oq6I-B -O /opt/ckpts/flashocc-m1.pth
+
+            TRAPS in that README. (1) The BEVDetOCC rows are Baidu Pan, not
+            Drive -- skip them. (2) There is a SECOND table below the Occ3D one,
+            on a different benchmark, whose "M1: FlashOCC (1f)" row reads
+            mIoU 15.41 and has a different file id. Taking that checkpoint
+            silently gives you the wrong model. Match on the mIoU, not the row
+            label.
 
 Native Occ3D-nuScenes, `num_classes=18`, free at index 17, head output
 `(B, Dx, Dy, Dz, C)`. No class mapping, nothing downstream changes.

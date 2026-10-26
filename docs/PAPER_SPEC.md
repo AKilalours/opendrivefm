@@ -5,7 +5,7 @@ Zhu et al. DLWM. All four are CVPR 2026 camera-ready, all four use the same
 template, and the conventions below are consistent across all of them unless
 noted.
 
-This file is a spec, not prose. `opendrivefm_paper.tex` is still 918 lines of
+This file is a spec, not prose. `archive/retired_paper/opendrivefm_paper.tex` (moved from the root 2026-10-26) is still 918 lines of
 the retired project; this is what replaces it.
 
 ---
