@@ -4215,3 +4215,94 @@ was not.
 Corrected today to `3{,}008`. No measured quantity changes. This is a label
 error of the same class as the Figure 1 one, found by diffing the macro block
 against this log rather than by re-running anything.
+
+---
+
+## A62 - the second backbone changes from SurroundOcc to FlashOcc, and why
+## (2026-10-26, BEFORE any second-backbone execution)
+
+A53 and A60 name SurroundOcc. This amendment replaces it with FlashOcc. The
+acceptance condition fixed in A60 is **unchanged and still binding**: accept
+H2' only if the bootstrap interval excludes zero AND the point estimate is
+>= +0.02 against the FB-OCC test-half figure of +0.0484. `FULL_PX` stays
+965.0 and the observability maps are reused unchanged, because they are a
+property of the sensor rig and not of the model.
+
+The substitution is recorded here, before the run, because a pre-registration
+that can be silently re-aimed at a different model is not one.
+
+### Why SurroundOcc cannot be run before 16 November
+
+Three findings, all from inspection rather than from a failed pod session.
+
+1. **There is no public SurroundOcc checkpoint trained on Occ3D-nuScenes.**
+   The official repository releases two checkpoints, both trained on
+   SurroundOcc's own dense nuScenes labels, both hosted on Baidu Pan. The
+   "mIoU 37.1 on Occ3D-nuScenes" that A53 cites is a re-trained figure from
+   other papers' comparison tables, not a released artifact. Obtaining it
+   means a training run, which is the $50-200 class of work this project
+   deferred until after submission.
+
+2. **The label spaces differ.** SurroundOcc's released head is 17-class on
+   nuScenes-Occupancy. Everything in this project -- the ground truth, the
+   `mask_camera` scope of A5, the sealed split, the observability maps -- is
+   Occ3D 18-class with free at index 17. Mapping between them is a
+   methodological decision that A53 never registered, and inventing one
+   during a timed pod session is exactly how a result stops being credible.
+
+3. **`scripts/pod/run_fbocc_voxel.py` could not have driven it.** The model
+   construction is generic, but the extraction was not: `return_raw_occ=True`
+   is an FB-OCC keyword, `['pred_occupancy']` an FB-OCC output key, and
+   `assert p.shape[-1] == 18` an Occ3D assumption. Steps 3 and 4 of the
+   runbook would have failed on the first frame.
+
+### Why FlashOcc, specifically
+
+    M2  FlashOCC-4D-Stereo  R50  256x704  2 frames   mIoU 37.84   Google Drive
+    M1  FlashOCC            R50  256x704  1 frame    mIoU 32.08   Google Drive
+
+* **Native Occ3D-nuScenes, 18 classes.** Config `flashocc-r50-4d-stereo.py`
+  declares `num_classes=18` on a `BEVOCCHead2D`, and `BEVOCCHead2D.forward`
+  returns `(B, Dx, Dy, Dz, C)` -- the same layout FB-OCC produces. Free stays
+  at index 17. No class mapping is required, so no undeclared decision enters
+  the comparison.
+* **37.84 against FB-OCC's 39.1.** Closer than the 37.1 A53 was hoping for,
+  so A53's second reason -- that a difference in H2 must not be dismissible as
+  "one model is simply worse" -- is satisfied more strongly, not less.
+* **Architecturally distant.** FlashOcc's channel-to-height plugin collapses a
+  2D BEV feature map into height, where FB-OCC runs a forward-backward 3D view
+  transform. Two frames against sixteen is a large temporal gap, though not
+  the zero-temporal contrast SurroundOcc would have given. This is the one
+  respect in which the substitution is weaker than the original plan, and it
+  is recorded as such.
+* **Checkpoints are on Google Drive.** Directly fetchable from a pod.
+* **Same mmdet3d generation as FB-BEV**, so the seven install walls documented
+  in `scripts/pod/setup_fbocc_pod.sh` largely transfer.
+
+### Registered in addition: the temporal-fusion ablation
+
+M1 (1 frame) and M2 (2 frames) share one environment and one checkpoint
+download path, so running both costs a second inference pass and nothing else.
+With FB-OCC at 16 frames this yields H2 at **1, 2 and 16 frames**.
+
+This is registered now so it cannot later be presented as a planned result if
+only the flattering half of it lands. **Both are reported or neither is.** M2
+is the headline; M1 is reported alongside it whatever it shows. If M1's
+interval is wide -- and at 32.08 mIoU it may be -- that is stated, not dropped.
+
+### The export path, patched today
+
+`run_fbocc_voxel.py` takes `--backbone {fbocc,flashocc}`, defaulting to
+`fbocc`. The FB-OCC path is byte-for-byte what it was, so nothing already
+measured is disturbed. The FlashOcc path overrides `simple_test_occ` on the
+detector class to return `outs.softmax(-1)` instead of the upstream
+`get_occ_gpu` argmax, because `conf`, `conf2` and `p_free` cannot be recovered
+from class labels. `simple_test_occ` is the right seam: `BEVDetOCC` and
+`BEVStereo4DOCC` both route through it and differ above it, so each class
+keeps its own feature path. `_meta.json` now records the backbone and config.
+
+**Untested against a GPU.** It is written from the upstream source and is
+unverified until the 50-frame gate in step 3 of the runbook passes. The gate
+conditions are unchanged: dynamic classes above ~1% in the histogram, grid
+orientation `a[::-1, ::-1]` checked against one FB-OCC frame, and mIoU in the
+neighbourhood of the published figure -- 37.84 for M2, not 37.1.

@@ -39,6 +39,33 @@ the record shows it was set in advance.
 
 ## Which backbone
 
+> **SUPERSEDED 2026-10-26 by METHOD_FREEZE A62. The backbone is FlashOcc, not
+> SurroundOcc.** There is no public SurroundOcc checkpoint trained on
+> Occ3D-nuScenes; the released weights are 17-class on nuScenes-Occupancy and
+> live on Baidu Pan, and the "37.1 on Occ3D" figure is a re-trained number from
+> other papers' tables. See A62 for the full reasoning. The section below is
+> kept as written because the reasons it gives are the reasons FlashOcc was
+> chosen to replace it.
+
+### What to actually run
+
+    M2  FlashOCC-4D-Stereo  R50  256x704  2f  mIoU 37.84   <- the headline
+    M1  FlashOCC            R50  256x704  1f  mIoU 32.08   <- same env, run it too
+
+    repo    https://github.com/Yzichen/FlashOCC
+    cfg     projects/configs/flashocc/flashocc-r50-4d-stereo.py   (M2)
+            projects/configs/flashocc/flashocc-r50.py             (M1)
+    ckpts   Google Drive, linked from the repo README model zoo. Use gdown.
+            Do NOT take the BEVDetOCC rows from that table: those are Baidu.
+
+Native Occ3D-nuScenes, `num_classes=18`, free at index 17, head output
+`(B, Dx, Dy, Dz, C)`. No class mapping, nothing downstream changes.
+
+Running M1 as well as M2 costs one extra inference pass and gives H2 at 1, 2
+and 16 frames. A62 registers both as reportable: **both or neither.**
+
+### The original SurroundOcc reasoning, retained
+
 **SurroundOcc first.** Reasons, in order:
 
 1. It is the furthest from FB-OCC architecturally that is still camera-only:
@@ -76,12 +103,17 @@ not free and an unbounded install is how a day disappears.
     #    one is available -- container disk is lost on stop.
     bash scripts/pod/setup_fbocc_pod.sh          # shared env, ~25 min
 
-    # 2. SurroundOcc repo + checkpoint, then the smoke gate BEFORE the full run
+    # 2. FlashOCC repo + checkpoint, then the smoke gate BEFORE the full run
+    git clone --depth 1 https://github.com/Yzichen/FlashOCC /opt/FlashOCC
+    pip install gdown && gdown <M2 file id> -O /opt/ckpts/flashocc-m2.pth
     python scripts/pod/mini_gate.py              # must pass; it exists for this
 
     # 3. export per-voxel predictions for the sealed split
-    python scripts/pod/run_fbocc_voxel.py <out> --cfg <surroundocc cfg> \
-        --ckpt <surroundocc ckpt> --limit 50     # 50 frames first, ALWAYS
+    #    --backbone flashocc is REQUIRED; the default is still fbocc so that
+    #    the existing FB-OCC path cannot be disturbed by accident.
+    python scripts/pod/run_fbocc_voxel.py <out> --backbone flashocc \
+        --cfg /opt/FlashOCC/projects/configs/flashocc/flashocc-r50-4d-stereo.py \
+        --ckpt /opt/ckpts/flashocc-m2.pth --limit 50   # 50 frames first, ALWAYS
 
     #    sanity on those 50 before spending the rest:
     #      - class histogram has dynamic classes above ~1%.  The Stage-2
@@ -89,10 +121,21 @@ not free and an unbounded install is how a day disappears.
     #        combined and cost a day. Check this number, every time.
     #      - grid orientation: the BEV transform is a[::-1, ::-1]. Verify on
     #        one frame against the same frame from FB-OCC.
-    #      - mIoU in the neighbourhood of the published 37.1.
+    #      - mIoU in the neighbourhood of the published 37.84 for M2
+    #        (32.08 for M1). NOT 37.1 -- that was the SurroundOcc figure.
+    #
+    #    the export path for FlashOcc was written from upstream source and has
+    #    never touched a GPU. If it throws, the seam is install_flashocc_prob_hook
+    #    in run_fbocc_voxel.py: it overrides simple_test_occ to return
+    #    outs.softmax(-1) instead of the upstream get_occ_gpu argmax.
 
     # 4. full split, then pull the predictions down and STOP the pod
-    python scripts/pod/run_fbocc_voxel.py <out> --cfg ... --ckpt ...
+    python scripts/pod/run_fbocc_voxel.py <out> --backbone flashocc --cfg ... --ckpt ...
+
+    #    then M1, same environment, one more pass:
+    python scripts/pod/run_fbocc_voxel.py <out_m1> --backbone flashocc \
+        --cfg /opt/FlashOCC/projects/configs/flashocc/flashocc-r50.py \
+        --ckpt /opt/ckpts/flashocc-m1.pth
 
     # 5. everything after this is CPU work on the laptop and costs nothing:
     #    the observability maps are already built -- they are a property of the

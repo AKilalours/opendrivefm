@@ -58,6 +58,30 @@ CFG = '/opt/FB-BEV/occupancy_configs/fb_occ/fbocc_infer.py'
 CKPT = '/opt/ckpts/fbocc-r50.pth'
 
 
+def install_flashocc_prob_hook(detector):
+    """Make a FlashOcc / BEVDet-OCC detector return probabilities, not labels.
+
+    Upstream `simple_test_occ` ends in `get_occ_gpu`, which argmaxes the head
+    output and hands back uint8 class labels. We need the distribution: `conf`,
+    `conf2` and `p_free` are the whole point of this export, and they cannot be
+    recovered from an argmax.
+
+    We override `simple_test_occ` rather than `simple_test` deliberately. Both
+    `BEVDetOCC` and `BEVStereo4DOCC` route through it, and they differ above it
+    (only one applies `upsample`), so patching the lower method leaves each
+    class's own feature path exactly as upstream wrote it and changes only what
+    comes out of the head.
+
+    `BEVOCCHead2D.forward` returns (B, Dx, Dy, Dz, num_classes), which is the
+    same layout FB-OCC produces, so nothing downstream of here changes.
+    """
+    def simple_test_occ(self, img_feats, img_metas=None):
+        outs = self.occ_head(img_feats)
+        return [outs.softmax(-1)[0].float().cpu().numpy()]
+
+    type(detector).simple_test_occ = simple_test_occ
+
+
 def q8(a):
     """Probability -> uint8. Explicit rounding, explicit clip."""
     return np.clip(np.rint(a * 255.0), 0, 255).astype(np.uint8)
@@ -69,6 +93,9 @@ def main():
     ap.add_argument('--cfg', default=CFG)
     ap.add_argument('--ckpt', default=CKPT)
     ap.add_argument('--limit', type=int, default=0)
+    ap.add_argument('--backbone', choices=('fbocc', 'flashocc'), default='fbocc',
+                    help='fbocc: the original path, unchanged. flashocc: also '
+                         'covers BEVDet-OCC, which shares the same head.')
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
@@ -79,6 +106,8 @@ def main():
                           dist=False, shuffle=False)
     model = build_model(cfg.model, test_cfg=cfg.get('test_cfg'))
     load_checkpoint(model, args.ckpt, map_location='cpu')
+    if args.backbone == 'flashocc':
+        install_flashocc_prob_hook(model)
     model = MMDataParallel(model.cuda().eval(), device_ids=[0])
 
     n = len(ds) if not args.limit else min(args.limit, len(ds))
@@ -93,10 +122,15 @@ def main():
             done += 1
             continue
         with torch.no_grad():
-            p = model(return_loss=False, rescale=True,
-                      return_raw_occ=True, **data)[0]['pred_occupancy']
-        p = np.asarray(p, np.float32)            # (200, 200, 16, 18), softmaxed
+            if args.backbone == 'fbocc':
+                out = model(return_loss=False, rescale=True,
+                            return_raw_occ=True, **data)[0]['pred_occupancy']
+            else:
+                # the hook above already softmaxed and moved this to the host
+                out = model(return_loss=False, rescale=True, **data)[0]
+        p = np.asarray(out, np.float32)          # (200, 200, 16, 18), softmaxed
         assert p.shape[-1] == 18, p.shape
+        assert p.shape[:3] == (200, 200, 16), p.shape
 
         order = np.argpartition(-p, 1, axis=-1)  # top-2 without a full sort
         cls = order[..., 0].astype(np.uint8)
@@ -116,6 +150,8 @@ def main():
                 quantisation='uint8 = round(255 * p)',
                 fields=['cls', 'conf', 'conf2', 'p_free'],
                 sec_per_frame=round((time.time() - t0) / max(done, 1), 4),
+                backbone=args.backbone,
+                cfg=os.path.basename(args.cfg),
                 ckpt=os.path.basename(args.ckpt))
     json.dump(meta, open(os.path.join(args.out, '_meta.json'), 'w'), indent=2)
     print(json.dumps(meta, indent=2))
