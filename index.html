@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpenDriveFM — Trust-Aware BEV Perception</title>
+<title>SightOcc — Geometric Observability for Camera-Only 3D Occupancy</title>
+<meta name="description" content="A learning-free measure of where a camera rig can actually see, and why model confidence cannot flag an object it never predicted.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
@@ -236,365 +237,257 @@ footer a { color: var(--green); text-decoration: none; }
 
   <!-- HEADER -->
   <header>
-    <div class="badge">🟢 LIVE · nuScenes · Apple Silicon MPS</div>
-    <h1>OpenDriveFM</h1>
+    <div class="badge">CVPR 2027 submission in preparation &middot; Occ3D-nuScenes &middot; sealed test split</div>
+    <h1>SightOcc</h1>
     <p class="subtitle">
-      Trust-Aware Multi-Camera BEV Occupancy Prediction<br>
-      and the Validation Harness That Measures It
+      Geometric Observability for Missed Objects<br>
+      in Camera-Only 3D Occupancy
     </p>
-    <div>
-      <span class="tag tag-green">Self-Supervised</span>
-      <span class="tag tag-cyan">BEV Perception</span>
-      <span class="tag tag-orange">LLM Fine-tuning</span>
-      <span class="tag tag-purple">Sparse Training</span>
-      <span class="tag tag-green">Imitation Learning</span>
-      <span class="tag tag-cyan">World Model</span>
-      <span class="tag tag-orange">Neural Pruning</span>
-      <span class="tag tag-purple">C++ LibTorch</span>
+    <div style="margin-top:18px;">
+      <span class="tag tag-cyan">Camera-only occupancy</span>
+      <span class="tag tag-green">Learning-free measure</span>
+      <span class="tag tag-orange">Failure prediction</span>
+      <span class="tag tag-purple">Occ3D-nuScenes</span>
+      <span class="tag tag-cyan">Pre-registered</span>
+      <span class="tag tag-green">Sealed test split</span>
     </div>
+    <p style="color:var(--muted);margin-top:22px;max-width:760px;margin-left:auto;margin-right:auto;line-height:1.65;">
+      Akila Lourdes Miriyala Francis &nbsp;&middot;&nbsp; Akilan Manivannan &nbsp;&mdash;&nbsp; Long Island University, Brooklyn
+    </p>
   </header>
 
-  <!-- CORRECTION NOTICE -->
-  <div style="max-width:1100px;margin:0 auto 28px;padding:16px 20px;border:1px solid #d29922;
-              border-left:4px solid #d29922;border-radius:8px;background:rgba(210,153,34,0.07);
-              font-size:0.88em;line-height:1.6;">
-    <strong style="color:#d29922;">Corrected figures.</strong>
-    An earlier version of this page reported 317 FPS, ADE 2.457&nbsp;m, IoU 0.136,
-    &ldquo;+26.6% IoU under sensor faults&rdquo; and &ldquo;100% fault detection&rdquo;.
-    None of those reproduce from the code and checkpoints in the repository. Every number
-    below is produced by a script in the repo and written to a JSON artifact. The full
-    list of removed claims, and the measurement that replaced each one, is in the
-    <a href="https://github.com/AKilalours/opendrivefm#removed-claims"
-       style="color:#d29922;">repository README</a>.
-  </div>
-
-  <!-- METRICS -->
+  <!-- HEADLINE NUMBERS -->
   <div class="metrics-grid fade-in">
     <div class="metric">
-      <span class="metric-value">0.764</span>
-      <span class="metric-label">Fault-detection AUROC</span>
+      <span class="metric-value">0.7623</span>
+      <span class="metric-label">Observability AUROC, per object</span>
     </div>
     <div class="metric">
-      <span class="metric-value">71.2</span>
-      <span class="metric-label">FPS (C++, 4 threads)</span>
+      <span class="metric-value">0.7193</span>
+      <span class="metric-label">Model confidence (MSP), per object</span>
     </div>
     <div class="metric">
-      <span class="metric-value">13.9ms</span>
-      <span class="metric-label">p50 Latency (C++)</span>
+      <span class="metric-value">+0.0432</span>
+      <span class="metric-label">Gain over MSP &middot; CI [+0.0135, +0.0708]</span>
     </div>
     <div class="metric">
-      <span class="metric-value">2.763m</span>
-      <span class="metric-label">Trajectory ADE</span>
+      <span class="metric-value">0.7745</span>
+      <span class="metric-label">LiDAR point-count oracle</span>
     </div>
     <div class="metric">
-      <span class="metric-value">0.0767</span>
-      <span class="metric-label">BEV IoU</span>
+      <span class="metric-value">+0.0484</span>
+      <span class="metric-label">Over mask_camera, per voxel</span>
     </div>
     <div class="metric">
-      <span class="metric-value">82</span>
-      <span class="metric-label">Held-out frames</span>
+      <span class="metric-value">40,863</span>
+      <span class="metric-label">Objects scored</span>
     </div>
     <div class="metric">
-      <span class="metric-value">553K</span>
-      <span class="metric-label">Parameters</span>
+      <span class="metric-value">3,008</span>
+      <span class="metric-label">Test frames &middot; 75 held-out scenes</span>
     </div>
     <div class="metric">
-      <span class="metric-value">5</span>
-      <span class="metric-label">Injected fault types</span>
+      <span class="metric-value">0.329</span>
+      <span class="metric-label">Seconds per frame to compute</span>
     </div>
   </div>
 
-  <!-- ARCHITECTURE -->
+  <!-- THE PROBLEM -->
   <section class="fade-in">
-    <div class="section-label">Architecture</div>
-    <h2>System Overview</h2>
-    <p style="color:var(--muted);margin-bottom:24px;">
-      Camera-only pipeline — no LiDAR at inference. 6 surround cameras → BEV occupancy + ego trajectory.
+    <div class="section-label">The problem</div>
+    <h2>A missed object and empty road look identical</h2>
+    <p style="color:var(--muted);line-height:1.8;margin-bottom:18px;">
+      Camera-only 3D occupancy models are evaluated as though every voxel were equally
+      observable. They are not. A rig can assign maximal confidence to free space exactly
+      where it supplies almost no geometric evidence, because a missed object and correctly
+      observed empty road are both, to the model, simply <em>free</em>.
     </p>
+    <p style="color:var(--muted);line-height:1.8;">
+      Every published uncertainty method reads the network. Softmax probability, top-2 margin,
+      ensembles, MC-dropout &mdash; each is a statement about a prediction that <em>was made</em>.
+      None of them can say anything about a prediction that was never made at all.
+    </p>
+  </section>
 
-    <div class="arch-box"><span class="hl-cyan">6 × Camera (90×160px)</span>
-         │
-         ▼
-<span class="hl-green">CNN Stem</span> <span style="color:#475569">or</span> <span class="hl-purple">ViTStem</span> (patch_size=16, 50 patches/cam)
-Shared weights × 6  →  (B·V, 384, H/8, W/8)
-         │
-    ┌────┴────────────────────────┐
-    ▼                             ▼
-<span class="hl-cyan">BEV Lifter (LSS)</span>              <span class="hl-orange">CameraTrustScorer</span>
-K⁻¹×[u,v,1]=ray              Laplacian + Sobel physics gate
-T_cam→ego frame               self-supervised, zero fault labels
-→ (B, 192, 64, 64)            score t ∈ [0,1] per camera
-    │                             │
-    └──── <span class="hl-green">Trust-Weighted Fusion</span> ────┘
-          softmax(t) × BEV_features
-          bev_pool_kernel.py  2.1× speedup
-                   │
-      ┌────────────┴────────────┐
-      ▼                         ▼
-<span class="hl-cyan">BEV Decoder</span>               <span class="hl-purple">CausalTrajHead</span>
-4×ConvTranspose2d         GPT-2 transformer
-IoU = 0.0767              3 layers, 4 heads, 666K params
-                          ADE = 2.763m</div>
+  <!-- THE MEASURE -->
+  <section class="fade-in">
+    <div class="section-label">The measure</div>
+    <h2>One equation, one parameter, nothing learned</h2>
+    <div class="arch-box"><span class="hl-cyan">O(v)</span> = max<sub>i</sub> &nbsp; <span class="hl-green">c<sub>i</sub>(v)</span> &middot; <span class="hl-orange">s<sub>i</sub>(v)</span>
 
+  <span class="hl-green">c<sub>i</sub>(v)</span>   projected coverage    min(1, (f<sub>i</sub>&middot;r / d)<sup>2</sup> / &pi;<sub>full</sub>)
+  <span class="hl-orange">s<sub>i</sub>(v)</span>   first-hit visibility  per-pixel ray marching, no bins, no depth bias
+
+  <span class="hl-purple">one parameter</span>  &pi;<sub>full</sub> = 965.0 px    <span class="hl-purple">learned components</span>  none</div>
+    <p style="color:var(--muted);line-height:1.8;margin-top:18px;">
+      Coverage says how much image area a voxel-sized object would occupy in camera <em>i</em>;
+      visibility says whether the ray reaches it first. The maximum over the rig is the strength
+      of the best geometric evidence any camera supplies for that point in space. Unlike a binary
+      camera-observation mask it carries evidence <em>strength</em>, and it resolves occlusion explicitly.
+    </p>
+  </section>
+
+  <!-- THE RESULT -->
+  <section class="fade-in">
+    <div class="section-label">Main result</div>
+    <h2>The answer inverts with granularity</h2>
+    <table>
+      <thead>
+        <tr><th>Question being asked</th><th>Model confidence</th><th>Geometric observability</th><th>Winner</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Is <em>this voxel</em> wrong?</td><td>0.8797</td><td>0.6321</td><td style="color:var(--orange)">confidence</td></tr>
+        <tr><td>Is <em>this object</em> missed entirely?</td><td>0.7193</td><td>0.7623</td><td style="color:var(--green)">geometry</td></tr>
+        <tr><td>Is <em>this frame</em> degraded?</td><td>0.8618</td><td>0.8066</td><td style="color:var(--orange)">confidence</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);line-height:1.8;margin-top:20px;">
+      This is not a tie-break, it is the finding. Confidence dominates on the question it is built
+      for and fails on the one it structurally cannot answer. At the object level, observability
+      comes within noise of a LiDAR point-count oracle &mdash; 0.7623 against 0.7745, a difference
+      whose interval spans zero &mdash; while using no LiDAR at all.
+    </p>
+    <div class="features" style="margin-top:24px;">
+      <div class="feature">
+        <div class="feature-icon">&#9679;</div>
+        <h4>Miss rate falls 10&times; across observability bands</h4>
+        <p>47.3% of objects missed in the least-observable band, 4.7% in the most observable.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#9679;</div>
+        <h4>It beats the dataset's own flag</h4>
+        <p>+0.0484 AUROC over Occ3D's <span style="font-family:var(--mono,monospace);color:var(--cyan)">mask_camera</span>, CI [+0.0390, +0.0584].</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT IS IN THE WAY -->
+  <section class="fade-in">
+    <div class="section-label">Diagnostics</div>
+    <h2>What is actually blocking the cameras</h2>
+    <p style="color:var(--muted);line-height:1.8;margin-bottom:18px;">
+      Measured over 400 frames by attributing every blind voxel to the thing occluding it.
+      The ordering depends entirely on what you choose to measure, which is the same granularity
+      trap in a different coordinate.
+    </p>
+    <table>
+      <thead><tr><th>Occluder</th><th>By occluded volume</th><th>By occluded road area</th></tr></thead>
+      <tbody>
+        <tr><td>Buildings and structures</td><td>43.9%</td><td>14.3%</td></tr>
+        <tr><td>Vegetation</td><td>27.9%</td><td>5.4%</td></tr>
+        <tr><td>Vehicles</td><td>15.7%</td><td style="color:var(--green)">45.4%</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);line-height:1.8;margin-top:18px;">
+      Measure the volume of space you cannot see and buildings dominate. Measure the area of
+      <em>road surface</em> you cannot see &mdash; where anything you could actually hit is sitting &mdash;
+      and vehicles dominate by a factor of three. Road-surface figures exclude ground-class
+      self-occlusion, which is a ray-sampling artefact and is reported separately.
+    </p>
+  </section>
+
+  <!-- METHOD INTEGRITY -->
+  <section class="fade-in">
+    <div class="section-label">Method integrity</div>
+    <h2>Pre-registered, and the negative results are reported</h2>
     <div class="features">
       <div class="feature">
-        <div class="feature-icon">🧠</div>
-        <h4>GPT-2 Causal Trajectory Head</h4>
-        <p>Autoregressive waypoint prediction via behavioral cloning on 404 real nuScenes expert demonstrations. Lower-triangular causal mask. 666K parameters.</p>
+        <div class="feature-icon">&#9679;</div>
+        <h4>Acceptance bars set before the runs</h4>
+        <p>A 4,200-line amendment log fixes every hypothesis and its acceptance threshold in
+        advance. The test split is sealed under digest <span style="font-family:var(--mono,monospace);color:var(--cyan)">924a44db</span> and was opened once.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">⚡</div>
-        <h4>Vectorized BEV Pool Kernel</h4>
-        <p>Replaces Python for-loop over 6 cameras with single batched einsum GPU operation. 2.1× speedup on CPU. Runs on Apple MPS.</p>
+        <div class="feature-icon">&#9679;</div>
+        <h4>Two independent implementations agree to 0.0006</h4>
+        <p>A z-buffer build gives +0.0521, a ray marcher sharing no geometry code gives +0.0527.
+        The signal is in the measure, not in either implementation's bugs.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">🔬</div>
-        <h4>Sparse Attention Training</h4>
-        <p>SparseCausalTrajHead with strided (64%), local window (73%), and combined (58%) attention patterns. O(T·k) vs O(T²) dense.</p>
+        <div class="feature-icon">&#9679;</div>
+        <h4>Three hypotheses failed and are published as failures</h4>
+        <p>Calibration gap is not monotone in observability. The camera mask is marginally better
+        at selective risk. And rebuilding the measure from predicted geometry loses the
+        object-level advantage.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon">📊</div>
-        <h4>LLM Fine-tuning</h4>
-        <p>GPT-2 (124M params) fine-tuned on tokenized nuScenes trajectories. 404-token vocabulary. Causal LM objective. Loss 16.97→0.0004.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">✂️</div>
-        <h4>Neural Network Pruning</h4>
-        <p>L1 unstructured pruning: 30% sparsity → 464K params. Zero latency regression. Compatible with downstream quantization.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🎥</div>
-        <h4>BEV Occupancy Forecasting</h4>
-        <p>Predicts T+1, T+2, T+3 future BEV frames from T=4 past observations. Same paradigm as UniAD (NeurIPS 2023). 6.6M params.</p>
+        <div class="feature-icon">&#9679;</div>
+        <h4>The last failure explains itself</h4>
+        <p>Predicted occupancy is an order of magnitude denser than the true volume, so it shadows
+        regions the rig genuinely sees. Observability at missed objects barely moves; at detected
+        objects it collapses.</p>
       </div>
     </div>
   </section>
 
-  <!-- TRUST SCORER -->
+  <!-- ENGINEERING -->
   <section class="fade-in">
-    <div class="section-label">Self-Supervised Learning</div>
-    <h2>CameraTrustScorer</h2>
-    <p style="color:var(--muted);margin-bottom:24px;">
-      Detects degraded cameras with zero fault labels — pure contrastive self-supervised learning.
-      The only autonomous driving paper (vs ProtoOcc, GAFusion, PointBeV) with real-time fault tolerance.
-    </p>
-
-    <div class="code"><span class="cm"># Contrastive margin loss — the only supervision signal</span>
-<span class="cm"># No fault labels. No human annotation. Zero supervision.</span>
-<span class="kw">L_trust</span> = <span class="fn">max</span>(<span class="nm">0</span>, <span class="kw">t_faulted</span> − <span class="kw">t_clean</span> + <span class="nm">0.2</span>)
-<span class="cm"># t_clean > t_faulted + 0.2 enforced during training</span>
-<span class="cm"># Training signal comes from data augmentation, not labels</span></div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Condition</th>
-          <th>Trust Score</th>
-          <th>Drop vs Clean</th>
-          <th>Visualization</th>
-          <th>Category</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Clean (baseline)</td>
-          <td class="trust-good">0.795</td>
-          <td>—</td>
-          <td><span class="trust-bar" style="width:120px;background:var(--green)"></span></td>
-          <td>—</td>
-        </tr>
-        <tr>
-          <td>Blur</td>
-          <td class="trust-bad">0.340</td>
-          <td class="trust-bad">-57%</td>
-          <td><span class="trust-bar" style="width:51px;background:var(--red)"></span></td>
-          <td><span class="tag tag-cyan">Known</span></td>
-        </tr>
-        <tr>
-          <td>Occlusion</td>
-          <td class="trust-bad">0.310</td>
-          <td class="trust-bad">-61%</td>
-          <td><span class="trust-bar" style="width:47px;background:var(--red)"></span></td>
-          <td><span class="tag tag-cyan">Known</span></td>
-        </tr>
-        <tr>
-          <td>Noise</td>
-          <td class="trust-bad">0.460</td>
-          <td class="trust-bad">-42%</td>
-          <td><span class="trust-bar" style="width:69px;background:var(--orange)"></span></td>
-          <td><span class="tag tag-cyan">Known</span></td>
-        </tr>
-        <tr>
-          <td>Glare</td>
-          <td class="trust-bad">0.420</td>
-          <td class="trust-bad">-47%</td>
-          <td><span class="trust-bar" style="width:63px;background:var(--orange)"></span></td>
-          <td><span class="tag tag-cyan">Known</span></td>
-        </tr>
-        <tr>
-          <td>Rain</td>
-          <td class="trust-bad">0.491</td>
-          <td class="trust-bad">-38%</td>
-          <td><span class="trust-bar" style="width:74px;background:var(--orange)"></span></td>
-          <td><span class="tag tag-cyan">Known</span></td>
-        </tr>
-        <tr>
-          <td>Heavy Snow ⚡</td>
-          <td class="trust-bad">0.355</td>
-          <td class="trust-bad">~-55%</td>
-          <td><span class="trust-bar" style="width:53px;background:var(--purple)"></span></td>
-          <td><span class="tag tag-purple">UNSEEN</span></td>
-        </tr>
-        <tr>
-          <td>Dense Fog ⚡</td>
-          <td class="trust-bad">0.380</td>
-          <td class="trust-bad">~-52%</td>
-          <td><span class="trust-bar" style="width:57px;background:var(--purple)"></span></td>
-          <td><span class="tag tag-purple">UNSEEN</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <p style="font-size:0.82em;color:var(--muted)">⚡ UNSEEN = not in training set. Detected via physics signals (Laplacian + Sobel) that generalize across fault types.</p>
-  </section>
-
-  <!-- ABLATION -->
-  <section class="fade-in">
-    <div class="section-label">Ablation Study</div>
-    <h2>No Trust vs Uniform vs Trust-Aware</h2>
-    <p style="color:var(--muted);margin-bottom:24px;">
-      Comparing fusion strategies to isolate the benefit of the CameraTrustScorer.
-      Trust benefit is <strong>larger under fault conditions</strong> — as designed.
-    </p>
-
+    <div class="section-label">Engineering</div>
+    <h2>3.46&times; faster, bit-for-bit identical</h2>
     <div class="ablation-grid">
       <div class="ablation-card">
-        <h4>No Trust (baseline)</h4>
-        <div class="iou">0.0706</div>
-        <p style="color:var(--muted);font-size:0.82em;margin-top:8px;">Uniform weights, ignores camera quality</p>
-        <div class="ablation-bar"><div class="ablation-bar-fill" style="width:85%;background:var(--red)"></div></div>
-      </div>
-      <div class="ablation-card">
-        <h4>Uniform Average</h4>
-        <div class="iou">0.0752</div>
-        <p style="color:var(--muted);font-size:0.82em;margin-top:8px;">Simple mean across all cameras equally</p>
-        <div class="ablation-bar"><div class="ablation-bar-fill" style="width:90%;background:var(--orange)"></div></div>
+        <h4>Direct ray marcher</h4>
+        <div class="version-metric">1.139 s / frame</div>
       </div>
       <div class="ablation-card best">
-        <h4>Trust-Aware (ours) ⭐</h4>
-        <div class="iou">0.0776</div>
-        <p style="color:var(--muted);font-size:0.82em;margin-top:8px;">Weighted by self-supervised trust score</p>
-        <div class="ablation-bar"><div class="ablation-bar-fill" style="width:100%;background:var(--green)"></div></div>
+        <h4>Precomputed index table</h4>
+        <div class="version-metric">0.329 s / frame</div>
+      </div>
+      <div class="ablation-card">
+        <h4>Output difference</h4>
+        <div class="version-metric">0 of 30,720,000 voxels</div>
       </div>
     </div>
-
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
-      <h3>Under Fault Conditions (1 camera faulted)</h3>
-      <div class="ablation-grid" style="margin-top:16px;">
-        <div class="ablation-card">
-          <h4>No Trust</h4>
-          <div class="iou" style="color:var(--red)">0.0643</div>
-          <div class="ablation-bar"><div class="ablation-bar-fill" style="width:78%;background:var(--red)"></div></div>
-        </div>
-        <div class="ablation-card">
-          <h4>Uniform Average</h4>
-          <div class="iou" style="color:var(--orange)">0.0717</div>
-          <div class="ablation-bar"><div class="ablation-bar-fill" style="width:87%;background:var(--orange)"></div></div>
-        </div>
-        <div class="ablation-card best">
-          <h4>Trust-Aware</h4>
-          <div class="iou">0.0814</div>
-          <p style="color:#d29922;font-size:0.82em;margin-top:4px;">Not reproducible: trust fusion did not improve IoU at any temperature, over 3 seeds</p>
-          <div class="ablation-bar"><div class="ablation-bar-fill" style="width:100%;background:var(--green)"></div></div>
-        </div>
-      </div>
-    </div>
+    <p style="color:var(--muted);line-height:1.8;margin-top:20px;">
+      Extrinsics and intrinsics are constant within a scene, and the whole validation split
+      contains only two distinct camera rigs. So the ray-to-voxel index table is built twice,
+      in 6.9 seconds, held in 832 MB, and reused across 6,019 frames. The full build fell from
+      114 minutes to 33.
+    </p>
   </section>
 
-  <!-- TRAINING HISTORY -->
+  <!-- SCOPE -->
   <section class="fade-in">
-    <div class="section-label">Experimental History</div>
-    <h2>13 Training Experiments</h2>
-    <div class="version-list">
-      <div class="version"><span class="version-tag">v2</span><span class="version-desc">Initial CNN + trust scorer</span><span class="version-metric">First working pipeline</span></div>
-      <div class="version"><span class="version-tag">v5</span><span class="version-desc">AdamW + CosineAnnealingLR</span><span class="version-metric">Loss 26→9.5</span></div>
-      <div class="version"><span class="version-tag">v7</span><span class="version-desc">Scene-level splits</span><span class="version-metric">No data leakage</span></div>
-      <div class="version best"><span class="version-tag">v8 ★</span><span class="version-desc">Geometry BEV lifter</span><span class="version-metric">IoU=0.0767</span></div>
-      <div class="version"><span class="version-tag">v9</span><span class="version-desc">LiDAR depth supervision</span><span class="version-metric">ADE 2.740→2.559m</span></div>
-      <div class="version best"><span class="version-tag">v11 ★</span><span class="version-desc">T=4 temporal video fusion + 128×128 BEV</span><span class="version-metric">ADE=2.763m BEST</span></div>
-      <div class="version"><span class="version-tag">v13</span><span class="version-desc">3-class semantic labels</span><span class="version-metric">IoU=0.131 vehicle</span></div>
-      <div class="version"><span class="version-tag">v14</span><span class="version-desc">Full LSS from scratch</span><span class="version-metric">Needs more epochs</span></div>
-    </div>
-  </section>
-
-  <!-- COMPARISON -->
-  <section class="fade-in">
-    <div class="section-label">vs State of the Art</div>
-    <h2>CVPR Paper Comparison</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>System</th><th>Speed</th><th>Parameters</th>
-          <th>Traj</th><th>Fault Tolerance</th><th>Hardware</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>ProtoOcc CVPR25</td><td>9.5 FPS</td><td>46.2M</td>
-          <td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td>
-          <td style="color:var(--muted)">8×A100</td>
-        </tr>
-        <tr>
-          <td>GAFusion CVPR24</td><td>8 FPS</td><td>~80M</td>
-          <td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td>
-          <td style="color:var(--muted)">2×3090</td>
-        </tr>
-        <tr>
-          <td>PointBeV CVPR24</td><td>~10 FPS</td><td>~40M</td>
-          <td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td>
-          <td style="color:var(--muted)">A100</td>
-        </tr>
-        <tr style="background:rgba(0,255,136,0.04);border-left:3px solid var(--green)">
-          <td><strong>OpenDriveFM ★</strong></td>
-          <td class="trust-good"><strong>71.2 FPS</strong></td>
-          <td class="trust-good"><strong>553K</strong></td>
-          <td class="trust-good">✓ ADE=2.763m</td>
-          <td class="trust-good">✓ 5 fault types</td>
-          <td class="trust-good">MacBook</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="section-label">Scope, stated plainly</div>
+    <h2>An evaluation-time diagnostic, not a runtime monitor</h2>
+    <p style="color:var(--muted);line-height:1.8;">
+      The measure reads external scene geometry, so it cannot run on a vehicle that does not
+      already have that geometry. We position it where it belongs: fleet-scale triage for finding
+      where a camera-only stack is structurally blind, before deployment rather than during it.
+      The attempt to rebuild it from the model's own predictions is reported in the paper, and
+      it fails &mdash; that boundary is a result, not an omission.
+    </p>
+    <p style="color:var(--muted);line-height:1.8;margin-top:16px;">
+      One consequence does transfer directly to hardware. At the front camera's 1266.4 px focal
+      length, geometric evidence saturates at 16.31 m. A loaded Class 8 tractor at 65 mph needs
+      about 160 m to stop.
+    </p>
   </section>
 
   <!-- CTA -->
-  <div class="cta-section fade-in">
-    <h2>Try It Yourself</h2>
+  <section class="cta-section fade-in">
+    <h2>Code, artifacts and measurement logs</h2>
     <p style="color:var(--muted);margin-bottom:32px;">
-      Run the live demo locally or explore the full codebase
+      Every number on this page is produced by a script in the repository and gated in CI.
     </p>
-    <a href="https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm" class="btn btn-primary">
-      📂 View on GitHub
+    <a href="https://github.com/AkilanManivannanak/opendrivefm" class="btn btn-primary">
+      Repository
     </a>
     <a href="https://akilalourdes-opendrivefm.hf.space" target="_blank" class="btn btn-secondary">
-      🎮 Live Demo (Gradio)
+      Live demo
     </a>
-    <div class="code" style="text-align:left;max-width:600px;margin:32px auto 0;">
-<span class="cm"># Quick start</span>
-<span class="kw">git clone</span> https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm.git
-<span class="kw">cd</span> opendrivefm
-<span class="kw">conda env create</span> -f environment.yml
-<span class="kw">python</span> apps/demo/live_demo_webcam.py --nuscenes
-<span class="cm"># OR</span>
-<span class="kw">python</span> scripts/gradio_app.py --share</div>
-  </div>
+  </section>
 
   <footer>
-    <p>OpenDriveFM · LIU Image and Vision Computing · April 2026</p>
+    <p>SightOcc &middot; Long Island University, Brooklyn &middot; 2026</p>
     <p style="margin-top:8px;">
-      <a href="https://akilalours.github.io/opendrivefm" target="_blank" style="color:var(--green);text-decoration:none;">Akila Lourdes</a> · <a href="https://akilanmanivannanak.github.io/opendrivefm" target="_blank" style="color:var(--cyan);text-decoration:none;">Akilan Manivannan</a> &nbsp;·&nbsp;
-      <a href="https://github.com/AI-688-Image-and-Vision-Computing/Opendrivefm">GitHub</a>
+      <a href="https://akilalours.github.io/opendrivefm" target="_blank" style="color:var(--green);text-decoration:none;">Akila Lourdes Miriyala Francis</a> &middot;
+      <a href="https://akilanmanivannanak.github.io/opendrivefm" target="_blank" style="color:var(--cyan);text-decoration:none;">Akilan Manivannan</a> &nbsp;&middot;&nbsp;
+      <a href="https://github.com/AkilanManivannanak/opendrivefm">GitHub</a>
     </p>
     <p style="margin-top:16px;font-size:0.8em;">
-      AUROC 0.764 · 71.2 FPS (C++) · ADE=2.763m · IoU=0.0767 · Self-supervised trust scoring · C++ LibTorch parity
+      Results on the Occ3D-nuScenes validation split, 75 held-out scenes, opened once under a
+      pre-registered protocol. Confidence intervals are 95% bootstrap over scenes.
     </p>
   </footer>
 
@@ -631,9 +524,9 @@ function animateValue(el, start, end, duration, suffix='') {
 
 // Animate on page load
 const metrics = [
-  { selector: '.metric:nth-child(1) .metric-value', start: 0.434, end: 0.764, suffix: '' },
-  { selector: '.metric:nth-child(2) .metric-value', start: 0, end: 71.2, suffix: '' },
-  { selector: '.metric:nth-child(4) .metric-value', start: 3.012, end: 2.763, suffix: 'm' },
+  { selector: '.metric:nth-child(1) .metric-value', start: 0.7193, end: 0.7623, suffix: '' },
+  { selector: '.metric:nth-child(2) .metric-value', start: 0.7623, end: 0.7193, suffix: '' },
+  { selector: '.metric:nth-child(8) .metric-value', start: 1.139,  end: 0.329,  suffix: '' },
 ];
 
 setTimeout(() => {
