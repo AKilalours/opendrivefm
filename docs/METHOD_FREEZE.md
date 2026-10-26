@@ -4144,3 +4144,74 @@ as the test token with a predicted-occluder volume maximising the
 predicted-minus-GT occupied fraction: 79.0% against 5.4%.
 
 Both figures previously used dc03fe4e. No frame is now used twice.
+
+---
+
+## A60 - H2 on a second backbone: acceptance fixed BEFORE the run (2026-10-26)
+
+**Date:** 2026-10-26. **Decided:** BEFORE any SurroundOcc execution. At the
+time of writing no SurroundOcc code has been run in this project, no
+SurroundOcc checkpoint has been downloaded, and no pod has been booted. This
+entry exists so that the acceptance bar cannot be read as having been chosen
+after seeing the number, which is the whole reason the runbook
+(`docs/POD_RUNBOOK_SECOND_BACKBONE.md`, written 2026-09-24) orders it as
+step 0.
+
+**What is being measured.** The same H2 contrast, on the same sealed test
+split, through the same code path, with only the prediction export changed:
+
+    H2(backbone) = AUROC(observability) - AUROC(mask_camera),  voxel ranking
+
+FB-OCC r50 gave **+0.0484 [+0.0390, +0.0584]** on the 75 test scenes and
+**+0.0534 [+0.0462, +0.0609]** on all 150. The second backbone is scored
+against the test-half figure.
+
+**Acceptance, fixed now.** The result is accepted as supporting H2 if the
+bootstrap interval excludes zero AND the point estimate is **>= +0.02**.
+
+**What a failure means, also fixed now.** A point estimate below +0.02, or an
+interval spanning zero, is a finding and is written up as one in this log and
+in the paper. It is not a reason to try a third backbone until one agrees. No
+third backbone will be run for the purpose of obtaining agreement.
+
+**What is not being changed.** `FULL_PX = 965.0` is not retuned for
+SurroundOcc. The observability maps are not rebuilt: they are a function of
+the camera rig and the scene geometry, not of the model, so the identical
+maps are reused and only the per-voxel predictions differ. Any deviation from
+either of those two statements invalidates the comparison and must be logged
+here before it is made.
+
+**Why SurroundOcc and not COTR.** Recorded in the runbook on 2026-09-24 and
+restated here: SurroundOcc carries no temporal window at all where FB-OCC
+fuses 16 frames, so a measure that survives both is not a fact about temporal
+fusion; its published 37.1 mIoU is close enough to FB-OCC's 39.1 that a
+difference cannot be dismissed as one model simply being worse; and its
+release is a plain mmdet3d inference path. COTR is attempted only if
+SurroundOcc installs in under an hour.
+
+**Sanity gates on the first 50 frames, before the full export.** Dynamic
+classes above ~1% in the class histogram (the Stage-2 column-collapse bug
+reported 1.2% for all ten dynamic classes combined and cost a day); grid
+orientation `a[::-1, ::-1]` verified against one FB-OCC frame; mIoU in the
+neighbourhood of the published 37.1. All three are checked and written down,
+pass or fail, before the remaining frames are spent.
+
+---
+
+## A61 - the paper still carried the scanned frame count (2026-10-26)
+
+The 6,016 / 3,008 discrepancy was identified earlier in this log: the field
+`"frames": 6016` in `missed_detection_test.json` is the number of frames
+SCANNED and is identical to the all-scenes run, while the test half of the
+split holds **3,008** frames. Figure 1 was corrected at the time to count
+frames from `split.py` rather than trusting the field.
+
+The paper macro was not. `paper/main.tex` defined `\nFrames` as `6{,}016`,
+and that macro is used once, in the object-level result sentence, which
+therefore reported the object-level gain "over 40,863 objects in 6,016
+frames". The object count was always correct and test-only; the frame count
+was not.
+
+Corrected today to `3{,}008`. No measured quantity changes. This is a label
+error of the same class as the Figure 1 one, found by diffing the macro block
+against this log rather than by re-running anything.
