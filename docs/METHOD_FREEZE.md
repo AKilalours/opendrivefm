@@ -4812,3 +4812,94 @@ A60 was written on 26 October with the threshold fixed and the outcome
 unknown. A62 changed the backbone for documented reasons without touching the
 threshold. A68 and A69 were registered earlier today, before this result was
 visible. Nothing in the acceptance moved after the fact.
+
+---
+
+## A71 RESULT -- observability-weighted evaluation. H8a triggers, H8b FAILS.
+
+**Date:** 2026-10-29. Sealed TEST half, 3,008 frames, 75 scenes, digest
+`924a44db544d4818`, inside `mask_camera`, 17 non-free classes. Weighting is
+`O(v)` from `obs_max` exactly as A68 fixed it: uint8/255, no exponent, no
+threshold. No second weighting was tried.
+
+### First, the pipeline validates itself
+
+    model         published   standard   weighted    delta
+    FB-OCC            39.10      38.92      45.13     +6.21
+    FlashOcc M2       37.84      38.00      45.14     +7.14
+    FlashOcc M1       32.08      31.91      37.30     +5.39
+
+All three standard figures reproduce the published numbers within 0.2 points.
+That was not the point of this experiment but it is the strongest end-to-end
+check the second-backbone work has: data layout, info pickle, inference
+config, the `simple_test_occ` override, quantisation and the sealed split all
+have to be right simultaneously for three independent models to land on their
+own published scores.
+
+### H8a -- ordering. Triggers, but must not be oversold.
+
+    standard:  FB-OCC 38.92  >  M2 38.00  >  M1 31.91
+    weighted:  M2     45.14  >  FB-OCC 45.13  >  M1 37.30
+
+The ranking does change. **It changes by 0.01 points, which is a tie, not a
+reversal, and the paper must not claim otherwise.** No confidence interval
+has been computed, and a 0.01 difference would not survive one.
+
+The defensible statement is the other side of the same number: **weighting by
+observability erases FB-OCC's entire 0.93-point advantage over FlashOcc M2.**
+A model with sixteen frames of temporal fusion and a different architecture
+is ahead on the benchmark and level once you weight by whether the cameras
+had evidence.
+
+### H8b -- gap attribution. FAILS, as registered.
+
+    G_std (best - worst)  7.02
+    G_wt  (best - worst)  7.84
+    1 - G_wt/G_std       -0.118
+
+The pre-registered bar was a reduction of at least 25%. The gap does not
+shrink -- it **widens by 11.8%**. H8b fails and is reported as a failure.
+
+The reason is visible in the table: M1 is weaker than the other two
+everywhere, by about seven points, and weighting does not touch that. A
+three-way best-versus-worst spread is dominated by the weakest model, and
+A68 chose that definition without anticipating how far below the others M1
+would sit. The definition was fixed in advance and it is kept.
+
+### The two-model contrast, which was NOT H8b's registered bar
+
+A69 registered the FB-OCC/M2 pair as the control for the capability confound,
+since 39.10 against 37.84 is the only near-matched comparison available.
+
+    standard gap   +0.93
+    weighted gap   -0.01
+    reduction       99.3%
+
+**This is reported as an observation, not as a passed test.** It was not
+H8b's bar, and labelling it as one after seeing it would be exactly the
+substitution this log exists to prevent.
+
+### Per-class, and an unplanned consistency check
+
+Every class gains under weighting except two. **Vegetation loses in all three
+models** (-6.27, -5.00, -5.76) and **manmade loses in two of three** (-1.85,
++1.01, -2.39).
+
+Those are precisely the two classes `blind_attribution.json` identified as
+dominating occluded volume -- manmade 43.9%, vegetation 27.9%. Two
+independent measurements, made months apart for different reasons, agree that
+these are the classes the rig cannot see. Not planned, and not a hypothesis
+test, but worth recording.
+
+### What is missing, and what happens next
+
+**No confidence intervals.** Every figure above is a point estimate. The
+0.93-to-0.01 collapse is suggestive and is not yet a claim. A paired bootstrap
+over the 75 test scenes on the difference-of-differences is required before
+any of this goes in the paper as a result.
+
+That bootstrap is a standard uncertainty quantification of a metric already
+registered in A68, not a new weighting and not a new hypothesis. It will be
+run and **reported whatever it shows** -- including the likely outcome that
+the pair contrast has an interval spanning zero, which would reduce this
+amendment to "weighting changes nothing that can be distinguished from noise".
