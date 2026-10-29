@@ -5267,3 +5267,58 @@ and reporting that as a result would be padding.
 * Reported whichever way it falls. A null here is informative: it would say
   the object-level advantage of geometry is not additive with confidence,
   which constrains how the paper should recommend using the measure.
+
+---
+
+## A77 RESULT -- A76 passes. Geometry and confidence are complementary.
+
+**Date:** 2026-10-29. 48,087 dev objects fit, 40,863 TEST objects scored, 75
+scenes each, digest `924a44db544d4818`, 2,000 paired bootstrap resamples.
+Two features, one logistic fit on dev, weights frozen and applied to test.
+
+    observability          0.7623  [0.7439, 0.7816]
+    MSP (max conf in box)  0.7193  [0.6994, 0.7399]
+    combined (dev-fit)     0.7934  [0.7773, 0.8107]
+
+    combined - observability   +0.0311  [+0.0246, +0.0371]   excludes 0
+    combined - MSP             +0.0742  [+0.0533, +0.0964]   excludes 0
+
+**A76 acceptance: gain >= +0.01 and interval excluding zero. PASS at
++0.0311 [+0.0246, +0.0371].**
+
+### What it means
+
+The paper argues the two signals fail in different places -- one reads the
+camera rig, the other reads the network, and the inversion across granularity
+is evidence of that. If they were measuring the same thing, combining them
+would add nothing, as it very nearly does at the voxel level (+0.0015).
+At the object level it adds +0.0311 with a tight interval.
+
+The dev-fitted weights say the same thing: **observability -1.0310, MSP
+-0.5152.** Geometry carries twice the weight of the model's own confidence
+in predicting whether an object is missed entirely, and the fit was never
+shown the test half.
+
+### An observation that needs its own test before it is claimed
+
+    LiDAR points in box (ORACLE)   0.7745     published, baselines_object.json
+    combined (A76)                 0.7934     +0.0190
+
+The combined score's point estimate **exceeds the LiDAR point-count oracle**,
+and its interval's lower bound, 0.7773, sits above the oracle's point
+estimate. That is suggestive and **is not a claim**: comparing an interval
+against a point is not a test, exactly the error A72 refused to make.
+
+### Registered now, before it is run
+
+The oracle is added to `combined_object.py` as a scored baseline and the
+**paired** contrast `combined - oracle` is computed on the same scene draws.
+It is not a new hypothesis and not a new feature: the oracle is already one
+of the six baselines in the published object-level table, and comparing a new
+score against every existing baseline is completeness rather than selection.
+
+**Reported whichever way it falls.** If the interval spans zero, the honest
+statement is that the combination *matches* a LiDAR oracle without LiDAR,
+which is still worth saying and is weaker than beating it.
+
+No further features, no refit. The weights above stay exactly as fitted.

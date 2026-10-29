@@ -94,7 +94,8 @@ def extract(half, obs_dir, minpts, preds_dir):
                 continue
             rows.append((row["scene"], float(obs[vx][gm].max()),
                          float(conf[vx].max()),
-                         bool(np.isin(pcls[vx], list(DYN)).any())))
+                         bool(np.isin(pcls[vx], list(DYN)).any()),
+                         float(ann["num_lidar_pts"][k])))
         used += 1
         if used % 500 == 0:
             print(f"  {used} frames  {len(rows):,} objects  "
@@ -102,9 +103,10 @@ def extract(half, obs_dir, minpts, preds_dir):
     sc = np.array([r[0] for r in rows])
     X = np.array([[r[1], r[2]] for r in rows], np.float64)
     y = ~np.array([r[3] for r in rows], bool)
+    pts = np.array([r[4] for r in rows], np.float64)
     print(f"  {half}: {len(rows):,} objects, {len(set(sc))} scenes, "
           f"{y.mean()*100:.1f}% missed\n")
-    return sc, X, y
+    return sc, X, y, pts
 
 
 def fit_logistic(X, y, iters=200, lr=0.5):
@@ -128,8 +130,8 @@ def main():
     ap.add_argument("--out", default="")
     a = ap.parse_args()
 
-    sc_d, X_d, y_d = extract("dev", a.obs, a.minpts, a.preds)
-    sc_t, X_t, y_t = extract("test", a.obs, a.minpts, a.preds)
+    sc_d, X_d, y_d, _ = extract("dev", a.obs, a.minpts, a.preds)
+    sc_t, X_t, y_t, pts_t = extract("test", a.obs, a.minpts, a.preds)
 
     # standardise on DEV only; the same constants are applied to TEST.
     mu, sd = X_d.mean(0), X_d.std(0)
@@ -141,8 +143,12 @@ def main():
 
     Z = (X_t - mu) / sd
     comb = 1.0 / (1.0 + np.exp(-(np.hstack([Z, np.ones((len(Z), 1))]) @ w)))
+    # A77: the LiDAR point-count oracle, already one of the six baselines in
+    # the published object table, added so the new score is compared against
+    # all of them rather than a chosen subset.
     cols = {"observability": -X_t[:, 0],
             "MSP (max conf in box)": -X_t[:, 1],
+            "LiDAR points in box (ORACLE)": -pts_t,
             "combined (dev-fit)": comb}
     point = {k: auroc(v, y_t) for k, v in cols.items()}
     for k, v in point.items():
@@ -172,7 +178,8 @@ def main():
            "dev_weights": {"obs": w[0], "msp": w[1], "bias": w[2]},
            "auroc": point, "ci": {k: list(ci(v)) for k, v in boot.items()},
            "contrasts": {}}
-    for ref in ("observability", "MSP (max conf in box)"):
+    for ref in ("observability", "MSP (max conf in box)",
+                "LiDAR points in box (ORACLE)"):
         d = boot["combined (dev-fit)"] - boot[ref]
         lo, hi = ci(d)
         pt = point["combined (dev-fit)"] - point[ref]
