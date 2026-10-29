@@ -4617,3 +4617,127 @@ the risk is low, but it is not zero.
 
     0 LaTeX errors, 0 undefined citations, 0 BibTeX warnings
     63 bibitems (was 64), 13 pages
+
+---
+
+## A68 - observability-weighted evaluation, PRE-REGISTERED (2026-10-29)
+
+**Written before the H2' result for either FlashOcc model is known.** The runs
+are in progress and no output file exists yet. Timestamped by the commit.
+
+### Why
+
+The paper currently says geometric observability predicts where a model fails.
+A reviewer's fair reply is "and so what -- the measure improves nothing." This
+asks a question whose answer, either way, is about the benchmark rather than
+about our measure: **how much of the mIoU that separates camera-only occupancy
+models is earned in voxels where the rig supplies little or no geometric
+evidence?**
+
+Three independently trained models now predict the same sealed split:
+
+    FB-OCC          16 frames   published mIoU 39.1
+    FlashOcc M2      2 frames   published mIoU 37.84
+    FlashOcc M1      1 frame    published mIoU 32.08
+
+### Definition, fixed now
+
+Scope: the sealed TEST half, 3,008 frames, 75 scenes, digest
+`924a44db544d4818`, inside `mask_camera` (A5's scope). Occ3D protocol, 17
+classes, free excluded.
+
+    standard mIoU     intersection and union counted per voxel, weight 1
+    weighted mIoU     the same, each voxel contributing weight O(v)
+
+`O(v)` is the measure exactly as published -- `data/pack/obs_max`,
+`FULL_PX = 965.0`, no exponent, no threshold, no rescaling. **The weighting
+function is fixed here and will not be adjusted after seeing results.** Trying
+a family of weightings and reporting the one that separates is the failure
+mode this amendment exists to prevent.
+
+### The two readings, and the bar for each
+
+**H8a -- ordering.** If the weighted ranking of the three models differs from
+the standard ranking, that is the headline: the benchmark's ordering depends
+on evidence the cameras do not have.
+
+**H8b -- gap attribution.** Let `G_std` be the standard mIoU gap between the
+best and worst of the three, and `G_wt` the weighted gap. Report
+`1 - G_wt/G_std`. **Pre-registered threshold for calling it substantial:
+>= 25% relative reduction.** Below that, the honest report is that weighting
+barely changes model comparison, which also goes in the paper.
+
+### Commitments
+
+* All three models, both metrics, reported whichever way it falls.
+* If neither H8a nor H8b clears its bar, the result is reported as a null and
+  the paper's framing does not change on the strength of it.
+* No second weighting is tried. If this one shows nothing, that is the answer.
+
+---
+
+## A69 - a sampling-family baseline, PRE-REGISTERED (2026-10-29)
+
+**Written before any ensemble quantity has been computed.**
+
+### Why
+
+A46 completed the post-hoc uncertainty family: MSP, top-2 margin, `p_free`,
+range from ego. The sampling family -- MC-dropout and deep ensembles -- was
+never run, and `main.tex` line 940 calls it the single largest gap in the
+evaluation. It is the first thing a reviewer will ask for.
+
+MC-dropout is unavailable: `grep Dropout` across the occupancy path of both
+BEVDet and FlashOcc hits only the trajectory heads of the retired project.
+Sampling a network that has no dropout would mean inserting it at inference
+into a pretrained checkpoint, which is a different model.
+
+A seed ensemble is also unavailable -- there are no seed replicas and training
+them is out of scope before 16 November.
+
+### What is available, and what it is not
+
+Three independently trained camera-only occupancy models on the identical
+split. **This is a heterogeneous ensemble, not a deep ensemble**, and the
+paper must say so in those words. Lakshminarayanan's construction is N seeds
+of one architecture; this is three architectures. Architectural diversity
+generally yields more informative disagreement than seed diversity, so as a
+baseline against our measure it is conservative rather than lenient -- but it
+is not the thing the citation describes, and claiming otherwise would be
+false.
+
+### Definition, fixed now
+
+The exports store `cls`, `conf`, `conf2`, `p_free` per voxel, not the full
+18-way distribution, so the committee statistics are limited to what those
+support. Two scores, both registered, both reported:
+
+    E1  modal disagreement   1 - (count of models whose cls equals the modal
+                             cls) / 3.  Three levels: 0, 1/3, 2/3.
+    E2  free-space spread    standard deviation of p_free across the three
+                             models. Continuous.
+
+Evaluated exactly as A46 evaluated the post-hoc family: AUROC for per-voxel
+error inside `mask_camera`, and AUROC for per-object miss over the 40,863
+test objects, paired bootstrap over scenes, 2,000 resamples.
+
+### The capability confound, and its control
+
+The three models differ in quality (39.1 / 37.84 / 32.08), so disagreement
+partly tracks "one model is weaker" rather than "this region is hard".
+Registered control: **report the FB-OCC and M2 pair alone as well**, 39.1
+against 37.84, where that confound is smallest.
+
+### Commitment, including the bad outcome
+
+This experiment can damage the paper. If E1 or E2 beats geometric
+observability at the object level, the central claim is weakened and the
+correct response is to narrow it, not to bury the comparison.
+
+**Registered now: the ensemble results are reported whatever they show, and if
+they beat observability the abstract is rewritten to say so.** A reviewer will
+ask for this baseline regardless; the only choice available is whether we run
+it ourselves or let them imagine the answer.
+
+No acceptance threshold is set, because this is a baseline rather than a
+hypothesis of ours. There is nothing here to pass.
