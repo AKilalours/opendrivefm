@@ -100,6 +100,19 @@ def main():
     os.makedirs(args.out, exist_ok=True)
 
     cfg = Config.fromfile(args.cfg)
+
+    # mmdet3d configs may declare a plugin directory whose modules register the
+    # detectors, heads and PIPELINE TRANSFORMS the config then refers to by
+    # name. Nothing imports it automatically -- upstream does this in
+    # tools/test.py -- so without it the build dies on the first custom entry
+    # with "X is not in the pipeline registry". FB-OCC's config declares no
+    # plugin, so this is a no-op on that path.
+    if cfg.get('plugin', False) and cfg.get('plugin_dir'):
+        import importlib
+        module = cfg.plugin_dir.rstrip('/').replace('/', '.')
+        importlib.import_module(module)
+        print('plugin imported:', module)
+
     cfg.model.train_cfg = None
     ds = build_dataset(cfg.data.test)
     dl = build_dataloader(ds, samples_per_gpu=1, workers_per_gpu=2,
