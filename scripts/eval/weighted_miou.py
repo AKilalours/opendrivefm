@@ -69,6 +69,19 @@ def main():
     inter_w = np.zeros(N_CLS, np.float64)
     union_w = np.zeros(N_CLS, np.float64)
 
+    # Per-scene sufficient statistics. A bootstrap over scenes only needs the
+    # per-scene intersection and union vectors, so they are written out once
+    # here and every resampling -- including PAIRED comparisons between two
+    # models over the same scene draws -- is done afterwards from the JSON.
+    # 75 scenes x 18 classes x 4 vectors is small; re-reading 3,008 frames per
+    # bootstrap replicate would not be.
+    per_scene = {}
+
+    def scene_acc(s):
+        if s not in per_scene:
+            per_scene[s] = [np.zeros(N_CLS, np.float64) for _ in range(4)]
+        return per_scene[s]
+
     used, t0 = 0, time.time()
     for row in index:
         if keep is not None and row["scene"] not in keep:
@@ -89,13 +102,16 @@ def main():
         w = np.load(op).astype(np.float32) / 255.0
 
         gtm, pm, wm = gt[mask], cls[mask], w[mask]
+        si, su, siw, suw = scene_acc(row["scene"])
         for c in range(N_CLS):
             p, q = pm == c, gtm == c
             both, either = p & q, p | q
-            inter[c] += np.count_nonzero(both)
-            union[c] += np.count_nonzero(either)
-            inter_w[c] += float(wm[both].sum())
-            union_w[c] += float(wm[either].sum())
+            ni, nu = np.count_nonzero(both), np.count_nonzero(either)
+            wi, wu = float(wm[both].sum()), float(wm[either].sum())
+            inter[c] += ni;   union[c] += nu
+            inter_w[c] += wi; union_w[c] += wu
+            si[c] += ni;  su[c] += nu
+            siw[c] += wi; suw[c] += wu
 
         used += 1
         if used % 250 == 0:
@@ -118,6 +134,9 @@ def main():
               f"   {per_wt[c]-per_std[c]:+6.2f}")
 
     res = dict(preds=args.preds, scenes=args.scenes, frames=used,
+               per_scene={s: dict(inter=v[0].tolist(), union=v[1].tolist(),
+                                  inter_w=v[2].tolist(), union_w=v[3].tolist())
+                          for s, v in sorted(per_scene.items())},
                miou_standard=m_std, miou_weighted=m_wt,
                delta=m_wt - m_std,
                per_class_standard=per_std, per_class_weighted=per_wt,
