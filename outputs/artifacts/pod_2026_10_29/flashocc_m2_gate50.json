@@ -1,0 +1,11 @@
+{
+  "mb_per_frame": 1.2341013,
+  "gb_total": 7.4280557247,
+  "free_frac": 0.39401575,
+  "dynamic_of_nonfree": 0.0136324706458955,
+  "conf_median": 0.8470588326454163,
+  "conf_ceiling": 0.16731975,
+  "voxels_per_occupied_column": 9.695748000000002,
+  "single_voxel_column_frac": 0.001804,
+  "pass": false
+}

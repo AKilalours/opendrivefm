@@ -69,6 +69,14 @@ cpp/build/
 !outputs/artifacts/per_camera_fault_ranking.json
 !outputs/artifacts/failure_triage_vlm.json
 
+# Second backbone, 2026-10-29 (A62, A65-A67). Same rule as above: named
+# entries only, never a wildcard over outputs/artifacts. The directory itself
+# must be un-ignored first or git will not descend into it to see the files.
+!outputs/artifacts/h2_max_test_flashocc_*.json
+!outputs/artifacts/pod_2026_10_29/
+!outputs/artifacts/pod_2026_10_29/*.json
+!outputs/artifacts/pod_2026_10_29/*.md
+
 # Rendered figures are ignored wholesale (they can be regenerated and some are
 # large). Portfolio figures are un-ignored one at a time, same discipline as
 # outputs/artifacts above -- never blanket-unignore outputs/figures/.
