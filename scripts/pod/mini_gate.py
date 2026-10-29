@@ -68,11 +68,30 @@ FREE = 17
 N_FRAMES_FULL = 6019
 
 
-def main(d):
+# Concatenating every voxel of every frame is fine for the 20-50 frames this
+# was written for and fatal beyond that: 6,019 frames is 3.85 billion values,
+# and the three float32 copies come to roughly 46 GB. Both FlashOcc exports
+# were killed by the OOM reaper on 2026-10-29 before this guard existed.
+MAX_UNSAMPLED = 600
+
+
+def main(d, n_frames=0, seed=0):
     fs = sorted(glob.glob(os.path.join(d, '*.npz')))
     if not fs:
         sys.exit(f'no npz in {d}')
-    print(f'{len(fs)} frames in {d}\n')
+    if n_frames:
+        rs = np.random.default_rng(seed)
+        sel = sorted(rs.choice(len(fs), min(n_frames, len(fs)), replace=False))
+        print(f'{len(fs)} frames in {d}; sampling {len(sel)} (seed {seed})\n')
+        fs = [fs[i] for i in sel]
+    elif len(fs) > MAX_UNSAMPLED:
+        sys.exit(
+            f'{len(fs)} frames in {d}.\n'
+            f'This gate holds every voxel of every frame in memory, so more '
+            f'than {MAX_UNSAMPLED} frames will exhaust RAM and be killed.\n'
+            f'Pass --frames N to sample, e.g.  --frames 400')
+    else:
+        print(f'{len(fs)} frames in {d}\n')
 
     nbytes = np.mean([os.path.getsize(f) for f in fs])
     total = nbytes * N_FRAMES_FULL / 1e9
@@ -157,4 +176,12 @@ def main(d):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else '/opt/preds_mini')
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('dir', nargs='?', default='/opt/preds_mini')
+    ap.add_argument('--frames', type=int, default=0,
+                    help='sample this many frames instead of using all of '
+                         'them; required above %d' % MAX_UNSAMPLED)
+    ap.add_argument('--seed', type=int, default=0)
+    a = ap.parse_args()
+    main(a.dir, a.frames, a.seed)
