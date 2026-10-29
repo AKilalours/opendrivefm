@@ -107,6 +107,35 @@ SurroundOcc-specific fights. If the total passes **90 minutes**, stop, write
 down which wall it died on, and reconsider COTR or a null result. A pod hour is
 not free and an unbounded install is how a day disappears.
 
+## Data on the pod -- the cost this runbook never counted
+
+**Checked 2026-10-29.** The Mac holds nuScenes **v1.0-mini only**: 705 MB of
+`samples/`, 32 MB of mini metadata, 4.4 GB of sweeps. The sealed test split is
+75 scenes of the nuScenes *validation* set, which is trainval data. So the
+FB-OCC predictions in `data/preds` were produced with nuScenes present **on the
+pod**, not shipped from here.
+
+`setup_fbocc_pod.sh` does not handle this. It prints "put nuScenes under
+/opt/FB-BEV/data/nuscenes" and stops. Its "~25 min, most of it downloading"
+is the conda and mmdet3d stack, nothing else. **The nuScenes download is
+unbudgeted and would dwarf every install wall in that script.**
+
+### Check this BEFORE bringing up a GPU pod
+
+Attach the network volume to a cheap CPU pod -- not the A6000 -- and run:
+
+    du -sh /workspace/*
+    ls /workspace/*/data/nuscenes/                      # want samples/ v1.0-trainval/ maps/
+    find /workspace -name "bevdetv2-nuscenes_infos_val.pkl"
+
+    volume has nuScenes + the val info pkl   -> the 2-3 GPU-hour, $3-6 plan holds
+    volume has nuScenes, no pkl              -> create_data_bevdet.py rebuilds it, minutes
+    volume gone                              -> STOP. Re-plan. This is not a 90-minute job.
+
+A network volume is also what makes the pod restartable: container disk is lost
+the moment the pod stops, so without one, every interruption re-downloads
+everything.
+
 ## The run, in order
 
     # 0. before the pod
