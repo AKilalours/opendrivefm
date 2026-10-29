@@ -4741,3 +4741,74 @@ it ourselves or let them imagine the answer.
 
 No acceptance threshold is set, because this is a baseline rather than a
 hypothesis of ours. There is nothing here to pass.
+
+---
+
+## A70 RESULT -- H2' on the second backbone. PASSES, on both models.
+
+**Date:** 2026-10-29. Sealed TEST half, 3,008 frames, 75 scenes, split digest
+`924a44db544d4818`. `--obs data/pack/obs_max`, 2,000 bootstrap resamples over
+scenes. Acceptance fixed in A60 on 26 October, before any FlashOcc code ran;
+backbone changed from SurroundOcc to FlashOcc in A62 with the acceptance
+untouched.
+
+### The numbers
+
+    model              frames  mIoU    obs      mask     diff      95% CI
+    FB-OCC               16    39.10   0.6714   0.6230   +0.0484   [+0.0390, +0.0584]
+    FlashOcc M2           2    37.84   0.7041   0.6340   +0.0700   [+0.0602, +0.0793]
+    FlashOcc M1           1    32.08   0.6908   0.6299   +0.0609   [+0.0517, +0.0702]
+
+Observability inside `mask_camera`: 0.6321, 0.6414, 0.6363 respectively.
+
+### A60's acceptance, applied
+
+    FlashOcc M2   interval excludes zero  YES   point +0.0700 >= +0.02  YES   PASS
+    FlashOcc M1   interval excludes zero  YES   point +0.0609 >= +0.02  YES   PASS
+
+Both clear the bar. A62's both-or-neither rule is satisfied: both are reported.
+
+### What this does and does not establish
+
+**Does.** H2 is not an artefact of one backbone. The measure ranks per-voxel
+error above `mask_camera` on three independently trained camera-only
+occupancy models, and on the second architecture the margin is *larger* than
+on the first, not smaller.
+
+**Does.** It is not a fact about temporal fusion. A53's first reason for
+wanting a second backbone was that FB-OCC fuses 16 frames and the result might
+be about memory rather than geometry. Across 1, 2 and 16 frames the effect is
++0.0609, +0.0700, +0.0484 -- present everywhere and **not monotone in temporal
+depth**. Whatever the measure is detecting, more temporal context does not
+remove it.
+
+**Does not.** It does not establish that FB-OCC's margin is genuinely smaller
+than FlashOcc's. The FB-OCC and M2 intervals are disjoint ([+0.0390,+0.0584]
+against [+0.0602,+0.0793]), which is suggestive, but **comparing two
+confidence intervals is not a test of their difference.** A proper
+between-model claim needs a paired bootstrap on the difference-of-differences
+over the same scenes, which has not been run. Until it is, the only supported
+statement is "H2 holds on all three", not "H2 is stronger on FlashOcc".
+
+**Does not.** FB-OCC differs from the FlashOcc models in both architecture and
+temporal depth, so even a proper test could not attribute a difference to
+either cause. The clean within-family contrast is M1 against M2 -- same
+architecture, 1 frame against 2 -- and their intervals overlap substantially
+([+0.0517,+0.0702] against [+0.0602,+0.0793]). No difference is claimed there.
+
+### Consequence for the paper
+
+The two `TODO(pod)` comments at `main.tex` 938 and 940 are now resolved and
+unresolved respectively: the second backbone exists, the sampling-family
+baseline does not (A69 registers the substitute).
+
+The cross-architecture result is a genuine addition and should be stated
+plainly, with the non-monotone frame counts, and with the between-model
+comparison explicitly *not* claimed.
+
+### Provenance
+
+A60 was written on 26 October with the threshold fixed and the outcome
+unknown. A62 changed the backbone for documented reasons without touching the
+threshold. A68 and A69 were registered earlier today, before this result was
+visible. Nothing in the acceptance moved after the fact.
