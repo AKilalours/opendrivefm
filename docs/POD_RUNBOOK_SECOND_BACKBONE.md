@@ -116,17 +116,24 @@ not free and an unbounded install is how a day disappears.
     #    one is available -- container disk is lost on stop.
     bash scripts/pod/setup_fbocc_pod.sh          # shared env, ~25 min
 
-    # 2. FlashOCC repo + checkpoint, then the smoke gate BEFORE the full run
+    # 2. FlashOCC repo + checkpoint
     git clone --depth 1 https://github.com/Yzichen/FlashOCC /opt/FlashOCC
-    pip install gdown && gdown <M2 file id> -O /opt/ckpts/flashocc-m2.pth
-    python scripts/pod/mini_gate.py              # must pass; it exists for this
+    pip install gdown
+    gdown 12WYaCdoZA8-A6_oh6vdLgOmqyEc3PNCe -O /opt/ckpts/flashocc-m2.pth
+    gdown 1k9BzXB2nRyvXhqf7GQx3XNSej6Oq6I-B -O /opt/ckpts/flashocc-m1.pth
 
-    # 3. export per-voxel predictions for the sealed split
-    #    --backbone flashocc is REQUIRED; the default is still fbocc so that
-    #    the existing FB-OCC path cannot be disturbed by accident.
-    python scripts/pod/run_fbocc_voxel.py <out> --backbone flashocc \
+    # 3. SMALL export first, then the gate on its output. ALWAYS this order:
+    #    mini_gate.py reads the .npz files the export writes, so it cannot run
+    #    before one exists. (Earlier revisions of this runbook listed the gate
+    #    as step 2, which is impossible. Corrected 2026-10-29.)
+    #
+    #    --backbone flashocc is REQUIRED; the default is still fbocc so the
+    #    existing FB-OCC path cannot be disturbed by accident.
+    python scripts/pod/run_fbocc_voxel.py /opt/preds_mini --backbone flashocc \
         --cfg /opt/FlashOCC/projects/configs/flashocc/flashocc-r50-4d-stereo.py \
-        --ckpt /opt/ckpts/flashocc-m2.pth --limit 50   # 50 frames first, ALWAYS
+        --ckpt /opt/ckpts/flashocc-m2.pth --limit 50
+
+    python scripts/pod/mini_gate.py /opt/preds_mini    # must pass before step 4
 
     #    sanity on those 50 before spending the rest:
     #      - class histogram has dynamic classes above ~1%.  The Stage-2
