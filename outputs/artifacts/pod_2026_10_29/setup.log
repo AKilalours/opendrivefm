@@ -1,0 +1,773 @@
+
+[1;36m== micromamba + python 3.8[0m
+Fetch Shard Index for conda-forge/linux-64                                                      ⧖ Starting
+Fetch Shard Index for conda-forge/linux-64                                                ✔ Done (0.0 sec)
+Fetch Shard Index for conda-forge/noarch                                                        ⧖ Starting
+Fetch Shard Index for conda-forge/noarch                                                  ✔ Done (0.1 sec)
+Fetching and Parsing Packages' Shards                                                           ⧖ Starting
+Fetching and Parsing Packages' Shards                                                     ✔ Done (1.2 sec)
+
+Resolving Environment                                                                           ⧖ Starting
+Resolving Environment                                                                     ✔ Done (0.2 sec)
+
+Transaction
+
+  Prefix: /opt/mm/envs/occ
+
+  Updating specs:
+
+   - python=3.8
+   - pip
+
+
+  Package                Version  Build                 Channel          Size
+───────────────────────────────────────────────────────────────────────────────
+  Install:
+───────────────────────────────────────────────────────────────────────────────
+
+  + _openmp_mutex            4.5  20_gnu                conda-forge      29kB
+  + bzip2                  1.0.8  hda65f42_10           conda-forge     258kB
+  + ca-certificates   2026.10.23  hbd8a1cb_0            conda-forge     130kB
+  + ld_impl_linux-64      2.46.1  default_hbd61a6d_103  conda-forge     742kB
+  + libffi                 3.7.0  h81df57d_1            conda-forge      68kB
+  + libgcc                16.2.0  ha9f2e26_7            conda-forge       1MB
+  + libgomp               16.2.0  he0feb66_7            conda-forge     641kB
+  + liblzma                5.8.3  hb03c661_1            conda-forge     113kB
+  + liblzma-devel          5.8.3  hb03c661_1            conda-forge     492kB
+  + libnsl                 2.0.1  hb9d3cd8_1            conda-forge      34kB
+  + libsqlite             3.54.1  h0737f62_101          conda-forge     980kB
+  + libuuid               2.42.4  hcfc3c73_0            conda-forge      34kB
+  + libxcrypt             4.4.38  h280c20c_0            conda-forge     102kB
+  + libzlib                1.3.2  h25fd6f3_3            conda-forge      64kB
+  + ncurses                  6.6  hdb14827_1            conda-forge     911kB
+  + openssl                3.6.5  h781a0a9_0            conda-forge       3MB
+  + pip                   24.3.1  pyh8b19718_0          conda-forge       1MB
+  + python                3.8.20  h4a871b0_2_cpython    conda-forge      22MB
+  + readline                 8.3  hd6e31c0_1            conda-forge     349kB
+  + setuptools            75.3.0  pyhd8ed1ab_0          conda-forge     780kB
+  + tk                    8.6.13  noxft_h1df4ec4_4      conda-forge       4MB
+  + wheel                 0.45.1  pyhd8ed1ab_0          conda-forge      63kB
+  + xz                     5.8.3  ha02ee65_1            conda-forge      24kB
+  + xz-gpl-tools           5.8.3  ha02ee65_1            conda-forge      40kB
+  + xz-tools               5.8.3  hb03c661_1            conda-forge      96kB
+  + zstd                   1.5.7  hb78ec9c_7            conda-forge     601kB
+
+  Summary:
+
+  Install: 26 packages
+
+  Total download: 38MB
+
+───────────────────────────────────────────────────────────────────────────────
+
+
+warning  libmamba Security Warning: This transaction includes executing package scripts (pre/post-link/unlink) if present. These scripts can contain arbitrary code. Please ensure you trust the package sources.
+
+Transaction starting
+Linking libzlib-1.3.2-h25fd6f3_3
+Linking libgomp-16.2.0-he0feb66_7
+Linking zstd-1.5.7-hb78ec9c_7
+Linking _openmp_mutex-4.5-20_gnu
+Linking ld_impl_linux-64-2.46.1-default_hbd61a6d_103
+Linking libgcc-16.2.0-ha9f2e26_7
+Linking bzip2-1.0.8-hda65f42_10
+Linking libnsl-2.0.1-hb9d3cd8_1
+Linking libuuid-2.42.4-hcfc3c73_0
+Linking libffi-3.7.0-h81df57d_1
+Linking libsqlite-3.54.1-h0737f62_101
+Linking libxcrypt-4.4.38-h280c20c_0
+Linking liblzma-5.8.3-hb03c661_1
+Linking ncurses-6.6-hdb14827_1
+Linking tk-8.6.13-noxft_h1df4ec4_4
+Linking xz-gpl-tools-5.8.3-ha02ee65_1
+Linking liblzma-devel-5.8.3-hb03c661_1
+Linking xz-tools-5.8.3-hb03c661_1
+Linking readline-8.3-hd6e31c0_1
+Linking xz-5.8.3-ha02ee65_1
+Linking ca-certificates-2026.10.23-hbd8a1cb_0
+Linking openssl-3.6.5-h781a0a9_0
+Linking python-3.8.20-h4a871b0_2_cpython
+Linking pip-24.3.1-pyh8b19718_0
+Linking setuptools-75.3.0-pyhd8ed1ab_0
+Linking wheel-0.45.1-pyhd8ed1ab_0
+
+Transaction finished
+
+
+To activate this environment, use:
+
+    micromamba activate occ
+
+Or to execute a single command in this environment, use:
+
+    micromamba run -n occ mycommand
+
+
+[1;36m== torch 1.13.1+cu117[0m
+Looking in indexes: https://download.pytorch.org/whl/cu117
+Collecting torch==1.13.1+cu117
+  Downloading https://download-r2.pytorch.org/whl/cu117/torch-1.13.1%2Bcu117-cp38-cp38-linux_x86_64.whl (1801.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 GB 163.2 MB/s eta 0:00:00
+Collecting torchvision==0.14.1+cu117
+  Downloading https://download-r2.pytorch.org/whl/cu117/torchvision-0.14.1%2Bcu117-cp38-cp38-linux_x86_64.whl (24.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 24.3/24.3 MB 170.6 MB/s eta 0:00:00
+Collecting typing-extensions (from torch==1.13.1+cu117)
+  Downloading typing_extensions-4.13.2-py3-none-any.whl.metadata (3.0 kB)
+Collecting numpy (from torchvision==0.14.1+cu117)
+  Downloading numpy-1.24.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.6 kB)
+Collecting requests (from torchvision==0.14.1+cu117)
+  Downloading https://download.pytorch.org/whl/requests-2.28.1-py3-none-any.whl (62 kB)
+Collecting pillow!=8.3.*,>=5.3.0 (from torchvision==0.14.1+cu117)
+  Downloading pillow-10.4.0-cp38-cp38-manylinux_2_28_x86_64.whl.metadata (9.2 kB)
+Collecting charset-normalizer<3,>=2 (from requests->torchvision==0.14.1+cu117)
+  Downloading https://download.pytorch.org/whl/charset_normalizer-2.1.1-py3-none-any.whl (39 kB)
+Collecting idna<4,>=2.5 (from requests->torchvision==0.14.1+cu117)
+  Downloading https://download.pytorch.org/whl/idna-3.4-py3-none-any.whl (61 kB)
+Collecting urllib3<1.27,>=1.21.1 (from requests->torchvision==0.14.1+cu117)
+  Downloading https://download.pytorch.org/whl/urllib3-1.26.13-py2.py3-none-any.whl (140 kB)
+Collecting certifi>=2017.4.17 (from requests->torchvision==0.14.1+cu117)
+  Downloading https://download.pytorch.org/whl/certifi-2022.12.7-py3-none-any.whl (155 kB)
+Downloading pillow-10.4.0-cp38-cp38-manylinux_2_28_x86_64.whl (4.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 212.5 MB/s eta 0:00:00
+Downloading numpy-1.24.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.3/17.3 MB 330.4 MB/s eta 0:00:00
+Downloading typing_extensions-4.13.2-py3-none-any.whl (45 kB)
+Installing collected packages: urllib3, typing-extensions, pillow, numpy, idna, charset-normalizer, certifi, torch, requests, torchvision
+Successfully installed certifi-2022.12.7 charset-normalizer-2.1.1 idna-3.4 numpy-1.24.4 pillow-10.4.0 requests-2.28.1 torch-1.13.1+cu117 torchvision-0.14.1+cu117 typing-extensions-4.13.2 urllib3-1.26.13
+torch 1.13.1+cu117 NVIDIA A40
+
+[1;36m== mmcv / mmdet / mmseg[0m
+Collecting setuptools==59.5.0
+  Downloading setuptools-59.5.0-py3-none-any.whl.metadata (5.0 kB)
+Collecting numpy==1.23.5
+  Downloading numpy-1.23.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.3 kB)
+Collecting yapf==0.40.1
+  Downloading yapf-0.40.1-py3-none-any.whl.metadata (35 kB)
+Collecting pillow<10
+  Downloading Pillow-9.5.0-cp38-cp38-manylinux_2_28_x86_64.whl.metadata (9.5 kB)
+Collecting importlib-metadata>=6.6.0 (from yapf==0.40.1)
+  Downloading importlib_metadata-8.5.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting platformdirs>=3.5.1 (from yapf==0.40.1)
+  Downloading platformdirs-4.3.6-py3-none-any.whl.metadata (11 kB)
+Collecting tomli>=2.0.1 (from yapf==0.40.1)
+  Downloading tomli-2.5.0-py3-none-any.whl.metadata (10 kB)
+Collecting zipp>=3.20 (from importlib-metadata>=6.6.0->yapf==0.40.1)
+  Downloading zipp-3.20.2-py3-none-any.whl.metadata (3.7 kB)
+Downloading setuptools-59.5.0-py3-none-any.whl (952 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 952.4/952.4 kB 228.3 MB/s eta 0:00:00
+Downloading numpy-1.23.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.1/17.1 MB 50.9 MB/s eta 0:00:00
+Downloading yapf-0.40.1-py3-none-any.whl (250 kB)
+Downloading Pillow-9.5.0-cp38-cp38-manylinux_2_28_x86_64.whl (3.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 165.2 MB/s eta 0:00:00
+Downloading importlib_metadata-8.5.0-py3-none-any.whl (26 kB)
+Downloading platformdirs-4.3.6-py3-none-any.whl (18 kB)
+Downloading tomli-2.5.0-py3-none-any.whl (14 kB)
+Downloading zipp-3.20.2-py3-none-any.whl (9.2 kB)
+Installing collected packages: zipp, tomli, setuptools, platformdirs, pillow, numpy, importlib-metadata, yapf
+  Attempting uninstall: setuptools
+    Found existing installation: setuptools 75.3.0
+    Uninstalling setuptools-75.3.0:
+      Successfully uninstalled setuptools-75.3.0
+  Attempting uninstall: pillow
+    Found existing installation: pillow 10.4.0
+    Uninstalling pillow-10.4.0:
+      Successfully uninstalled pillow-10.4.0
+  Attempting uninstall: numpy
+    Found existing installation: numpy 1.24.4
+    Uninstalling numpy-1.24.4:
+      Successfully uninstalled numpy-1.24.4
+Successfully installed importlib-metadata-8.5.0 numpy-1.23.5 pillow-9.5.0 platformdirs-4.3.6 setuptools-59.5.0 tomli-2.5.0 yapf-0.40.1 zipp-3.20.2
+Looking in links: https://download.openmmlab.com/mmcv/dist/cu117/torch1.13/index.html
+Collecting mmcv-full==1.7.0
+  Downloading https://download.openmmlab.com/mmcv/dist/cu117/torch1.13.0/mmcv_full-1.7.0-cp38-cp38-manylinux1_x86_64.whl (46.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.1/46.1 MB 26.1 MB/s eta 0:00:00
+Collecting addict (from mmcv-full==1.7.0)
+  Downloading addict-2.4.0-py3-none-any.whl.metadata (1.0 kB)
+Requirement already satisfied: numpy in ./envs/occ/lib/python3.8/site-packages (from mmcv-full==1.7.0) (1.23.5)
+Collecting packaging (from mmcv-full==1.7.0)
+  Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+Requirement already satisfied: Pillow in ./envs/occ/lib/python3.8/site-packages (from mmcv-full==1.7.0) (9.5.0)
+Collecting pyyaml (from mmcv-full==1.7.0)
+  Downloading PyYAML-6.0.3-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.1 kB)
+Requirement already satisfied: yapf in ./envs/occ/lib/python3.8/site-packages (from mmcv-full==1.7.0) (0.40.1)
+Collecting opencv-python>=3 (from mmcv-full==1.7.0)
+  Downloading opencv_python-5.0.0.93-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (19 kB)
+Requirement already satisfied: importlib-metadata>=6.6.0 in ./envs/occ/lib/python3.8/site-packages (from yapf->mmcv-full==1.7.0) (8.5.0)
+Requirement already satisfied: platformdirs>=3.5.1 in ./envs/occ/lib/python3.8/site-packages (from yapf->mmcv-full==1.7.0) (4.3.6)
+Requirement already satisfied: tomli>=2.0.1 in ./envs/occ/lib/python3.8/site-packages (from yapf->mmcv-full==1.7.0) (2.5.0)
+Requirement already satisfied: zipp>=3.20 in ./envs/occ/lib/python3.8/site-packages (from importlib-metadata>=6.6.0->yapf->mmcv-full==1.7.0) (3.20.2)
+Downloading opencv_python-5.0.0.93-cp37-abi3-manylinux_2_28_x86_64.whl (73.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.8/73.8 MB 331.3 MB/s eta 0:00:00
+Downloading addict-2.4.0-py3-none-any.whl (3.8 kB)
+Downloading packaging-26.2-py3-none-any.whl (100 kB)
+Downloading PyYAML-6.0.3-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (806 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 806.0/806.0 kB 223.7 MB/s eta 0:00:00
+Installing collected packages: addict, pyyaml, packaging, opencv-python, mmcv-full
+Successfully installed addict-2.4.0 mmcv-full-1.7.0 opencv-python-5.0.0.93 packaging-26.2 pyyaml-6.0.3
+Collecting mmdet==2.28.2
+  Downloading mmdet-2.28.2-py3-none-any.whl.metadata (25 kB)
+Collecting mmsegmentation==0.30.0
+  Downloading mmsegmentation-0.30.0-py3-none-any.whl.metadata (14 kB)
+Collecting numba==0.56.4
+  Downloading numba-0.56.4-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.8 kB)
+Collecting matplotlib (from mmdet==2.28.2)
+  Downloading matplotlib-3.7.5-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (5.7 kB)
+Requirement already satisfied: numpy in ./envs/occ/lib/python3.8/site-packages (from mmdet==2.28.2) (1.23.5)
+Collecting pycocotools (from mmdet==2.28.2)
+  Downloading pycocotools-2.0.7-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.1 kB)
+Collecting scipy (from mmdet==2.28.2)
+  Downloading scipy-1.10.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (58 kB)
+Collecting six (from mmdet==2.28.2)
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting terminaltables (from mmdet==2.28.2)
+  Downloading terminaltables-3.1.10-py2.py3-none-any.whl.metadata (3.5 kB)
+Collecting mmcls>=0.20.1 (from mmsegmentation==0.30.0)
+  Downloading mmcls-0.25.0-py2.py3-none-any.whl.metadata (14 kB)
+Requirement already satisfied: packaging in ./envs/occ/lib/python3.8/site-packages (from mmsegmentation==0.30.0) (26.2)
+Collecting prettytable (from mmsegmentation==0.30.0)
+  Downloading prettytable-3.11.0-py3-none-any.whl.metadata (30 kB)
+Collecting llvmlite<0.40,>=0.39.0dev0 (from numba==0.56.4)
+  Downloading llvmlite-0.39.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.7 kB)
+Requirement already satisfied: setuptools in ./envs/occ/lib/python3.8/site-packages (from numba==0.56.4) (59.5.0)
+Requirement already satisfied: importlib-metadata in ./envs/occ/lib/python3.8/site-packages (from numba==0.56.4) (8.5.0)
+Collecting contourpy>=1.0.1 (from matplotlib->mmdet==2.28.2)
+  Downloading contourpy-1.1.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.9 kB)
+Collecting cycler>=0.10 (from matplotlib->mmdet==2.28.2)
+  Downloading cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+Collecting fonttools>=4.22.0 (from matplotlib->mmdet==2.28.2)
+  Downloading fonttools-4.57.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (102 kB)
+Collecting kiwisolver>=1.0.1 (from matplotlib->mmdet==2.28.2)
+  Downloading kiwisolver-1.4.7-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl.metadata (6.3 kB)
+Requirement already satisfied: pillow>=6.2.0 in ./envs/occ/lib/python3.8/site-packages (from matplotlib->mmdet==2.28.2) (9.5.0)
+Collecting pyparsing>=2.3.1 (from matplotlib->mmdet==2.28.2)
+  Downloading pyparsing-3.1.4-py3-none-any.whl.metadata (5.1 kB)
+Collecting python-dateutil>=2.7 (from matplotlib->mmdet==2.28.2)
+  Downloading python_dateutil-3.0.0-py2.py3-none-any.whl.metadata (8.2 kB)
+Collecting importlib-resources>=3.2.0 (from matplotlib->mmdet==2.28.2)
+  Downloading importlib_resources-6.4.5-py3-none-any.whl.metadata (4.0 kB)
+Requirement already satisfied: zipp>=3.20 in ./envs/occ/lib/python3.8/site-packages (from importlib-metadata->numba==0.56.4) (3.20.2)
+Collecting wcwidth (from prettytable->mmsegmentation==0.30.0)
+  Downloading wcwidth-0.8.5-py3-none-any.whl.metadata (23 kB)
+Collecting tzdata (from python-dateutil>=2.7->matplotlib->mmdet==2.28.2)
+  Downloading tzdata-2026.6-py2.py3-none-any.whl.metadata (1.4 kB)
+Downloading mmdet-2.28.2-py3-none-any.whl (1.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB 58.2 MB/s eta 0:00:00
+Downloading mmsegmentation-0.30.0-py3-none-any.whl (831 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 831.7/831.7 kB 175.9 MB/s eta 0:00:00
+Downloading numba-0.56.4-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (3.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 71.2 MB/s eta 0:00:00
+Downloading llvmlite-0.39.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (34.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 34.6/34.6 MB 37.8 MB/s eta 0:00:00
+Downloading mmcls-0.25.0-py2.py3-none-any.whl (648 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 648.8/648.8 kB 63.1 MB/s eta 0:00:00
+Downloading matplotlib-3.7.5-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (9.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.2/9.2 MB 166.3 MB/s eta 0:00:00
+Downloading prettytable-3.11.0-py3-none-any.whl (28 kB)
+Downloading pycocotools-2.0.7-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (439 kB)
+Downloading scipy-1.10.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (34.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 34.5/34.5 MB 46.3 MB/s eta 0:00:00
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading terminaltables-3.1.10-py2.py3-none-any.whl (15 kB)
+Downloading contourpy-1.1.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (301 kB)
+Downloading cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Downloading fonttools-4.57.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (4.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 190.0 MB/s eta 0:00:00
+Downloading importlib_resources-6.4.5-py3-none-any.whl (36 kB)
+Downloading kiwisolver-1.4.7-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 154.5 MB/s eta 0:00:00
+Downloading pyparsing-3.1.4-py3-none-any.whl (104 kB)
+Downloading python_dateutil-3.0.0-py2.py3-none-any.whl (94 kB)
+Downloading wcwidth-0.8.5-py3-none-any.whl (299 kB)
+Downloading tzdata-2026.6-py2.py3-none-any.whl (348 kB)
+Installing collected packages: wcwidth, tzdata, terminaltables, six, scipy, pyparsing, llvmlite, kiwisolver, importlib-resources, fonttools, cycler, contourpy, python-dateutil, prettytable, numba, matplotlib, pycocotools, mmcls, mmsegmentation, mmdet
+Successfully installed contourpy-1.1.1 cycler-0.12.1 fonttools-4.57.0 importlib-resources-6.4.5 kiwisolver-1.4.7 llvmlite-0.39.1 matplotlib-3.7.5 mmcls-0.25.0 mmdet-2.28.2 mmsegmentation-0.30.0 numba-0.56.4 prettytable-3.11.0 pycocotools-2.0.7 pyparsing-3.1.4 python-dateutil-3.0.0 scipy-1.10.1 six-1.17.0 terminaltables-3.1.10 tzdata-2026.6 wcwidth-0.8.5
+
+[1;36m== CUDA 11.7 toolkit (host nvcc is too new for this torch)[0m
+⚠ Shard Index for nvidia/label/cuda-11.7.1/linux-64 not available, falling back to flat repodata
+Using Flat Repodata for nvidia/label/cuda-11.7.1/linux-64                                       ✔ Starting
+Using Flat Repodata for nvidia/label/cuda-11.7.1/linux-64                                 ✔ Done (0.0 sec)
+⚠ Shard Index for nvidia/label/cuda-11.7.1/noarch not available, falling back to flat repodata
+Using Flat Repodata for nvidia/label/cuda-11.7.1/noarch                                         ✔ Starting
+Using Flat Repodata for nvidia/label/cuda-11.7.1/noarch                                   ✔ Done (0.0 sec)
+Parsing Packages' Records                                                                 ✔ Done (0.0 sec)
+
+Pinned packages:
+
+  - python=3.8
+
+Resolving Environment                                                                           ⧖ Starting
+Resolving Environment                                                                     ✔ Done (0.0 sec)
+
+Transaction
+
+  Prefix: /opt/mm/envs/occ
+
+  Updating specs:
+
+   - cuda-toolkit
+
+
+  Package                       Version  Build  Channel                       Size
+────────────────────────────────────────────────────────────────────────────────────
+  Install:
+────────────────────────────────────────────────────────────────────────────────────
+
+  + cuda-cccl                   11.7.91  0      nvidia/label/cuda-11.7.1       1MB
+  + cuda-command-line-tools      11.7.1  0      nvidia/label/cuda-11.7.1       1kB
+  + cuda-compiler                11.7.1  0      nvidia/label/cuda-11.7.1       1kB
+  + cuda-cudart                 11.7.99  0      nvidia/label/cuda-11.7.1     199kB
+  + cuda-cudart-dev             11.7.99  0      nvidia/label/cuda-11.7.1       1MB
+  + cuda-cuobjdump              11.7.91  0      nvidia/label/cuda-11.7.1     162kB
+  + cuda-cupti                 11.7.101  0      nvidia/label/cuda-11.7.1      24MB
+  + cuda-cuxxfilt               11.7.91  0      nvidia/label/cuda-11.7.1     300kB
+  + cuda-documentation          11.7.91  0      nvidia/label/cuda-11.7.1      90kB
+  + cuda-driver-dev             11.7.99  0      nvidia/label/cuda-11.7.1      16kB
+  + cuda-gdb                    11.7.91  0      nvidia/label/cuda-11.7.1       5MB
+  + cuda-libraries               11.7.1  0      nvidia/label/cuda-11.7.1       2kB
+  + cuda-libraries-dev           11.7.1  0      nvidia/label/cuda-11.7.1       2kB
+  + cuda-memcheck               11.7.91  0      nvidia/label/cuda-11.7.1     172kB
+  + cuda-nsight                 11.7.91  0      nvidia/label/cuda-11.7.1     119MB
+  + cuda-nsight-compute          11.7.1  0      nvidia/label/cuda-11.7.1       1kB
+  + cuda-nvcc                   11.7.99  0      nvidia/label/cuda-11.7.1      45MB
+  + cuda-nvdisasm               11.7.91  0      nvidia/label/cuda-11.7.1      33MB
+  + cuda-nvml-dev               11.7.91  0      nvidia/label/cuda-11.7.1      82kB
+  + cuda-nvprof                11.7.101  0      nvidia/label/cuda-11.7.1       5MB
+  + cuda-nvprune                11.7.91  0      nvidia/label/cuda-11.7.1      65kB
+  + cuda-nvrtc                  11.7.99  0      nvidia/label/cuda-11.7.1      18MB
+  + cuda-nvrtc-dev              11.7.99  0      nvidia/label/cuda-11.7.1      18MB
+  + cuda-nvtx                   11.7.91  0      nvidia/label/cuda-11.7.1      58kB
+  + cuda-nvvp                  11.7.101  0      nvidia/label/cuda-11.7.1     120MB
+  + cuda-sanitizer-api          11.7.91  0      nvidia/label/cuda-11.7.1      18MB
+  + cuda-toolkit                 11.7.1  0      nvidia/label/cuda-11.7.1       1kB
+  + cuda-tools                   11.7.1  0      nvidia/label/cuda-11.7.1       1kB
+  + cuda-visual-tools            11.7.1  0      nvidia/label/cuda-11.7.1       1kB
+  + gds-tools                  1.3.1.18  0      nvidia/label/cuda-11.7.1       2kB
+  + libcublas                11.10.3.66  0      nvidia/label/cuda-11.7.1     300MB
+  + libcublas-dev            11.10.3.66  0      nvidia/label/cuda-11.7.1     311MB
+  + libcufft                  10.7.2.91  0      nvidia/label/cuda-11.7.1      98MB
+  + libcufft-dev              10.7.2.91  0      nvidia/label/cuda-11.7.1     206MB
+  + libcufile                  1.3.1.18  0      nvidia/label/cuda-11.7.1     558kB
+  + libcufile-dev              1.3.1.18  0      nvidia/label/cuda-11.7.1      13MB
+  + libcurand                10.2.10.91  0      nvidia/label/cuda-11.7.1      53MB
+  + libcurand-dev            10.2.10.91  0      nvidia/label/cuda-11.7.1      53MB
+  + libcusolver                11.4.0.1  0      nvidia/label/cuda-11.7.1      83MB
+  + libcusolver-dev            11.4.0.1  0      nvidia/label/cuda-11.7.1      59MB
+  + libcusparse               11.7.4.91  0      nvidia/label/cuda-11.7.1     158MB
+  + libcusparse-dev           11.7.4.91  0      nvidia/label/cuda-11.7.1     325MB
+  + libnpp                    11.7.4.75  0      nvidia/label/cuda-11.7.1     136MB
+  + libnpp-dev                11.7.4.75  0      nvidia/label/cuda-11.7.1     133MB
+  + libnvjpeg                  11.8.0.2  0      nvidia/label/cuda-11.7.1       2MB
+  + libnvjpeg-dev              11.8.0.2  0      nvidia/label/cuda-11.7.1       2MB
+  + nsight-compute           2022.2.1.3  0      nvidia/label/cuda-11.7.1     484MB
+
+  Summary:
+
+  Install: 47 packages
+
+  Total download: 3GB
+
+────────────────────────────────────────────────────────────────────────────────────
+
+
+warning  libmamba Security Warning: This transaction includes executing package scripts (pre/post-link/unlink) if present. These scripts can contain arbitrary code. Please ensure you trust the package sources.
+
+Transaction starting
+Linking cuda-documentation-11.7.91-0
+Linking cuda-nvml-dev-11.7.91-0
+warning  libmamba [cuda-nvml-dev-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-cuobjdump-11.7.91-0
+warning  libmamba [cuda-cuobjdump-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-cuxxfilt-11.7.91-0
+warning  libmamba [cuda-cuxxfilt-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-nvcc-11.7.99-0
+warning  libmamba [cuda-nvcc-11.7.99-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-nvprune-11.7.91-0
+warning  libmamba [cuda-nvprune-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-cudart-11.7.99-0
+Linking cuda-nvrtc-11.7.99-0
+Linking libcublas-11.10.3.66-0
+Linking libcufft-10.7.2.91-0
+Linking libcufile-1.3.1.18-0
+Linking libcurand-10.2.10.91-0
+Linking libcusolver-11.4.0.1-0
+Linking libcusparse-11.7.4.91-0
+Linking libnpp-11.7.4.75-0
+Linking libnvjpeg-11.8.0.2-0
+Linking cuda-cccl-11.7.91-0
+Linking cuda-driver-dev-11.7.99-0
+Linking cuda-cupti-11.7.101-0
+warning  libmamba [cuda-cupti-11.7.101-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-gdb-11.7.91-0
+Linking cuda-memcheck-11.7.91-0
+warning  libmamba [cuda-memcheck-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-nvdisasm-11.7.91-0
+warning  libmamba [cuda-nvdisasm-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-nvprof-11.7.101-0
+warning  libmamba [cuda-nvprof-11.7.101-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-nvtx-11.7.91-0
+warning  libmamba [cuda-nvtx-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-sanitizer-api-11.7.91-0
+warning  libmamba [cuda-sanitizer-api-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-nsight-11.7.91-0
+warning  libmamba [cuda-nsight-11.7.91-0] The following files were already present in the environment:
+    - LICENSE
+Linking nsight-compute-2022.2.1.3-0
+warning  libmamba [nsight-compute-2022.2.1.3-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-compiler-11.7.1-0
+Linking cuda-nvrtc-dev-11.7.99-0
+Linking libcublas-dev-11.10.3.66-0
+Linking libcufft-dev-10.7.2.91-0
+Linking gds-tools-1.3.1.18-0
+Linking libcufile-dev-1.3.1.18-0
+Linking libcurand-dev-10.2.10.91-0
+Linking libcusolver-dev-11.4.0.1-0
+Linking libcusparse-dev-11.7.4.91-0
+warning  libmamba [libcusparse-dev-11.7.4.91-0] The following files were already present in the environment:
+    - lib/libcusparse.so.11
+    - lib/libcusparse.so.11.7.4.91
+Linking libnpp-dev-11.7.4.75-0
+Linking libnvjpeg-dev-11.8.0.2-0
+Linking cuda-libraries-11.7.1-0
+Linking cuda-cudart-dev-11.7.99-0
+Linking cuda-nvvp-11.7.101-0
+warning  libmamba [cuda-nvvp-11.7.101-0] The following files were already present in the environment:
+    - LICENSE
+Linking cuda-command-line-tools-11.7.1-0
+Linking cuda-nsight-compute-11.7.1-0
+Linking cuda-libraries-dev-11.7.1-0
+Linking cuda-visual-tools-11.7.1-0
+Linking cuda-tools-11.7.1-0
+Linking cuda-toolkit-11.7.1-0
+
+Transaction finished
+
+Build cuda_11.7.r11.7/compiler.31442593_0
+
+[1;36m== g++ 11 (CUDA 11.7 refuses anything above 11.5)[0m
+W: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+debconf: delaying package configuration, since apt-utils is not installed
+
+[1;36m== FB-BEV[0m
+Cloning into 'FB-BEV'...
+Collecting spconv-cu117
+  Downloading spconv_cu117-2.3.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (12 kB)
+Collecting timm
+  Downloading timm-1.0.30-py3-none-any.whl.metadata (33 kB)
+Collecting einops
+  Downloading einops-0.8.1-py3-none-any.whl.metadata (13 kB)
+Collecting pyquaternion
+  Downloading pyquaternion-0.9.9-py3-none-any.whl.metadata (1.4 kB)
+Collecting plyfile
+  Downloading plyfile-1.0.3-py3-none-any.whl.metadata (2.1 kB)
+Collecting trimesh
+  Downloading trimesh-4.12.2-py3-none-any.whl.metadata (13 kB)
+Collecting IPython
+  Downloading ipython-8.12.3-py3-none-any.whl.metadata (5.7 kB)
+Collecting nuscenes-devkit
+  Downloading nuscenes_devkit-1.1.11-py3-none-any.whl.metadata (15 kB)
+Collecting pccm>=0.4.0 (from spconv-cu117)
+  Downloading pccm-0.4.16-py3-none-any.whl.metadata (1.1 kB)
+Collecting ccimport>=0.4.0 (from spconv-cu117)
+  Downloading ccimport-0.4.4-py3-none-any.whl.metadata (1.4 kB)
+Collecting pybind11>=2.6.0 (from spconv-cu117)
+  Downloading pybind11-3.0.4-py3-none-any.whl.metadata (10 kB)
+Collecting fire (from spconv-cu117)
+  Downloading fire-0.7.1-py3-none-any.whl.metadata (5.8 kB)
+Requirement already satisfied: numpy in ./mm/envs/occ/lib/python3.8/site-packages (from spconv-cu117) (1.23.5)
+Collecting cumm-cu117<0.5.0,>=0.4.5 (from spconv-cu117)
+  Downloading cumm_cu117-0.4.11-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.3 kB)
+Requirement already satisfied: torch in ./mm/envs/occ/lib/python3.8/site-packages (from timm) (1.13.1+cu117)
+Requirement already satisfied: torchvision in ./mm/envs/occ/lib/python3.8/site-packages (from timm) (0.14.1+cu117)
+Requirement already satisfied: pyyaml in ./mm/envs/occ/lib/python3.8/site-packages (from timm) (6.0.3)
+Collecting huggingface_hub (from timm)
+  Downloading huggingface_hub-0.36.2-py3-none-any.whl.metadata (15 kB)
+Collecting safetensors (from timm)
+  Downloading safetensors-0.5.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.8 kB)
+Collecting backcall (from IPython)
+  Downloading backcall-0.2.0-py2.py3-none-any.whl.metadata (2.0 kB)
+Collecting decorator (from IPython)
+  Downloading decorator-5.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting jedi>=0.16 (from IPython)
+  Downloading jedi-0.19.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting matplotlib-inline (from IPython)
+  Downloading matplotlib_inline-0.1.7-py3-none-any.whl.metadata (3.9 kB)
+Collecting pickleshare (from IPython)
+  Downloading pickleshare-0.7.5-py2.py3-none-any.whl.metadata (1.5 kB)
+Collecting prompt-toolkit!=3.0.37,<3.1.0,>=3.0.30 (from IPython)
+  Downloading prompt_toolkit-3.0.52-py3-none-any.whl.metadata (6.4 kB)
+Collecting pygments>=2.4.0 (from IPython)
+  Downloading pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+Collecting stack-data (from IPython)
+  Downloading stack_data-0.6.3-py3-none-any.whl.metadata (18 kB)
+Collecting traitlets>=5 (from IPython)
+  Downloading traitlets-5.14.3-py3-none-any.whl.metadata (10 kB)
+Requirement already satisfied: typing-extensions in ./mm/envs/occ/lib/python3.8/site-packages (from IPython) (4.13.2)
+Collecting pexpect>4.3 (from IPython)
+  Downloading pexpect-4.9.0-py2.py3-none-any.whl.metadata (2.5 kB)
+Collecting cachetools (from nuscenes-devkit)
+  Downloading cachetools-5.5.2-py3-none-any.whl.metadata (5.4 kB)
+Collecting descartes (from nuscenes-devkit)
+  Downloading descartes-1.1.0-py3-none-any.whl.metadata (2.4 kB)
+Collecting matplotlib<3.6.0 (from nuscenes-devkit)
+  Downloading matplotlib-3.5.3-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl.metadata (6.7 kB)
+Requirement already satisfied: opencv-python>=4.5.4.58 in ./mm/envs/occ/lib/python3.8/site-packages (from nuscenes-devkit) (5.0.0.93)
+Requirement already satisfied: Pillow>6.2.1 in ./mm/envs/occ/lib/python3.8/site-packages (from nuscenes-devkit) (9.5.0)
+Collecting scikit-learn (from nuscenes-devkit)
+  Downloading scikit_learn-1.3.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (11 kB)
+Requirement already satisfied: scipy in ./mm/envs/occ/lib/python3.8/site-packages (from nuscenes-devkit) (1.10.1)
+Collecting Shapely<2.0.0 (from nuscenes-devkit)
+  Downloading Shapely-1.8.5.post1-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (43 kB)
+Collecting tqdm (from nuscenes-devkit)
+  Downloading tqdm-4.70.1-py3-none-any.whl.metadata (57 kB)
+Requirement already satisfied: pycocotools>=2.0.1 in ./mm/envs/occ/lib/python3.8/site-packages (from nuscenes-devkit) (2.0.7)
+Collecting ninja (from ccimport>=0.4.0->spconv-cu117)
+  Downloading ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (5.4 kB)
+Requirement already satisfied: requests in ./mm/envs/occ/lib/python3.8/site-packages (from ccimport>=0.4.0->spconv-cu117) (2.28.1)
+Collecting parso<0.9.0,>=0.8.4 (from jedi>=0.16->IPython)
+  Downloading parso-0.8.7-py2.py3-none-any.whl.metadata (8.2 kB)
+Requirement already satisfied: cycler>=0.10 in ./mm/envs/occ/lib/python3.8/site-packages (from matplotlib<3.6.0->nuscenes-devkit) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in ./mm/envs/occ/lib/python3.8/site-packages (from matplotlib<3.6.0->nuscenes-devkit) (4.57.0)
+Requirement already satisfied: kiwisolver>=1.0.1 in ./mm/envs/occ/lib/python3.8/site-packages (from matplotlib<3.6.0->nuscenes-devkit) (1.4.7)
+Requirement already satisfied: packaging>=20.0 in ./mm/envs/occ/lib/python3.8/site-packages (from matplotlib<3.6.0->nuscenes-devkit) (26.2)
+Requirement already satisfied: pyparsing>=2.2.1 in ./mm/envs/occ/lib/python3.8/site-packages (from matplotlib<3.6.0->nuscenes-devkit) (3.1.4)
+Requirement already satisfied: python-dateutil>=2.7 in ./mm/envs/occ/lib/python3.8/site-packages (from matplotlib<3.6.0->nuscenes-devkit) (3.0.0)
+Collecting lark>=1.0.0 (from pccm>=0.4.0->spconv-cu117)
+  Downloading lark-1.3.1-py3-none-any.whl.metadata (1.8 kB)
+Collecting portalocker>=2.3.2 (from pccm>=0.4.0->spconv-cu117)
+  Downloading portalocker-3.0.0-py3-none-any.whl.metadata (8.5 kB)
+Collecting ptyprocess>=0.5 (from pexpect>4.3->IPython)
+  Downloading ptyprocess-0.7.0-py2.py3-none-any.whl.metadata (1.3 kB)
+Requirement already satisfied: wcwidth in ./mm/envs/occ/lib/python3.8/site-packages (from prompt-toolkit!=3.0.37,<3.1.0,>=3.0.30->IPython) (0.8.5)
+Collecting termcolor (from fire->spconv-cu117)
+  Downloading termcolor-2.4.0-py3-none-any.whl.metadata (6.1 kB)
+Collecting filelock (from huggingface_hub->timm)
+  Downloading filelock-3.16.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting fsspec>=2023.5.0 (from huggingface_hub->timm)
+  Downloading fsspec-2025.3.0-py3-none-any.whl.metadata (11 kB)
+Collecting hf-xet<2.0.0,>=1.1.3 (from huggingface_hub->timm)
+  Downloading hf_xet-1.7.1-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+Collecting joblib>=1.1.1 (from scikit-learn->nuscenes-devkit)
+  Downloading joblib-1.4.2-py3-none-any.whl.metadata (5.4 kB)
+Collecting threadpoolctl>=2.0.0 (from scikit-learn->nuscenes-devkit)
+  Downloading threadpoolctl-3.5.0-py3-none-any.whl.metadata (13 kB)
+Collecting executing>=1.2.0 (from stack-data->IPython)
+  Downloading executing-2.3.0-py3-none-any.whl.metadata (9.1 kB)
+Collecting asttokens>=2.1.0 (from stack-data->IPython)
+  Downloading asttokens-3.0.2-py3-none-any.whl.metadata (5.7 kB)
+Collecting pure-eval (from stack-data->IPython)
+  Downloading pure_eval-0.2.4-py3-none-any.whl.metadata (6.4 kB)
+Requirement already satisfied: six>=1.6 in ./mm/envs/occ/lib/python3.8/site-packages (from python-dateutil>=2.7->matplotlib<3.6.0->nuscenes-devkit) (1.17.0)
+Requirement already satisfied: tzdata in ./mm/envs/occ/lib/python3.8/site-packages (from python-dateutil>=2.7->matplotlib<3.6.0->nuscenes-devkit) (2026.6)
+Requirement already satisfied: charset-normalizer<3,>=2 in ./mm/envs/occ/lib/python3.8/site-packages (from requests->ccimport>=0.4.0->spconv-cu117) (2.1.1)
+Requirement already satisfied: idna<4,>=2.5 in ./mm/envs/occ/lib/python3.8/site-packages (from requests->ccimport>=0.4.0->spconv-cu117) (3.4)
+Requirement already satisfied: urllib3<1.27,>=1.21.1 in ./mm/envs/occ/lib/python3.8/site-packages (from requests->ccimport>=0.4.0->spconv-cu117) (1.26.13)
+Requirement already satisfied: certifi>=2017.4.17 in ./mm/envs/occ/lib/python3.8/site-packages (from requests->ccimport>=0.4.0->spconv-cu117) (2022.12.7)
+Downloading spconv_cu117-2.3.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (67.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.7/67.7 MB 13.7 MB/s eta 0:00:00
+Downloading timm-1.0.30-py3-none-any.whl (2.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.7/2.7 MB 108.4 MB/s eta 0:00:00
+Downloading einops-0.8.1-py3-none-any.whl (64 kB)
+Downloading pyquaternion-0.9.9-py3-none-any.whl (14 kB)
+Downloading plyfile-1.0.3-py3-none-any.whl (23 kB)
+Downloading trimesh-4.12.2-py3-none-any.whl (741 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 741.0/741.0 kB 127.0 MB/s eta 0:00:00
+Downloading ipython-8.12.3-py3-none-any.whl (798 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 798.3/798.3 kB 78.5 MB/s eta 0:00:00
+Downloading nuscenes_devkit-1.1.11-py3-none-any.whl (313 kB)
+Downloading ccimport-0.4.4-py3-none-any.whl (27 kB)
+Downloading cumm_cu117-0.4.11-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.2/23.2 MB 13.2 MB/s eta 0:00:00
+Downloading jedi-0.19.2-py2.py3-none-any.whl (1.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 131.4 MB/s eta 0:00:00
+Downloading matplotlib-3.5.3-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl (11.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.3/11.3 MB 114.0 MB/s eta 0:00:00
+Downloading pccm-0.4.16-py3-none-any.whl (73 kB)
+Downloading pexpect-4.9.0-py2.py3-none-any.whl (63 kB)
+Downloading prompt_toolkit-3.0.52-py3-none-any.whl (391 kB)
+Downloading pybind11-3.0.4-py3-none-any.whl (314 kB)
+Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 167.6 MB/s eta 0:00:00
+Downloading Shapely-1.8.5.post1-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (2.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 85.8 MB/s eta 0:00:00
+Downloading traitlets-5.14.3-py3-none-any.whl (85 kB)
+Downloading backcall-0.2.0-py2.py3-none-any.whl (11 kB)
+Downloading cachetools-5.5.2-py3-none-any.whl (10 kB)
+Downloading decorator-5.3.1-py3-none-any.whl (10 kB)
+Downloading descartes-1.1.0-py3-none-any.whl (5.8 kB)
+Downloading fire-0.7.1-py3-none-any.whl (115 kB)
+Downloading huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 88.2 MB/s eta 0:00:00
+Downloading tqdm-4.70.1-py3-none-any.whl (80 kB)
+Downloading matplotlib_inline-0.1.7-py3-none-any.whl (9.9 kB)
+Downloading pickleshare-0.7.5-py2.py3-none-any.whl (6.9 kB)
+Downloading safetensors-0.5.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (471 kB)
+Downloading scikit_learn-1.3.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.1/11.1 MB 109.9 MB/s eta 0:00:00
+Downloading stack_data-0.6.3-py3-none-any.whl (24 kB)
+Downloading asttokens-3.0.2-py3-none-any.whl (28 kB)
+Downloading executing-2.3.0-py3-none-any.whl (29 kB)
+Downloading fsspec-2025.3.0-py3-none-any.whl (193 kB)
+Downloading hf_xet-1.7.1-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.2/4.2 MB 188.5 MB/s eta 0:00:00
+Downloading joblib-1.4.2-py3-none-any.whl (301 kB)
+Downloading lark-1.3.1-py3-none-any.whl (113 kB)
+Downloading parso-0.8.7-py2.py3-none-any.whl (107 kB)
+Downloading portalocker-3.0.0-py3-none-any.whl (19 kB)
+Downloading ptyprocess-0.7.0-py2.py3-none-any.whl (13 kB)
+Downloading threadpoolctl-3.5.0-py3-none-any.whl (18 kB)
+Downloading filelock-3.16.1-py3-none-any.whl (16 kB)
+Downloading ninja-1.13.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (183 kB)
+Downloading pure_eval-0.2.4-py3-none-any.whl (11 kB)
+Downloading termcolor-2.4.0-py3-none-any.whl (7.7 kB)
+Installing collected packages: pure-eval, ptyprocess, pickleshare, backcall, trimesh, traitlets, tqdm, threadpoolctl, termcolor, Shapely, safetensors, pyquaternion, pygments, pybind11, prompt-toolkit, portalocker, plyfile, pexpect, parso, ninja, lark, joblib, hf-xet, fsspec, filelock, executing, einops, decorator, cachetools, asttokens, stack-data, scikit-learn, matplotlib-inline, matplotlib, jedi, huggingface_hub, fire, ccimport, timm, pccm, IPython, descartes, nuscenes-devkit, cumm-cu117, spconv-cu117
+  Attempting uninstall: matplotlib
+    Found existing installation: matplotlib 3.7.5
+    Uninstalling matplotlib-3.7.5:
+      Successfully uninstalled matplotlib-3.7.5
+Successfully installed IPython-8.12.3 Shapely-1.8.5.post1 asttokens-3.0.2 backcall-0.2.0 cachetools-5.5.2 ccimport-0.4.4 cumm-cu117-0.4.11 decorator-5.3.1 descartes-1.1.0 einops-0.8.1 executing-2.3.0 filelock-3.16.1 fire-0.7.1 fsspec-2025.3.0 hf-xet-1.7.1 huggingface_hub-0.36.2 jedi-0.19.2 joblib-1.4.2 lark-1.3.1 matplotlib-3.5.3 matplotlib-inline-0.1.7 ninja-1.13.2 nuscenes-devkit-1.1.11 parso-0.8.7 pccm-0.4.16 pexpect-4.9.0 pickleshare-0.7.5 plyfile-1.0.3 portalocker-3.0.0 prompt-toolkit-3.0.52 ptyprocess-0.7.0 pure-eval-0.2.4 pybind11-3.0.4 pygments-2.19.2 pyquaternion-0.9.9 safetensors-0.5.3 scikit-learn-1.3.2 spconv-cu117-2.3.6 stack-data-0.6.3 termcolor-2.4.0 threadpoolctl-3.5.0 timm-1.0.30 tqdm-4.70.1 traitlets-5.14.3 trimesh-4.12.2
+Requirement already satisfied: numpy==1.23.5 in ./mm/envs/occ/lib/python3.8/site-packages (1.23.5)
+
+[1;36m== patching the two published defects[0m
+patched
+
+[1;36m== scikit-image from a wheel (easy_install cannot build modern sdists)[0m
+Collecting scikit-image<0.22
+  Downloading scikit_image-0.21.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (14 kB)
+Collecting networkx<3
+  Downloading networkx-2.8.8-py3-none-any.whl.metadata (5.1 kB)
+Collecting tensorboard
+  Downloading tensorboard-2.14.0-py3-none-any.whl.metadata (1.8 kB)
+Requirement already satisfied: numpy>=1.21.1 in ./mm/envs/occ/lib/python3.8/site-packages (from scikit-image<0.22) (1.23.5)
+Requirement already satisfied: scipy>=1.8 in ./mm/envs/occ/lib/python3.8/site-packages (from scikit-image<0.22) (1.10.1)
+Requirement already satisfied: pillow>=9.0.1 in ./mm/envs/occ/lib/python3.8/site-packages (from scikit-image<0.22) (9.5.0)
+Collecting imageio>=2.27 (from scikit-image<0.22)
+  Downloading imageio-2.35.1-py3-none-any.whl.metadata (4.9 kB)
+Collecting tifffile>=2022.8.12 (from scikit-image<0.22)
+  Downloading tifffile-2023.7.10-py3-none-any.whl.metadata (31 kB)
+Collecting PyWavelets>=1.1.1 (from scikit-image<0.22)
+  Downloading PyWavelets-1.4.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.9 kB)
+Requirement already satisfied: packaging>=21 in ./mm/envs/occ/lib/python3.8/site-packages (from scikit-image<0.22) (26.2)
+Collecting lazy_loader>=0.2 (from scikit-image<0.22)
+  Downloading lazy_loader-0.4-py3-none-any.whl.metadata (7.6 kB)
+Collecting absl-py>=0.4 (from tensorboard)
+  Downloading absl_py-2.3.1-py3-none-any.whl.metadata (3.3 kB)
+Collecting grpcio>=1.48.2 (from tensorboard)
+  Downloading grpcio-1.70.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.9 kB)
+Collecting google-auth<3,>=1.6.3 (from tensorboard)
+  Downloading google_auth-2.50.0-py3-none-any.whl.metadata (6.2 kB)
+Collecting google-auth-oauthlib<1.1,>=0.5 (from tensorboard)
+  Downloading google_auth_oauthlib-1.0.0-py2.py3-none-any.whl.metadata (2.7 kB)
+Collecting markdown>=2.6.8 (from tensorboard)
+  Downloading Markdown-3.7-py3-none-any.whl.metadata (7.0 kB)
+Collecting protobuf>=3.19.6 (from tensorboard)
+  Downloading protobuf-5.29.6-cp38-abi3-manylinux2014_x86_64.whl.metadata (592 bytes)
+Requirement already satisfied: requests<3,>=2.21.0 in ./mm/envs/occ/lib/python3.8/site-packages (from tensorboard) (2.28.1)
+Requirement already satisfied: setuptools>=41.0.0 in ./mm/envs/occ/lib/python3.8/site-packages (from tensorboard) (59.5.0)
+Collecting tensorboard-data-server<0.8.0,>=0.7.0 (from tensorboard)
+  Downloading tensorboard_data_server-0.7.2-py3-none-manylinux_2_31_x86_64.whl.metadata (1.1 kB)
+Collecting werkzeug>=1.0.1 (from tensorboard)
+  Downloading werkzeug-3.0.6-py3-none-any.whl.metadata (3.7 kB)
+Requirement already satisfied: wheel>=0.26 in ./mm/envs/occ/lib/python3.8/site-packages (from tensorboard) (0.45.1)
+Collecting pyasn1-modules>=0.2.1 (from google-auth<3,>=1.6.3->tensorboard)
+  Downloading pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting cryptography>=38.0.3 (from google-auth<3,>=1.6.3->tensorboard)
+  Downloading cryptography-47.0.0-cp38-abi3-manylinux_2_34_x86_64.whl.metadata (4.5 kB)
+Collecting requests-oauthlib>=0.7.0 (from google-auth-oauthlib<1.1,>=0.5->tensorboard)
+  Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl.metadata (11 kB)
+Requirement already satisfied: importlib-metadata>=4.4 in ./mm/envs/occ/lib/python3.8/site-packages (from markdown>=2.6.8->tensorboard) (8.5.0)
+Requirement already satisfied: charset-normalizer<3,>=2 in ./mm/envs/occ/lib/python3.8/site-packages (from requests<3,>=2.21.0->tensorboard) (2.1.1)
+Requirement already satisfied: idna<4,>=2.5 in ./mm/envs/occ/lib/python3.8/site-packages (from requests<3,>=2.21.0->tensorboard) (3.4)
+Requirement already satisfied: urllib3<1.27,>=1.21.1 in ./mm/envs/occ/lib/python3.8/site-packages (from requests<3,>=2.21.0->tensorboard) (1.26.13)
+Requirement already satisfied: certifi>=2017.4.17 in ./mm/envs/occ/lib/python3.8/site-packages (from requests<3,>=2.21.0->tensorboard) (2022.12.7)
+Collecting MarkupSafe>=2.1.1 (from werkzeug>=1.0.1->tensorboard)
+  Downloading MarkupSafe-2.1.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.0 kB)
+Collecting cffi>=1.14 (from cryptography>=38.0.3->google-auth<3,>=1.6.3->tensorboard)
+  Downloading cffi-1.17.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.5 kB)
+Requirement already satisfied: typing-extensions>=4.13.2 in ./mm/envs/occ/lib/python3.8/site-packages (from cryptography>=38.0.3->google-auth<3,>=1.6.3->tensorboard) (4.13.2)
+Requirement already satisfied: zipp>=3.20 in ./mm/envs/occ/lib/python3.8/site-packages (from importlib-metadata>=4.4->markdown>=2.6.8->tensorboard) (3.20.2)
+Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth<3,>=1.6.3->tensorboard)
+  Downloading pyasn1-0.6.5-py3-none-any.whl.metadata (8.4 kB)
+Collecting oauthlib>=3.0.0 (from requests-oauthlib>=0.7.0->google-auth-oauthlib<1.1,>=0.5->tensorboard)
+  Downloading oauthlib-3.3.1-py3-none-any.whl.metadata (7.9 kB)
+Collecting pycparser (from cffi>=1.14->cryptography>=38.0.3->google-auth<3,>=1.6.3->tensorboard)
+  Downloading pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+Downloading scikit_image-0.21.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.9/13.9 MB 144.4 MB/s eta 0:00:00
+Downloading networkx-2.8.8-py3-none-any.whl (2.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 188.5 MB/s eta 0:00:00
+Downloading tensorboard-2.14.0-py3-none-any.whl (5.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 179.2 MB/s eta 0:00:00
+Downloading absl_py-2.3.1-py3-none-any.whl (135 kB)
+Downloading google_auth-2.50.0-py3-none-any.whl (246 kB)
+Downloading google_auth_oauthlib-1.0.0-py2.py3-none-any.whl (18 kB)
+Downloading grpcio-1.70.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (6.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.0/6.0 MB 144.2 MB/s eta 0:00:00
+Downloading imageio-2.35.1-py3-none-any.whl (315 kB)
+Downloading lazy_loader-0.4-py3-none-any.whl (12 kB)
+Downloading Markdown-3.7-py3-none-any.whl (106 kB)
+Downloading protobuf-5.29.6-cp38-abi3-manylinux2014_x86_64.whl (320 kB)
+Downloading PyWavelets-1.4.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (6.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 113.5 MB/s eta 0:00:00
+Downloading tensorboard_data_server-0.7.2-py3-none-manylinux_2_31_x86_64.whl (6.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 277.4 MB/s eta 0:00:00
+Downloading tifffile-2023.7.10-py3-none-any.whl (220 kB)
+Downloading werkzeug-3.0.6-py3-none-any.whl (227 kB)
+Downloading cryptography-47.0.0-cp38-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 181.7 MB/s eta 0:00:00
+Downloading MarkupSafe-2.1.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (26 kB)
+Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl (24 kB)
+Downloading cffi-1.17.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (446 kB)
+Downloading oauthlib-3.3.1-py3-none-any.whl (160 kB)
+Downloading pyasn1-0.6.5-py3-none-any.whl (84 kB)
+Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+Installing collected packages: tifffile, tensorboard-data-server, PyWavelets, pycparser, pyasn1, protobuf, oauthlib, networkx, MarkupSafe, lazy_loader, imageio, grpcio, absl-py, werkzeug, scikit-image, requests-oauthlib, pyasn1-modules, markdown, cffi, cryptography, google-auth, google-auth-oauthlib, tensorboard
+Successfully installed MarkupSafe-2.1.5 PyWavelets-1.4.1 absl-py-2.3.1 cffi-1.17.1 cryptography-47.0.0 google-auth-2.50.0 google-auth-oauthlib-1.0.0 grpcio-1.70.0 imageio-2.35.1 lazy_loader-0.4 markdown-3.7 networkx-2.8.8 oauthlib-3.3.1 protobuf-5.29.6 pyasn1-0.6.5 pyasn1-modules-0.4.2 pycparser-2.23 requests-oauthlib-2.0.0 scikit-image-0.21.0 tensorboard-2.14.0 tensorboard-data-server-0.7.2 tifffile-2023.7.10 werkzeug-3.0.6
+Requirement already satisfied: numpy==1.23.5 in ./mm/envs/occ/lib/python3.8/site-packages (1.23.5)
+
+[1;36m== patching forward_test to accept points=None[0m
+patched and verified
+
+[1;36m== building FB-BEV (compiles bev_pool_v2)[0m
+  Preparing metadata (setup.py): finished with status 'done'
+Installing collected packages: mmdet3d
+  DEPRECATION: Legacy editable install of mmdet3d==1.0.0rc4 from file:///opt/FB-BEV (setup.py develop) is deprecated. pip 25.0 will enforce this behaviour change. A possible replacement is to add a pyproject.toml or enable --use-pep517, and use setuptools >= 64. If the resulting installation is not behaving as expected, try using --config-settings editable_mode=compat. Please consult the setuptools documentation for more information. Discussion can be found at https://github.com/pypa/pip/issues/11457
+  Running setup.py develop for mmdet3d
+Successfully installed mmdet3d
+/opt/mm/envs/occ/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+mmdet3d 1.0.0rc4 -> /opt/FB-BEV/mmdet3d/__init__.py
+
+[1;36m== checkpoint[0m
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+ 26  262M   26 69.6M    0     0  62.4M      0  0:00:04  0:00:01  0:00:03 62.4M 55  262M   55  145M    0     0  66.0M      0  0:00:03  0:00:02  0:00:01 69.7M 76  262M   76  200M    0     0  64.8M      0  0:00:04  0:00:03  0:00:01 66.2M100  262M  100  262M    0     0  66.0M      0  0:00:03  0:00:03 --:--:-- 67.4M
+-rw-r--r-- 1 root root 263M Oct 29 07:07 /opt/ckpts/fbocc-r50.pth
+
+[1;36m== inference-only config[0m
+
+[1;36m== done -- source /opt/env.sh in every new shell[0m
+
+Next:
+  source /opt/env.sh
+  # put nuScenes under /opt/FB-BEV/data/nuscenes (samples/, v1.0-*/ , maps/)
+  cd /opt/FB-BEV && python tools/create_data_bevdet.py    # writes the info pkl
+  python /opt/run_fbocc.py /opt/preds/<name>              # ~0.23 s/keyframe
+
+For mini instead of trainval, first:
+  sed -i "s/^VERSION *= *'v1.0-trainval'/VERSION = 'v1.0-mini'/" \
+    /opt/FB-BEV/tools/create_data_bevdet.py

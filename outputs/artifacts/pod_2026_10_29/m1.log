@@ -1,0 +1,88 @@
+/opt/mm/envs/occ/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+Using /root/.cache/torch_extensions/py38_cu117 as PyTorch extensions root...
+Detected CUDA files, patching ldflags
+Emitting ninja build file /root/.cache/torch_extensions/py38_cu117/dvr/build.ninja...
+Building extension module dvr...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+[1/1] /usr/bin/g++-11 dvr.o dvr.cuda.o -shared -L/opt/mm/envs/occ/lib/python3.8/site-packages/torch/lib -lc10 -lc10_cuda -ltorch_cpu -ltorch_cuda_cu -ltorch_cuda_cpp -ltorch -ltorch_python -L/opt/mm/envs/occ/lib64 -lcudart -o dvr.so
+FAILED: [code=1] dvr.so 
+/usr/bin/g++-11 dvr.o dvr.cuda.o -shared -L/opt/mm/envs/occ/lib/python3.8/site-packages/torch/lib -lc10 -lc10_cuda -ltorch_cpu -ltorch_cuda_cu -ltorch_cuda_cpp -ltorch -ltorch_python -L/opt/mm/envs/occ/lib64 -lcudart -o dvr.so
+/usr/bin/ld: cannot find -lcudart: No such file or directory
+collect2: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+[patch] dvr JIT build skipped: RuntimeError Error building extension 'dvr'
+/opt/mm/envs/occ/lib/python3.8/site-packages/torch/functional.py:504: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at ../aten/src/ATen/native/TensorShape.cpp:3190.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+plugin imported: projects.mmdet3d_plugin
+/opt/mm/envs/occ/lib/python3.8/site-packages/mmdet/models/backbones/resnet.py:401: UserWarning: DeprecationWarning: pretrained is deprecated, please use "init_cfg" instead
+  warnings.warn('DeprecationWarning: pretrained is deprecated, '
+/opt/FlashOCC/projects/mmdet3d_plugin/models/losses/cross_entropy_loss.py:240: UserWarning: Default ``avg_non_ignore`` is False, if you would like to ignore the certain label and average loss over non-ignore labels, which is the same with PyTorch official cross_entropy, set ``avg_non_ignore=True``.
+  warnings.warn(
+load checkpoint from local path: /opt/ckpts/flashocc-m1.pth
+/opt/FlashOCC/projects/mmdet3d_plugin/datasets/pipelines/loading.py:361: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at ../torch/csrc/utils/tensor_new.cpp:230.)
+  gt_boxes, gt_labels = torch.Tensor(gt_boxes), torch.tensor(gt_labels)
+/opt/FlashOCC/projects/mmdet3d_plugin/datasets/pipelines/loading.py:361: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at ../torch/csrc/utils/tensor_new.cpp:230.)
+  gt_boxes, gt_labels = torch.Tensor(gt_boxes), torch.tensor(gt_labels)
+/opt/FlashOCC/projects/mmdet3d_plugin/models/necks/view_transformer.py:288: UserWarning: torch.range is deprecated and will be removed in a future release because its behavior is inconsistent with Python's range builtin. Instead, use torch.arange, which produces values in [start, end).
+  ranks_depth = torch.range(
+/opt/FlashOCC/projects/mmdet3d_plugin/models/necks/view_transformer.py:290: UserWarning: torch.range is deprecated and will be removed in a future release because its behavior is inconsistent with Python's range builtin. Instead, use torch.arange, which produces values in [start, end).
+  ranks_feat = torch.range(
+/opt/FlashOCC/projects/mmdet3d_plugin/models/necks/view_transformer.py:301: UserWarning: torch.range is deprecated and will be removed in a future release because its behavior is inconsistent with Python's range builtin. Instead, use torch.arange, which produces values in [start, end).
+  batch_idx = torch.range(0, B - 1).reshape(B, 1). \
+200/6019  0.390s/frame  eta 37.8 min
+400/6019  0.392s/frame  eta 36.7 min
+600/6019  0.386s/frame  eta 34.9 min
+800/6019  0.383s/frame  eta 33.3 min
+1000/6019  0.391s/frame  eta 32.7 min
+1200/6019  0.393s/frame  eta 31.6 min
+1400/6019  0.396s/frame  eta 30.5 min
+1600/6019  0.399s/frame  eta 29.4 min
+1800/6019  0.399s/frame  eta 28.1 min
+2000/6019  0.398s/frame  eta 26.6 min
+2200/6019  0.397s/frame  eta 25.3 min
+2400/6019  0.398s/frame  eta 24.0 min
+2600/6019  0.400s/frame  eta 22.8 min
+2800/6019  0.400s/frame  eta 21.5 min
+3000/6019  0.401s/frame  eta 20.2 min
+3200/6019  0.401s/frame  eta 18.8 min
+3400/6019  0.401s/frame  eta 17.5 min
+3600/6019  0.401s/frame  eta 16.2 min
+3800/6019  0.400s/frame  eta 14.8 min
+4000/6019  0.400s/frame  eta 13.4 min
+4200/6019  0.411s/frame  eta 12.5 min
+4400/6019  0.413s/frame  eta 11.1 min
+4600/6019  0.413s/frame  eta 9.8 min
+4800/6019  0.412s/frame  eta 8.4 min
+5000/6019  0.411s/frame  eta 7.0 min
+5200/6019  0.410s/frame  eta 5.6 min
+5400/6019  0.409s/frame  eta 4.2 min
+5600/6019  0.409s/frame  eta 2.9 min
+5800/6019  0.409s/frame  eta 1.5 min
+6000/6019  0.409s/frame  eta 0.1 min
+{
+  "frames": 6019,
+  "grid": [
+    200,
+    200,
+    16
+  ],
+  "voxel": 0.4,
+  "z_range": [
+    -1.0,
+    5.4
+  ],
+  "classes": 18,
+  "free_channel": 17,
+  "quantisation": "uint8 = round(255 * p)",
+  "fields": [
+    "cls",
+    "conf",
+    "conf2",
+    "p_free"
+  ],
+  "sec_per_frame": 0.4087,
+  "backbone": "flashocc",
+  "cfg": "flashocc_m1_infer.py",
+  "ckpt": "flashocc-m1.pth"
+}

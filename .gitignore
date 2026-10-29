@@ -76,6 +76,8 @@ cpp/build/
 !outputs/artifacts/pod_2026_10_29/
 !outputs/artifacts/pod_2026_10_29/*.json
 !outputs/artifacts/pod_2026_10_29/*.md
+!outputs/artifacts/pod_2026_10_29/*.log
+!outputs/artifacts/pod_2026_10_29/*.log.gz
 
 # Rendered figures are ignored wholesale (they can be regenerated and some are
 # large). Portfolio figures are un-ignored one at a time, same discipline as
