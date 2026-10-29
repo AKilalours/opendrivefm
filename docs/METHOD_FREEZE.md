@@ -4571,3 +4571,49 @@ carries the measured distribution instead of an assumption.
 A60's acceptance for H2' is untouched and remains the only thing that decides
 whether the second backbone supports the claim. Nothing in this amendment
 touches an acceptance criterion; it corrects a smoke test.
+
+---
+
+## A67 - citation audit against the CVPR rejection rule (2026-10-29)
+
+CVPR 2027 states that papers with inaccurate or non-existent citations may be
+rejected. The bibliography had never been audited. Full record in
+`docs/CITATION_AUDIT.md`; this is the summary and the one decision that
+changes the paper's content.
+
+**Nine defects found in 64 cited entries.** Four carried
+`author={Anonymous and others}` and would have printed that way in the
+reference list. Two lacked any identifier. Two produced BibTeX warnings. And
+one could not be shown to exist.
+
+### `wang2026ngocc` is removed
+
+"NGOcc: Normal-Guided 3D Occupancy Prediction with Observability-aware Time
+Fusion", CVPR Workshops 2026, author field literally `{Wang and others}`.
+Three searches: no CVF workshop page, no arXiv record, no project page.
+
+It supported one clause in the Related Work paragraph that exists to state we
+claim no priority over visibility. Carrying an unverifiable citation there is
+worse than carrying none. Entry and citation both deleted; the paragraph reads
+without it. Restoring it is one line if a PDF appears.
+
+### The five 2026 entries were the real risk, and four survived it
+
+Recent enough to have been written from expectation rather than from a page
+anyone opened. `rahimi2026mad`, `xia2026drivelaw`, `zhu2026dlwm` and
+`tan2026lcdrive` all have CVF open-access PDFs. Only NGOcc did not.
+
+### Honest limit of this audit
+
+Fifteen entries were opened against a primary source today. The remaining
+forty-odd are canonical works accepted on recognition, with titles, venues and
+years checked by inspection of the entry only. That is a weaker standard and
+`CITATION_AUDIT.md` says so explicitly rather than claiming a verification
+that did not happen. None of them carries the markers that flagged all nine
+defects -- placeholder authors, missing identifiers, unverifiable venues -- so
+the risk is low, but it is not zero.
+
+### After
+
+    0 LaTeX errors, 0 undefined citations, 0 BibTeX warnings
+    63 bibitems (was 64), 13 pages
