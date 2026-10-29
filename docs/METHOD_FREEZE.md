@@ -4358,3 +4358,82 @@ the seccomp-relaxed `setarch` route becomes the fallback despite its cost.
 
 This is the fourth defect that CI job has surfaced that a written verification
 would not have, and the first that was nobody's fault.
+
+---
+
+## A64 - what the FlashOcc swap actually cost (2026-10-29)
+
+A62 chose FlashOcc on three grounds: native Occ3D 18-class, Google Drive
+checkpoints, and "same mmdet3d generation as FB-BEV, so the seven install walls
+largely transfer". **The first two held exactly. The third was wrong**, and the
+error is worth recording because it is the part reading a repository cannot
+settle.
+
+### The central claim is confirmed
+
+Model built on the pod, against the real classes, before any data existed:
+
+    detector     BEVStereo4DOCC
+    head         BEVOCCHead2D
+    num_classes  18
+    simple_test_occ present  True
+
+So no class mapping is required, nothing downstream of the export changes, and
+the `simple_test_occ` override registered in A62 hooks the method that both
+`BEVDetOCC` and `BEVStereo4DOCC` actually route through. The export patch is
+validated against the real class rather than against the source I read.
+
+### Six walls, none of them documented anywhere
+
+1. **FB-BEV's mmdet3d is missing the base classes.** It has
+   `LSSViewTransformerBEVDepth`, `CustomResNet` and `FPN_LSS`, but not
+   `LSSViewTransformerBEVStereo` and not `BEVStereo4D` -- which
+   `BEVStereo4DOCC` inherits from. FlashOcc is built on **BEVDet**, not on
+   FB-BEV, and the two forks are cousins rather than twins. Fixed by cloning
+   BEVDet dev3.0 alongside and switching by `PYTHONPATH` order.
+2. BEVDet's mmdet3d imports `lyft_dataset_sdk` and `pandas`; the FB-OCC script
+   installs neither. Both go in with `--no-deps`, because their full dependency
+   sets try to bump numpy off the 1.23.5 pin.
+3. FlashOcc's configs inherit from `_base_` files at `$FLASHOCC/mmdetection3d/`,
+   a symlink the repo expects you to create.
+4. Both repos register `MEGVIIEMAHook` and others; mmcv refuses duplicate
+   registration. Resolved by `register_module(force=True)` across the plugin.
+   **This is a silent override and belongs on the record**: where both define a
+   name, the plugin wins. That is the correct resolution -- the configs were
+   written against the plugin's versions -- but it is an override, not a
+   no-op, and a future reader should know it happened.
+5. `ray_metrics.py` JIT-builds a CUDA extension from **relative** paths and
+   dies unless the cwd is the FlashOcc root. It computes RayIoU, a metric from
+   a different benchmark table that has nothing to do with H2. Patched to
+   absolute paths and made non-fatal; the build still fails on this image and
+   is correctly skipped.
+6. FlashOcc ships its own CUDA ops, unbuilt, behind `projects/setup.py` rather
+   than a root `setup.py`, which is why it is easy to miss. Three extensions:
+   `bev_pool_ext`, `bev_pool_v2_ext`, `nearest_assign_ext`.
+
+### Written down as `scripts/pod/setup_flashocc_pod.sh`
+
+Roughly two hours of GPU time went into discovering the above. The script
+replays it in about fifteen minutes. It is a **separate** script from
+`setup_fbocc_pod.sh` and only ever adds: the FB-OCC environment produced every
+published number in this project and must stay reproducible unchanged. In
+particular BEVDet is built with `build_ext --inplace`, never
+`pip install -e`, because an editable install would re-register the `mmdet3d`
+package and could displace FB-BEV's.
+
+Backbone selection is `PYTHONPATH` order. FB-BEV first gives FB-OCC; BEVDet
+first gives FlashOcc. Getting the order wrong silently loads the wrong
+mmdet3d rather than failing.
+
+### Unchanged
+
+A60's acceptance still binds: interval excludes zero AND point estimate
+>= +0.02 against +0.0484. `FULL_PX` stays 965.0. The observability maps are a
+property of the rig and are reused unmodified. A62's both-or-neither rule on
+M1 and M2 stands.
+
+### Still not done
+
+No inference has run. The pod had no nuScenes on it and no network volume, so
+the data that the FB-OCC export consumed is gone and has to be fetched again.
+That, not the integration, is now the whole remaining cost.
