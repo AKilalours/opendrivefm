@@ -5151,3 +5151,119 @@ strengthens rather than weakens the claim.
   both are in the record.
 * **A69's capability-confound control is still owed**: the FB-OCC/M2 pair
   alone, where the two members are closest in mIoU. Not yet run.
+
+---
+
+## A75 - deployable observability, second attempt. PRE-REGISTERED.
+
+**Written before the sparsified maps exist.** A55 failed and A55b measured
+why. This is a targeted fix for the measured cause, not a second roll of the
+dice, and it is registered so that distinction can be checked rather than
+asserted.
+
+### What A55b established
+
+Predicted occupancy is **11.2x denser** than the ground-truth volume --
+occupied fraction 0.5787 against 0.0518 over 60 sampled frames. A denser
+occluder set blocks more rays, so space the rig genuinely sees is scored
+unobserved. Observability at MISSED objects barely moved (+0.0030); at
+DETECTED objects it collapsed (-0.0816). Separation fell 0.3415 to 0.2569.
+**Over-occlusion, not evidence erasure.**
+
+If that diagnosis is right, matching the density should recover the range.
+If it is wrong, this fails too, and A55b's explanation needs revisiting.
+
+### The method, fixed now
+
+One scalar, chosen on the DEV half and frozen, exactly as `FULL_PX` was:
+
+    tau = the p_free quantile on the 75 DEV scenes at which the mean
+          predicted occupied fraction equals the mean GT occupied fraction
+          on those same DEV scenes.
+
+A voxel is an occluder when `p_free < tau`. Nothing else changes: same ray
+marcher, same `FULL_PX = 965.0`, same `measure = max`, same everything that
+produced `obs_max`. `tau` is a calibration constant computed from the model's
+own outputs plus one dataset-level statistic, and it is **never refit on
+test**.
+
+This remains deployable in the sense A54 requires: at inference the vehicle
+has `p_free` and the constant, and needs no ground-truth volume.
+
+### Scope
+
+The **same 800-frame test subsample A55 used**, declared in A55 before any
+number was read, so the two arms are paired frame for frame and object for
+object. The only thing that differs from A55 is the occluder density.
+
+### Acceptance, fixed now
+
+**PRIMARY, identical to A55's bar:** AUROC(obs_pred_sparse) - AUROC(MSP) > 0
+at object level, 95% paired scene-bootstrap interval excluding zero.
+
+**SECONDARY:** recovery of at least **50%** of the gap that the ground-truth
+occluder achieves, i.e.
+
+    [AUROC(obs_pred_sparse) - AUROC(MSP)] / [AUROC(obs_gt) - AUROC(MSP)] >= 0.50
+
+on the same subsample.
+
+### Commitments
+
+* One value of `tau`, computed on dev by the rule above. **No sweep.** If a
+  density-matched occluder does not work, trying three more densities until
+  one does is the failure this log exists to prevent.
+* Reported whichever way it falls. A second failure is a stronger result for
+  A55b's mechanism being incomplete, and it goes in the paper as such.
+* If it PASSES, the paper's scope sentence changes from "evaluation-time
+  diagnostic" to something narrower and more valuable, and A54/A55 stay in
+  the record as the route that got there.
+
+---
+
+## A76 - observability and confidence together, at object level.
+## PRE-REGISTERED.
+
+**Written before any combined object-level score has been computed.**
+
+### Why
+
+`baselines.json` reports a combined voxel-level score (0.8811 against MSP's
+0.8797, a negligible +0.0015). **No combined score has ever been computed at
+the object level**, which is the granularity where the paper's claim lives
+and where the two signals are furthest apart: observability 0.7623, MSP
+0.7193.
+
+The paper's own mechanism predicts they should be complementary rather than
+redundant -- one reads the camera rig, the other reads the network, and the
+inversion across granularity is evidence they fail in different places. If
+that is true, combining them should beat either. If combining them adds
+nothing, the two are measuring more of the same thing than the paper
+supposes, and that is worth knowing.
+
+### The method, fixed now
+
+Logistic regression on **two features only**: observability (max over GT
+voxels in box) and MSP (max conf in box), standardised. **Fit on the 75 DEV
+scenes, applied unchanged to the 75 TEST scenes.** Same protocol
+`baselines.py` uses at voxel level, same sealed split, digest
+`924a44db544d4818`.
+
+No feature engineering, no third feature, no interaction terms, no
+hyperparameter search. Two features, one fit, one application.
+
+### Acceptance, fixed now
+
+    AUROC(combined) - AUROC(observability) >= +0.01 on TEST, with a 95%
+    paired scene-bootstrap interval excluding zero.
+
++0.01 rather than "excludes zero" alone because a statistically detectable
+but trivially small gain is what the voxel-level combination already showed,
+and reporting that as a result would be padding.
+
+### Commitments
+
+* Fit once on dev. If it fails, no second feature set is tried.
+* Reported whichever way it falls. A null here is informative: it would say
+  the object-level advantage of geometry is not additive with confidence,
+  which constrains how the paper should recommend using the measure.
