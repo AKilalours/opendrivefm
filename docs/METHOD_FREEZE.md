@@ -5057,3 +5057,97 @@ minus observability, and each minus MSP.
 If an ensemble score beats observability at the object level, the paper's
 central claim is weakened and the abstract is rewritten to say so. Nothing
 in this amendment softens that.
+
+---
+
+## A74 RESULT -- the ensemble baseline. It loses, and the way it loses is the
+## mechanism the paper claims.
+
+**Date:** 2026-10-29. 40,863 objects, 75 TEST scenes, digest
+`924a44db544d4818`, 19.3% missed. 2,000 paired bootstrap resamples over
+scenes. Registered in A69, free choices closed in A73, both before the script
+existed.
+
+### A73's gate passed exactly
+
+    observability   0.7623 vs published 0.7623   diff 0.0000
+    MSP             0.7193 vs published 0.7193   diff 0.0000
+    objects         40,863 vs published 40,863
+
+The script reimplements the object pipeline from scratch because the producer
+of `baselines_object.json` can no longer be located by name. It lands on both
+published figures to four decimal places and on the exact object count. The
+ensemble numbers below are therefore comparable to the published table, which
+is what A73 demanded before any of them could be reported.
+
+### The result
+
+    score                              AUROC    95% CI
+    observability                      0.7623   [0.7439, 0.7816]
+    MSP (max conf in box)              0.7193   [0.6994, 0.7399]
+    E1 modal disagreement (mean)       0.4060   [0.3763, 0.4361]
+    E1 modal disagreement (max)        0.3920   [0.3705, 0.4136]
+    E2 p_free spread (mean)            0.4082   [0.3781, 0.4386]
+    E2 p_free spread (max)             0.2798   [0.2535, 0.3091]
+
+**All four ensemble scores fall below 0.5.** Committee disagreement is
+*anti*-correlated with a missed object: the three models agree most precisely
+where all three fail.
+
+Read at best case -- inverting each to its strongest orientation, which the
+contrasts below do, so the baseline cannot be said to have lost on a sign
+convention:
+
+    E1 mean 0.5940   E1 max 0.6080   E2 mean 0.5918   E2 max 0.7202
+
+### Every ensemble score loses to observability, at best case
+
+    E1 modal disagreement (mean)  - observability   -0.1684  [-0.2040, -0.1364]
+    E1 modal disagreement (max)   - observability   -0.1543  [-0.1834, -0.1265]
+    E2 p_free spread (mean)       - observability   -0.1705  [-0.2067, -0.1364]
+    E2 p_free spread (max)        - observability   -0.0421  [-0.0762, -0.0111]
+
+All four intervals exclude zero. The outcome A69 registered as the one that
+would force the abstract to be rewritten did not occur.
+
+### Where it lands instead is the interesting part
+
+The best ensemble score, E2 `p_free` spread at best case, reaches **0.7202**.
+MSP is **0.7193**. Their contrast is **+0.0010 [-0.0256, +0.0262], spanning
+zero.**
+
+Committee disagreement, read as generously as possible, converges on exactly
+the performance of the single model's own softmax and goes no further. That
+is what the paper predicts and the reason it gives: **both read the model.**
+Three models reading the same unobservable region all confidently predict
+free space, so they agree perfectly, and their agreement carries the same
+blind spot as one model's confidence. Adding members to a committee does not
+escape a failure mode that comes from consulting predictions at all.
+
+The anti-correlation is the clean statement of it: a consensus miss produces
+*zero* disagreement.
+
+### What this closes
+
+`main.tex` line 940 calls the missing sampling family the single largest gap
+in the evaluation. It is no longer missing. The reviewer's question -- "you
+compared against MSP but not against ensembles" -- now has an answer that
+strengthens rather than weakens the claim.
+
+### Limits, stated plainly
+
+* **Heterogeneous, not a deep ensemble.** Three architectures, not N seeds of
+  one. A69 requires the paper to say so in those words. Architectural
+  diversity usually yields *more* informative disagreement than seed
+  diversity, so this is a conservative stand-in -- but it is not
+  Lakshminarayanan's construction and must not be labelled as one.
+* **Three members.** A larger committee might behave differently, though the
+  mechanism argued above does not depend on size.
+* **MC-dropout is still absent** and remains genuinely untested: the
+  occupancy path has no dropout layers to sample.
+* **The registered direction was wrong.** A69 fixed "high disagreement =
+  uncertain" in advance and the data inverted it. Reporting the best-case
+  orientation is a courtesy to the baseline, not the registered reading, and
+  both are in the record.
+* **A69's capability-confound control is still owed**: the FB-OCC/M2 pair
+  alone, where the two members are closest in mIoU. Not yet run.
