@@ -4437,3 +4437,137 @@ M1 and M2 stands.
 No inference has run. The pod had no nuScenes on it and no network volume, so
 the data that the FB-OCC export consumed is gone and has to be fetched again.
 That, not the integration, is now the whole remaining cost.
+
+---
+
+## A65 - nuScenes on the pod, and the first FlashOcc inference (2026-10-29)
+
+The pod had no network volume and no nuScenes. The data the FB-OCC export
+consumed is gone; this records how it was fetched again, because the runbook
+budgeted nothing for it.
+
+### The download is 32 GB, not 293
+
+nuScenes publishes per-modality and keyframe-only archives that the download
+page mentions in passing and the runbook never used. Probed by HEAD request
+against `d36yt3mvayqw5m.cloudfront.net/public/v1.0`, which serves **unsigned**
+URLs once you know the filename:
+
+    v1.0-trainval01_blobs.tgz          31.6 GB   everything
+    v1.0-trainval01_blobs_camera.tgz   17.6 GB   camera incl. sweeps
+    v1.0-trainval01_blobs_lidar.tgz    13.8 GB
+    v1.0-trainval01_keyframes.tgz       4.5 GB   <- this one
+
+Ten keyframe parts, piped straight into `tar` so no archive touches disk, and
+extracting only `samples/CAM_*`:
+
+    curl -sL "$B/v1.0-trainval${i}_keyframes.tgz" \
+      | tar -xz -C /workspace/nuscenes --wildcards 'samples/CAM_*'
+
+32 GB written, 28 minutes, **34,149 files in CAM_FRONT** -- the exact nuScenes
+keyframe count.
+
+### Keyframes are sufficient for the 2-frame model, which was not obvious
+
+M2 is `sequential=True` with `num_adj=1`, so it consumes a neighbouring frame.
+Whether that neighbour is a previous keyframe or a LiDAR-rate sweep decides
+whether the download is 32 GB or 176. `NuScenesDatasetBEVDet.get_adj_info`
+settles it:
+
+    select_id = max(index - select_id, 0)
+    ... self.data_infos[select_id]
+
+It steps back through the **info list** -- previous keyframes -- and falls back
+to the current frame at a scene boundary. `sweeps/` is never read. The 32 GB
+download is complete for both M1 and M2.
+
+### Two more defects in the data path
+
+* `create_data_bevdet.py` calls `mmcv.check_file_exist(lidar_path)` and then
+  never opens the file. The path is stored as a string. Removing the check is
+  what makes a camera-only pod possible; keeping it would require 138 GB of
+  point clouds to satisfy an assertion.
+* The same script then runs `create_groundtruth_database`, which genuinely
+  reads point clouds and dies. It builds a cache for training-time copy-paste
+  augmentation and is irrelevant to inference. It runs **after**
+  `add_ann_adj_info`, so the pickles are already written when it fails. The
+  tag is `bevdetv3-nuscenes`, not `bevdetv2`; an alias symlink covers configs
+  that expect the older name.
+
+### First inference
+
+50 frames, M2, `0.789 s/frame`, 18 classes, free channel 17. Extrapolates to
+~79 min for the 6,019-frame split per model, ~2.6 h for M1 and M2 together.
+
+Two further walls, both scripted in `scripts/pod/flashocc_infer_setup.sh`:
+the test pipeline carries `LoadPointsFromFile` and `Collect3D(['points',...])`,
+which cannot work on a camera-only pod (same shape as wall 7 of the FB-OCC
+script, including the `forward_test` guard for `points[0]` on a `None`); and
+`run_fbocc_voxel.py` never imported the config's `plugin_dir`, so every custom
+pipeline transform was unregistered. FB-OCC's config declares no plugin, so
+that fix is a no-op on the FB-OCC path.
+
+---
+
+## A66 - the FREE gate was mis-specified, and would have rejected FB-OCC
+
+**Date:** 2026-10-29. Found because it failed the FlashOcc 50-frame export.
+
+### What happened
+
+The M2 smoke export passed five of six gates and failed one:
+
+    [PASS] >= 2.0 voxels per occupied column   9.696
+    [PASS] <= 50% single-voxel columns         0.18%
+    [PASS] conf median <= 0.999                0.8471
+    [PASS] conf ceiling <= 50%                 16.7%
+    [PASS] dynamic >= 0.2%                     1.36%
+    [FAIL] free in 0.55-0.95                   0.394
+
+The structural gate -- the one A41 wrote specifically because the class
+histogram could not catch a column collapse -- passes with a 4.8x margin.
+
+### The gate, not the export, is wrong
+
+Measured on **400 random frames of the validated FB-OCC export**, which
+predates FlashOcc entirely and is the reference this gate should have been
+written against:
+
+    p1 0.2113   p25 0.3387   median 0.4113   p75 0.4953   p99 0.7061
+    mean 0.4231   observed range 0.204 - 0.795
+
+    frames of FB-OCC's OWN export that pass `free in 0.55-0.95`:  14.5%
+    FlashOcc's 0.394 as a percentile of FB-OCC:                   44th
+
+So the gate would have rejected 85.5% of the export it was calibrated to
+describe, and the FlashOcc value sits essentially at FB-OCC's median. The
+original threshold came from the assumption written in the docstring -- "Occ3D
+is mostly empty air" -- which was never checked against a number.
+
+**This is the second mis-specified gate in this file**, after A41's CLASSES
+gate. Both failed the same way: a threshold written from expectation instead
+of from the distribution.
+
+### The change, and why it is not post-hoc fitting
+
+New window: `0.15 <= free <= 0.85`. It is FB-OCC's observed range (0.204 to
+0.795) with margin on both sides, and it still rejects a degenerate export --
+all-free or all-occupied -- which is the only thing this gate was ever able to
+catch.
+
+The recalibration is derived **exclusively from the FB-OCC export**. No
+FlashOcc number entered the choice of threshold; the FlashOcc value is
+reported above only to show where it lands. The alternative -- keeping the
+gate and declaring the FlashOcc export broken -- would mean asserting a defect
+that the same measurement says is present in FB-OCC's accepted output. That is
+not a defensible reading.
+
+Changing a threshold after it fires deserves suspicion, so it is recorded here
+in full rather than quietly edited, and the docstring in `mini_gate.py` now
+carries the measured distribution instead of an assumption.
+
+### Unchanged
+
+A60's acceptance for H2' is untouched and remains the only thing that decides
+whether the second backbone supports the claim. Nothing in this amendment
+touches an acceptance criterion; it corrects a smoke test.

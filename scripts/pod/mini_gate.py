@@ -41,9 +41,17 @@ output:
               no information and no calibration study is possible. Gate:
               median <= 0.999 AND fraction at ceiling <= 0.50.
 
-  4. FREE     fraction of voxels predicted free. Occ3D is mostly empty air;
-              anything outside 0.55-0.95 means the volume is being read
-              wrongly. Gate: 0.55 <= free <= 0.95.
+  4. FREE     fraction of voxels predicted free. RECALIBRATED 2026-10-29
+              (A66) after it failed a FlashOcc export at 0.394. The original
+              window, 0.55-0.95, was written from the assumption that "Occ3D
+              is mostly empty air" and was never checked against the data.
+              Measured on 400 random frames of the VALIDATED FB-OCC export:
+              p1 = 0.211, median = 0.411, p99 = 0.706, mean = 0.423. The old
+              window would have passed only 14.5% of FB-OCC's own frames, so
+              it would have rejected the export it was meant to describe.
+              Second gate in this file found to be mis-specified, after A41.
+              New window is FB-OCC's observed range (0.204-0.795) with margin.
+              Gate: 0.15 <= free <= 0.85.
 
 A gate that fails is not a reason to proceed carefully. It is a reason to
 stop, because every hour after this one is spent on top of the answer.
@@ -132,7 +140,7 @@ def main(d):
          f'{single_col_frac*100:.2f}%'),
         ('conf median <= 0.999', med <= 0.999, f'{med:.4f}'),
         ('conf ceiling <= 50%', ceil <= 0.50, f'{ceil*100:.1f}%'),
-        ('free in 0.55-0.95', 0.55 <= free_frac <= 0.95, f'{free_frac:.3f}'),
+        ('free in 0.15-0.85', 0.15 <= free_frac <= 0.85, f'{free_frac:.3f}'),
     ]
     ok = True
     for name, passed, val in gates:
