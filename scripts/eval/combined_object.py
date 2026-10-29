@@ -130,7 +130,7 @@ def main():
     ap.add_argument("--out", default="")
     a = ap.parse_args()
 
-    sc_d, X_d, y_d, _ = extract("dev", a.obs, a.minpts, a.preds)
+    sc_d, X_d, y_d, pts_d = extract("dev", a.obs, a.minpts, a.preds)
     sc_t, X_t, y_t, pts_t = extract("test", a.obs, a.minpts, a.preds)
 
     # standardise on DEV only; the same constants are applied to TEST.
@@ -146,10 +146,25 @@ def main():
     # A77: the LiDAR point-count oracle, already one of the six baselines in
     # the published object table, added so the new score is compared against
     # all of them rather than a chosen subset.
+    # A78: capacity-matched control. The same logistic procedure, the same
+    # dev-only standardisation and fit, two features -- but LiDAR point count
+    # in place of observability. This is what makes the oracle contrast a
+    # test of the feature rather than of feature count and fitting.
+    L_d = np.column_stack([pts_d, X_d[:, 1]])
+    L_t = np.column_stack([pts_t, X_t[:, 1]])
+    muL, sdL = L_d.mean(0), L_d.std(0)
+    sdL[sdL == 0] = 1.0
+    wL = fit_logistic((L_d - muL) / sdL, y_d)
+    print(f"A78 dev fit: w_lidar {wL[0]:+.4f}  w_msp {wL[1]:+.4f}  "
+          f"bias {wL[2]:+.4f}")
+    ZL = (L_t - muL) / sdL
+    ctrl = 1.0 / (1.0 + np.exp(-(np.hstack([ZL, np.ones((len(ZL), 1))]) @ wL)))
+
     cols = {"observability": -X_t[:, 0],
             "MSP (max conf in box)": -X_t[:, 1],
             "LiDAR points in box (ORACLE)": -pts_t,
             "combined (dev-fit)": comb}
+    cols["LiDAR+MSP (dev-fit, A78)"] = ctrl
     point = {k: auroc(v, y_t) for k, v in cols.items()}
     for k, v in point.items():
         print(f"  {k:<26} AUROC {v:.4f}")
@@ -176,10 +191,12 @@ def main():
     print()
     out = {"objects": int(len(y_t)), "scenes": len(scenes), "boot": a.boot,
            "dev_weights": {"obs": w[0], "msp": w[1], "bias": w[2]},
+           "dev_weights_a78": {"lidar": wL[0], "msp": wL[1], "bias": wL[2]},
            "auroc": point, "ci": {k: list(ci(v)) for k, v in boot.items()},
            "contrasts": {}}
     for ref in ("observability", "MSP (max conf in box)",
-                "LiDAR points in box (ORACLE)"):
+                "LiDAR points in box (ORACLE)",
+                "LiDAR+MSP (dev-fit, A78)"):
         d = boot["combined (dev-fit)"] - boot[ref]
         lo, hi = ci(d)
         pt = point["combined (dev-fit)"] - point[ref]

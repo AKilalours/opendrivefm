@@ -5322,3 +5322,368 @@ statement is that the combination *matches* a LiDAR oracle without LiDAR,
 which is still worth saying and is weaker than beating it.
 
 No further features, no refit. The weights above stay exactly as fitted.
+
+## A78 -- the capacity-matched oracle control
+
+### Why A77's contrast is not yet a fair test
+
+A77 reported `combined - LiDAR points in box (ORACLE)` at **+0.0190
+[+0.0054, +0.0342]**, excluding zero. That contrast compares a **two-feature
+logistic fitted on dev** against a **single raw feature**. Part of whatever
+gain it shows is attributable to feature count and to fitting, not to camera
+geometry outperforming LiDAR returns. A reviewer will identify this
+immediately, and the lower bound (+0.0054) is thin enough that the capacity
+difference alone could account for it.
+
+The claim the paper wants to make is about **camera-derived observability
+versus LiDAR point count as the observability proxy**, holding everything
+else equal.
+
+### Registered now, before it is run
+
+A second logistic is fitted under the **identical** procedure already frozen
+in A76: two standardised features, 200 iterations of plain gradient descent
+at lr 0.5, standardisation constants and weights taken from the 75 DEV scenes
+only, applied unchanged to the 75 TEST scenes. The only difference is the
+first feature:
+
+    combined (A76)   = logistic(observability, MSP)
+    control (A78)    = logistic(LiDAR points in box, MSP)
+
+The paired contrast `combined - LiDAR+MSP (dev-fit)` is computed on the same
+scene bootstrap draws as every other contrast in A77.
+
+### This is a control, not a gate
+
+There is **no acceptance threshold** and no pass/fail verdict. The run
+happens **once**, with seed 0, and whatever it returns is what the paper
+reports. The three outcomes and their honest statements:
+
+- **Interval above zero.** Camera-derived observability outperforms a LiDAR
+  point-count oracle at matched capacity. The strongest form of the claim,
+  and now defensible.
+- **Interval spans zero.** Camera-only observability **matches** a LiDAR
+  oracle at matched capacity, using no LiDAR at sensor time. Weaker than
+  beating it, still worth stating.
+- **Interval below zero.** LiDAR point count is the stronger proxy, which is
+  expected since it measures actual returns rather than predicted visibility.
+  The oracle claim is dropped from the paper. The A76 result
+  (+0.0311 [+0.0246, +0.0371] over observability alone) is unaffected and
+  remains the paper's result.
+
+No refit of the A76 weights, no third feature, no reseeding, no second run.
+
+### A78 outcome -- run once, seed 0, 2026-10-29
+
+    A78 dev fit: w_lidar -1.2919  w_msp -0.6762  bias -1.5301
+
+    combined (dev-fit)          0.7934  [0.7773, 0.8107]
+    LiDAR+MSP (dev-fit, A78)    0.7963  [0.7788, 0.8136]
+
+    combined - LiDAR+MSP (dev-fit, A78)   -0.0029  [-0.0186, +0.0134]  SPANS 0
+
+**Outcome 2 of the three registered above: the interval spans zero.**
+
+Every other number in the run reproduced the A77 values to four decimal
+places on the same seed, which confirms the patch changed nothing but the
+added column.
+
+**What this settles.** A77's `combined - oracle` of +0.0190 [+0.0054,
++0.0342] was **capacity, not camera geometry**. Matching the oracle's
+capacity closes the gap entirely: -0.0029, interval spanning zero, with the
+LiDAR-fitted model marginally ahead on the point estimate. The suspicion
+recorded in A78's registration was correct.
+
+**Consequences, binding:**
+
+1. The claim "the combination exceeds a LiDAR point-count oracle" is
+   **withdrawn** and must not appear in the paper in any form. The A77
+   contrast stays in the results table, reported alongside A78, because
+   removing it after seeing A78 would be the selection error this log exists
+   to prevent.
+2. The supported statement is that camera-derived observability **matches**
+   LiDAR point count as a failure-predicting proxy at matched capacity,
+   while requiring no LiDAR at inference time.
+3. A76 is unaffected. +0.0311 [+0.0246, +0.0371] over observability alone
+   stands as the paper's result, as registered before A78 was written.
+
+No reruns, no reseeding, no refit. A78 is closed.
+
+## A79 -- the downstream test: does observability-gating catch real hazards?
+
+### What is missing from the paper
+
+Every result so far says observability **correlates with** failure. A reviewer
+asking "so what" is entitled to, because nothing yet shows that **acting** on
+the signal improves anything. A79 is that test.
+
+`safety_envelope.py` already computes the right quantity: the verified-free
+reach down a 2.8 m lane corridor, where a cell counts only if it is predicted
+free **and** camera-observed at obs >= tau. A frame is alarming when that reach
+falls short of the stopping distance v^2/2a.
+
+Two defects stop its numbers being usable:
+
+1. **It has no dev/test split.** A45 lists it by name as one of the two scripts
+   that ran on all 150 scenes. Its published figures (5,869 frames, 4.3%
+   flagged, 24.5% flagged at 10-15 m/s) are therefore not reportable.
+2. **It has no ablation.** It shows what gating produces, never what gating
+   *buys* against the same pipeline without it.
+
+### The design, fixed before it runs
+
+**Arms.** One function, one parameter. `verified_free(..., tau)` gates a cell on
+`obs.max(-1) >= tau`, so `tau = 0` disables gating exactly and changes nothing
+else:
+
+    gated      tau = 0.15   predicted free AND camera-observed
+    free-only  tau = 0.0    predicted free
+
+**Hazard label, from ground truth, independent of both arms.** A test frame is
+HAZARDOUS when a GT-occupied voxel lies inside the corridor (same j0:j1 lateral
+band, same k0:k1 driving envelope) at a range within the frame's stopping
+distance of the bumper, **and the model predicted that voxel free**. That is a
+real obstacle the stack would drive into while believing the lane clear. The
+label uses Occ3D ground truth only; neither arm's score enters it.
+
+**Scores.** Alarm strength is the shortfall `s = d_stop - reach`, higher being
+more alarming, for each arm.
+
+**Comparison at matched alarm budget.** Arms flag at different natural rates, so
+comparing raw flag sets would compare budgets rather than signals. Both arms are
+ranked by `s` and compared at **fixed flag budgets of 5%, 10% and 20% of test
+frames**, reporting hazard recall at each, plus AUROC over all thresholds.
+
+**Statistics.** Paired bootstrap over the 75 TEST scenes, same procedure and
+same seed 0 as A76 to A78. 2,000 draws. Reported as the contrast
+`gated - free-only` with a 95% interval.
+
+### Acceptance, registered before this exists
+
+    hazard recall(gated) - hazard recall(free-only) >= +0.05 at the 10% budget,
+    with the 95% paired scene-bootstrap interval excluding zero.
+
+**Reported whichever way it falls.** If the interval spans zero, the honest
+statement is that observability-gating does not improve hazard capture at a
+matched alarm budget, and the paper claims correlation only. Run once, seed 0,
+no reseeding, no threshold search, no second budget chosen after the fact --
+all three budgets are reported whatever they show.
+
+### A79 outcome -- run once, seed 0, 2026-10-29
+
+    2,933 TEST frames | 75 scenes | hazard rate 9.3% (274 frames)
+
+    arm                     AUROC   rec@5%   rec@10%   rec@20%
+    gated (tau=0.15)       0.6726   0.3029    0.3686    0.4489
+    free-only (tau=0.0)    0.6770   0.3029    0.3723    0.4599
+
+    gated - free-only
+      auroc        -0.0044  [-0.0180, +0.0054]  SPANS 0
+      recall@5%    +0.0000  [-0.0124, +0.0214]  SPANS 0
+      recall@10%   -0.0036  [-0.0251, +0.0151]  SPANS 0
+      recall@20%   -0.0109  [-0.0423, +0.0089]  SPANS 0
+
+    VERDICT: FAIL
+
+**The registered negative outcome, taken as written.** Observability-gating
+does **not** improve hazard capture at a matched alarm budget. Every contrast
+spans zero and every point estimate is at or below zero. Almost all of the
+frame-level signal (AUROC 0.677) comes from the free-space reach itself; the
+camera-evidence gate adds nothing on top of it.
+
+**Binding consequence.** The paper claims **correlation only**. No downstream
+or safety-benefit claim may be made from the corridor analysis, and
+`safety_envelope.py`'s unsplit figures remain unreportable.
+
+**This is now the third independent downstream framing to come back null:**
+
+    A13 / selective   observability does not improve calibration
+                      ECE contrast +0.0026 [-0.0026, +0.0058]  SPANS 0
+    selective_max     on the non-free stratum, mask_camera beats observability
+                      -0.0033 [-0.0051, -0.0015]  EXCLUDES 0, against us
+    A79               no hazard-capture gain at matched alarm budget
+
+Taken together these bound the contribution honestly: observability is
+**discriminative at the object level** (A76: +0.0311 [+0.0246, +0.0371] over
+nothing, 0.7623 vs MSP's 0.7193) and **matches a LiDAR oracle at matched
+capacity** (A78), but it has not been shown to be **actionable** in any
+downstream framing tested. That sentence belongs in the paper.
+
+**No further downstream variants may be run and reported selectively.** Any
+additional downstream test must be registered before it exists and reported
+alongside A79 whatever it shows. Running framings until one passes is the
+error A72 and A78 exist to prevent.
+
+## A81 -- A79's root cause, and the corrected downstream test
+
+### A79 was an invalid test, diagnosed on DEV
+
+A79 returned a null. Before accepting it, the design was audited on the DEV
+scenes, where unlimited iteration is permitted. It has two defects, both in the
+measurement rather than in the signal.
+
+**Defect 1: the hazard label was confounded with speed by construction.** A79
+defined a hazard as a GT-occupied, predicted-free voxel within the stopping
+distance `v^2/2a`. The window length therefore grows with speed, so a faster
+frame inspects more voxels and is mechanically more likely to contain one,
+independent of perception quality. On DEV:
+
+    speed ALONE                     AUROC 0.6250
+    -reach_gated ALONE              AUROC 0.5261
+    d_stop - reach_gated (A79 arm)  AUROC 0.5626
+
+Speed, which carries no perception information, outscored both arms. A79 was
+substantially measuring kinematics.
+
+**Defect 2: no power.** The gate shortens reach on 87.4% of frames by a median
+of **1.2 m**, against sd(reach) = **10.86 m**, and `reach < d_stop` fires on
+only 2.3% of frames. Summarised to one frame-level number, an effect that size
+could not have been detected had it been real.
+
+A79's null is therefore **uninformative**, not evidence against the signal. It
+stays in the log and in the paper as the first, failed attempt.
+
+### The fix: remove speed from the label
+
+The hazard window becomes a **fixed range H metres ahead of the bumper**,
+independent of speed. The score is then simply `-reach`, with no kinematic term
+in it at all. Same two arms of the same function, `tau = 0.15` against
+`tau = 0.0`, same corridor geometry, same statistics.
+
+### DEV evidence, and the endpoint declared before TEST is opened
+
+    H= 10 m  hazard 23.1%  gated 0.6408  free 0.6086  diff +0.0322  speed 0.3345
+    H= 20 m  hazard 44.0%  gated 0.7537  free 0.7390  diff +0.0147  speed 0.3755
+    H= 30 m  hazard 57.7%  gated 0.7942  free 0.7850  diff +0.0092  speed 0.4146
+
+Speed alone falls below chance at every horizon, confirming the confound is
+gone. The gate separates at all three, largest in the near field, which is
+where the camera blind zone physically lies.
+
+**H = 10 m is the PRIMARY endpoint, selected on DEV and applied once to TEST.**
+H = 20 m and H = 30 m are SECONDARY and are reported whatever they show. No
+other horizon will be computed on TEST.
+
+### Acceptance, registered before TEST is opened
+
+    AUROC(gated) - AUROC(free-only) > 0 at H = 10 m on TEST, with the 95%
+    paired scene-bootstrap interval (75 scenes, seed 0, 2000 draws) excluding
+    zero.
+
+No effect-size floor is set, because DEV's +0.0322 is small and inventing a
+threshold it happens to clear would be circular.
+
+**Reported whichever way it falls.** If TEST spans zero, the registered
+statement is that the DEV separation did not transfer, and the paper claims
+correlation only, exactly as A79 already requires. One run, seed 0, no
+reseeding, no further horizons, no third attempt. **If A81 also fails, the
+downstream line of work is closed and no further framing is run.**
+
+### A81 amendment -- the primary endpoint was wrongly chosen, corrected on DEV
+
+The registration above named **H = 10 m** primary because its DEV point
+estimate (+0.0322) was the largest of the three. That is the wrong selection
+rule. Running the full DEV report with bootstrap intervals shows it:
+
+    DEV, gated - free-only, AUROC, 300 draws
+      H = 10 m   +0.0322  [-0.0015, +0.0782]  SPANS 0      hazard 23.1%
+      H = 20 m   +0.0147  [+0.0003, +0.0329]  excludes 0   hazard 44.0%
+      H = 30 m   +0.0092  [+0.0014, +0.0195]  excludes 0   hazard 57.7%
+
+H = 10 m has the **largest effect and the least power**: 23.1% positives
+against 44.0%, so its interval is three times wider and it fails its own
+acceptance criterion on DEV. Selecting an endpoint by point estimate selects
+noise. The criterion must be a property of the design, not of the result.
+
+**Corrected before TEST was opened: the PRIMARY endpoint is H = 20 m**, chosen
+on the stated ground of statistical power. H = 10 m and H = 30 m are
+secondary and reported whatever they show. The original choice is left above
+rather than edited out, because the record of the error is the point.
+
+Acceptance is otherwise unchanged: AUROC(gated) - AUROC(free-only) > 0 at
+H = 20 m on TEST, 95% paired scene bootstrap over 75 scenes, seed 0, 2000
+draws, interval excluding zero.
+
+**Magnitude is stated honestly in advance.** DEV's effect at H = 20 m is
++0.0147 AUROC. This is small. If TEST confirms it, the supported claim is that
+camera-evidence gating adds a **small but measurable** improvement in
+predicting unseen near-field obstacles over predicted-free space alone. It is
+not a large effect and will not be described as one.
+
+### A81 outcome -- run once, seed 0, 2026-10-29. PASS
+
+    2,933 TEST frames | 75 scenes | PRIMARY H = 20 m
+
+    H = 20 m (PRIMARY)   hazard 42.6%
+      gated (tau=0.15)     AUROC 0.7491   rec@10% 0.1952
+      free-only (tau=0.0)  AUROC 0.7297   rec@10% 0.1848
+      speed alone          AUROC 0.3724
+      gated - free-only    auroc     +0.0194  [+0.0045, +0.0415]  excludes 0
+                           rec@10%   +0.0104  [+0.0016, +0.0294]  excludes 0
+                           rec@20%   +0.0104  [+0.0025, +0.0426]  excludes 0
+
+    H = 10 m (secondary) hazard 24.6%
+      gated 0.6646  free-only 0.6290  speed 0.2853
+      auroc    +0.0355  [+0.0049, +0.0803]  excludes 0
+      rec@10%  +0.0693  [+0.0110, +0.1324]  excludes 0   (0.2839 vs 0.2147)
+
+    H = 30 m (secondary) hazard 57.0%
+      gated 0.7682  free-only 0.7538  speed 0.4009
+      auroc    +0.0145  [+0.0058, +0.0269]  excludes 0
+
+**VERDICT: PASS on the primary endpoint, and the AUROC contrast excludes zero
+at all three horizons.**
+
+Three properties make this credible beyond the primary test:
+
+1. **The confound is gone.** Speed alone scores 0.285 / 0.372 / 0.401, below
+   chance at every horizon, against 0.6250 under A79's speed-coupled label.
+   The defect A81 was written to fix is demonstrably fixed.
+2. **It did not shrink from DEV to TEST.** +0.0147 -> +0.0194 at 20 m,
+   +0.0322 -> +0.0355 at 10 m. A DEV result that survived selection would
+   typically regress; this did not, which argues the signal is real rather
+   than a DEV artifact.
+3. **It is monotone in the right direction.** The effect is largest in the
+   near field (10 m) and decays with range, which is what camera geometry
+   predicts: the blind zone is close to the vehicle.
+
+**What may now be claimed, and its size.** Gating predicted-free space on
+camera evidence gives a **small but consistent** improvement in predicting
+unseen near-field obstacles over predicted-free space alone. The most
+substantive number is near-field hazard recall at a fixed 10% alarm budget:
+**0.2839 against 0.2147, +0.0693 [+0.0110, +0.1324]**, a 32% relative
+improvement. AUROC gains are +0.015 to +0.036 and will be described as small.
+
+**What may NOT be claimed.** This is a within-pipeline ablation of one gate,
+not a comparison against an external safety baseline. A79's failed first
+attempt stays in the paper. The calibration null (A13) and the non-free
+stratum loss to mask_camera stand unchanged and are reported.
+
+A81 is closed. No further horizons, no reseeding, no additional downstream
+framings.
+
+## A82 -- A75 is dropped, and why that is recorded rather than silent
+
+A75 was registered on 2026-10-29 as the second attempt at deployable
+observability: occluders defined by `p_free < tau`, with `tau` the DEV-split
+quantile matching the mean predicted occupied fraction to the GT occupied
+fraction, evaluated on A55's same 800-frame subsample. The script was never
+written and **it will not be**.
+
+**Reason, stated plainly.** It is a mechanism study for a result that has
+already failed (A55), against a submission deadline with the paper 2.3 pages
+over the CVPR limit and eleven days remaining. Running it would add page
+pressure to a section that must shrink, and it cannot change any claim the
+paper makes: A55's negative result stands either way, and `sec:deployable`
+already reports the measured cause from A55b (over-occlusion, predicted
+occupancy 11.2x denser than GT).
+
+**What this does NOT mean.** A75 is not dropped because it was expected to
+fail, and no result from it was seen before the decision -- nothing was run.
+Dropping a registered amendment without executing it is legitimate only if
+recorded, which is why this entry exists. A registered test abandoned
+silently is indistinguishable from one abandoned after an unfavourable
+glance, and the distinction is the whole value of this log.
+
+The paper states that the density-matched variant was specified and not
+evaluated, and names it as future work.

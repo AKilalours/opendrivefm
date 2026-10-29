@@ -199,3 +199,9 @@ paper/p-*.png
 paper/*.pdf
 paper/*.brf
 paper/*.toc
+
+# Result JSONs backing paper claims (small, no checkpoints). A76-A81, A56.
+!outputs/artifacts/combined_object.json
+!outputs/artifacts/a81_downstream.json
+!outputs/artifacts/a79_safety_downstream.json
+!outputs/artifacts/a56_fullpx.json
