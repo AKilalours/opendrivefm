@@ -4987,3 +4987,73 @@ what turned out to be interesting, and it is kept and reported failed.
   is the finding; its generality across the wider leaderboard is untested.
 * `O(v)` was fixed by A68 and not tuned. No second weighting was tried, and
   none will be.
+
+---
+
+## A73 - the choices A69 left open, FIXED before the ensemble script is written
+
+A69 registered the two committee scores and the commitment to report them
+whatever they show. It did not say which model's error they predict, how a
+per-voxel score becomes a per-object score, or how the result would be
+validated. Those are three degrees of freedom and they are closed here,
+before any line of the scoring script exists.
+
+### 1. Target: FB-OCC
+
+Committee disagreement is scored on its ability to predict **FB-OCC's**
+failures. FB-OCC is the model every existing baseline in
+`baselines_object.json` and `baselines.json` is computed against, so this is
+the only choice that makes the ensemble comparable to MSP, margin, `p_free`,
+range and observability. Scoring a different model would compare against
+nothing.
+
+The committee that produces the disagreement still contains FB-OCC. That is
+the standard ensemble setting -- the deployed model is a member of its own
+committee -- and is noted rather than treated as a defect.
+
+### 2. Miss definition: no dynamic voxel anywhere in the box
+
+`det`/`dyn` as `missed_detection.py` defines them: an annotated dynamic
+object counts as MISSED when no voxel inside its oriented box carries any
+dynamic-class prediction. Dynamic classes, `num_lidar_pts >= 1`, boxes whose
+interior contains at least one ground-truth voxel of the object's class.
+Identical filtering to the existing object-level table.
+
+### 3. Aggregation: mean AND max, both reported
+
+A per-object score has to come from per-voxel values inside the box.
+Observability uses `max` over the ground-truth occupied voxels; MSP uses
+`max` over the box. For disagreement neither is obviously right -- `max`
+saturates on three-level E1, `mean` dilutes a locally confused region.
+
+**Both are computed and both are reported, for both E1 and E2: four ensemble
+scores.** Choosing one after seeing which wins is the move this log exists to
+prevent. If they disagree with each other, that is itself the finding and is
+stated.
+
+### 4. The script must validate itself before its output counts
+
+`baselines_object.json` was produced by a script that can no longer be
+located by name, so the new script reimplements the object pipeline. It is
+therefore required to **reproduce the two known FB-OCC figures**:
+
+    observability (max over GT voxels in box)   0.7623
+    MSP (max conf in box)                       0.7193
+
+**Tolerance 0.005 absolute.** If either is outside that, the pipeline is not
+the one that produced the published table, the ensemble numbers are not
+comparable to it, and **nothing from the run is reported** until the
+discrepancy is understood. This is a gate on my own code, not on the
+hypothesis.
+
+### 5. Bootstrap
+
+Paired over the 75 TEST scenes, 2,000 resamples, same draw applied to every
+score in a replicate, as A72 did. Contrasts reported: each ensemble score
+minus observability, and each minus MSP.
+
+### Restating the commitment from A69
+
+If an ensemble score beats observability at the object level, the paper's
+central claim is weakened and the abstract is rewritten to say so. Nothing
+in this amendment softens that.
