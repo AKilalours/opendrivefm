@@ -107,6 +107,40 @@ SurroundOcc-specific fights. If the total passes **90 minutes**, stop, write
 down which wall it died on, and reconsider COTR or a null result. A pod hour is
 not free and an unbounded install is how a day disappears.
 
+## Exact pod configuration
+
+Derived from what `setup_fbocc_pod.sh` installs, not from preference.
+
+    GPU               RTX A6000 (48 GB)
+    Also fine         A40, A100 40/80GB, RTX A5000, RTX 3090
+    NEVER             RTX 4090, L40, L40S, H100, H200, B200
+    Cloud             Secure Cloud (Community Cloud cannot mount network volumes)
+    Template          RunPod PyTorch 2.8.0
+    Container disk    100 GB
+    Network volume    the existing one, mounted at /workspace
+    Region            must match the volume's region, or it will not attach
+
+**Why the GPU list is a hard constraint.** The environment pins
+`torch==1.13.1+cu117`. That wheel ships kernels for sm_37 through sm_86 and
+nothing above it. A 4090 or L40S is sm_89; an H100 is sm_90. On those cards
+`torch.cuda.is_available()` returns True -- so the assertion on line 53 of the
+setup script **passes** -- and then the first real kernel launch dies with
+"no kernel image is available for execution on the device", deep into the run,
+long after the install budget is spent. Pick from the allowed list.
+
+GPU memory is not the binding constraint: FlashOCC-4D-Stereo at R50 256x704
+with `samples_per_gpu=1` fits comfortably in 24 GB. Architecture is.
+
+The script's own tested configuration, for reference: RunPod PyTorch 2.8.0
+image, RTX A6000, CUDA 12.8 host, driver 580. A newer host CUDA and driver are
+fine -- drivers are backward compatible -- which is why wall 4 exists and
+installs a CUDA 11.7 toolkit inside the environment.
+
+**Write the exports to the network volume, not the container disk.** Two
+backbones at ~6.7 GB each is ~13.4 GB, and `mini_gate.py` assumes roughly
+15 GB free. Container disk is lost the moment the pod stops; a stopped pod
+with the export still on it is the one failure that wastes the whole session.
+
 ## Data on the pod -- the cost this runbook never counted
 
 **Checked 2026-10-29.** The Mac holds nuScenes **v1.0-mini only**: 705 MB of
