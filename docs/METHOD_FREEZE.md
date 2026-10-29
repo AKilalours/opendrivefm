@@ -4903,3 +4903,87 @@ registered in A68, not a new weighting and not a new hypothesis. It will be
 run and **reported whatever it shows** -- including the likely outcome that
 the pair contrast has an interval spanning zero, which would reduce this
 amendment to "weighting changes nothing that can be distinguished from noise".
+
+---
+
+## A72 RESULT -- paired bootstrap on the weighted comparison. The shift is real.
+
+**Date:** 2026-10-29. 2,000 replicates, resampling the 75 TEST scenes with
+replacement, **the same draw applied to every model in each replicate**. The
+need for this was stated in A71 before it was run, including the explicit
+warning that the interval might span zero and reduce A71 to noise. It does
+not.
+
+### Per model
+
+    fbocc        std  38.92  [36.99, 40.56]     wt  45.13  [43.01, 46.79]
+    flashocc_m2  std  38.00  [35.90, 39.57]     wt  45.14  [42.72, 46.77]
+    flashocc_m1  std  31.91  [29.97, 33.42]     wt  37.30  [35.04, 38.86]
+
+### The pairwise shift, which is the quantity that matters
+
+`shift = gap_weighted - gap_standard`, paired, so it asks whether weighting
+moves the gap between two models by more than scene-to-scene variation
+explains.
+
+    FB-OCC vs M2    gap_std  +0.93  [+0.14, +1.88]   excludes 0
+                    gap_wt   -0.01  [-0.71, +0.98]   SPANS 0
+                    shift    -0.93  [-1.53, -0.27]   EXCLUDES 0
+
+    FB-OCC vs M1    gap_std  +7.02  [+6.26, +7.88]
+                    gap_wt   +7.84  [+6.89, +8.86]
+                    shift    +0.82  [+0.14, +1.49]   EXCLUDES 0
+
+    M2     vs M1    gap_std  +6.09  [+5.52, +6.64]
+                    gap_wt   +7.84  [+7.07, +8.56]
+                    shift    +1.75  [+1.24, +2.21]   EXCLUDES 0
+
+### What is now claimable
+
+**FB-OCC's benchmark advantage over FlashOcc M2 is real, and it disappears
+under observability weighting.** +0.93 with an interval excluding zero becomes
+-0.01 with an interval spanning zero, and the shift between those two states
+is itself significant at -0.93 [-1.53, -0.27]. This is a difference-of-
+differences on paired scene draws, not two intervals eyeballed side by side.
+
+A71's caution was correct and is now settled: the apparent ranking *reversal*
+is not one. `gap_wt` spans zero. The claim is that the lead **vanishes**, not
+that it inverts, and the paper must say vanishes.
+
+### The finding is better than the one A68 went looking for
+
+A68 expected the interesting case to be a ranking change. The real result is
+that **the sign of the shift differs across pairs**:
+
+* FB-OCC's advantage over M2 is concentrated in voxels with LOW observability.
+  Weight by evidence and it is gone.
+* M2's advantage over M1 moves the other way, +1.75: it is concentrated in
+  voxels the cameras see WELL, and weighting makes it larger.
+
+So a model's position on Occ3D-nuScenes can be earned in two quite different
+places, and **standard mIoU cannot distinguish an advantage won on visible
+geometry from one won where no camera has evidence.** That is a statement
+about the benchmark, which is what A68 was built to test, and it is stronger
+than a reordering because it holds with intervals rather than by 0.01.
+
+### H8b still fails, and that is still reported
+
+The registered three-way bar -- best-versus-worst gap shrinking by >= 25% --
+fails: +7.02 to +7.84, a widening of 11.8%, now confirmed significant at
++0.82 [+0.14, +1.49]. M1 is uniformly weaker and weighting does not forgive
+it. A68's definition was fixed in advance, it was the wrong definition for
+what turned out to be interesting, and it is kept and reported failed.
+
+### Limits, stated plainly
+
+* **Cause is not identified.** FB-OCC differs from the FlashOcc models in both
+  architecture and temporal depth (16 frames against 2). The tempting reading
+  -- that long temporal fusion buys accuracy precisely where single-frame
+  evidence is weak -- is consistent with the FB-OCC/M2 shift but contradicted
+  in sign by the M2/M1 shift, where going from 1 frame to 2 helps most where
+  observability is already high. Two temporal contrasts, opposite signs. No
+  mechanism is claimed.
+* **Three models is three points.** The sign of the shift varying across pairs
+  is the finding; its generality across the wider leaderboard is untested.
+* `O(v)` was fixed by A68 and not tuned. No second weighting was tried, and
+  none will be.
