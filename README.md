@@ -18,14 +18,16 @@
 </p>
 
 <p align="center">
-  <sub><b>One held-out scene, 40 frames at 12 m/s, 2560&times;1600, every panel
-  read from the dataset.</b> The hero is CAM_FRONT at its native 1600&times;900
-  with the occupancy projected onto the road plane: <b>teal</b> where the model
-  calls the road clear <i>and</i> the cameras saw it, <b>orange</b> where it calls
-  it clear on almost no evidence. Objects carry their nuScenes instance ids and
-  are tracked across frames, and the table lists every currently missed object
-  with its range, its observability, and how many consecutive frames it has been
-  missed. 20.5% of annotated objects in this scene are missed.<br>
+  <sub><b>One held-out scene, 40 frames at 12 m/s, 2560&times;1600, every pixel
+  read from the dataset.</b> Hero: CAM_FRONT at native 1600&times;900 with the
+  occupancy projected onto the road plane, <b>teal</b> verified clear,
+  <b>orange</b> called free with almost no camera evidence. Middle row renders
+  the occupancy volume <i>through the camera</i> &mdash; semantics, range to the
+  first surface, the observability at that surface, and the error against Occ3D
+  compared at the hit voxel. Bottom row is the same frame in plan. Objects carry
+  their nuScenes instance ids, are tracked across frames, and every missed one is
+  listed with its range, its observability and how many consecutive frames it has
+  been missed.<br>
   <b><a href="https://akilanmanivannanak.github.io/opendrivefm/viewer/">Open the interactive viewer</a></b>
   &middot; <a href="docs/figs/demo.mp4">full-resolution video</a>
   &middot; regenerate with <code>scripts/figs/make_demo_video.py</code></sub>

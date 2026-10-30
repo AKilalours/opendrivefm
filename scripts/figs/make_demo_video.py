@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 _s = importlib.util.spec_from_file_location(
     "co", os.path.join(ROOT, "scripts/eval/combined_object.py"))
 co = importlib.util.module_from_spec(_s); _s.loader.exec_module(co)
-import cam_overlay, bev_widgets as bw
+import cam_overlay, bev_widgets as bw, raycast as rc
 
 W, H = 2560, 1600
 BG, INK, INK2, EDGE = (11, 14, 19), (240, 239, 236), (150, 155, 164), (38, 43, 52)
@@ -34,8 +34,10 @@ BLUE, ORANGE, WARN, TEAL = (57, 135, 229), (233, 104, 52), (237, 161, 0), (0, 16
 RED = (231, 72, 72)
 FREE, TAU, GAP = 17, 0.15, 14
 HERO = (32, 124, 1600, 900)
-ROW_Y, ROW_H = 1042, 372
-KEY_Y = 1436
+ROW_Y, ROW_H = 1040, 236          # camera-view panels
+ROW2_Y = 1288                     # plan-view panels
+KEY_Y = 1540
+RC_W, RC_H, RC_SS = 389, 212, 2   # panel size, and supersample for the march
 COL_X, COL_W, COL_H = 1664, 425, 240
 TRAIL = 12          # frames of track history drawn in the bird's-eye
 SURROUND = (("CAM_FRONT_LEFT", "front left"), ("CAM_FRONT", "front"),
@@ -65,8 +67,9 @@ def font(sz, bold=False):
 def panel(d, x, y, w, h, title, f, sub=None):
     d.rectangle([x-1, y-1, x+w, y+h], outline=EDGE, width=1)
     d.text((x + 9, y + 6), title, font=f, fill=INK2)
-    if sub:
-        d.text((x + w - 9 - f.getlength(sub), y + 6), sub, font=f, fill=(110,118,132))
+    if sub and f.getlength(title) + f.getlength(sub) + 40 < w:
+        d.text((x + w - 9 - f.getlength(sub), y + 6), sub, font=f,
+               fill=(110, 118, 132))
 
 
 def square(img, w, h):
@@ -103,6 +106,7 @@ def main():
     rows = sorted([(i, r) for i, r in enumerate(index) if r["scene"] == a.scene],
                   key=lambda t: t[1]["timestamp"])
     frames, tot, miss_tot, prev = [], 0, 0, None
+    ray = {}          # ray directions are fixed: sensor2ego is a rigid mount
     # Real tracking: nuScenes gives a persistent instance id per annotation, so
     # identity across frames is read from the dataset rather than associated by
     # us. hist keeps each track's recent GLOBAL positions, which are projected
@@ -215,21 +219,50 @@ def main():
         bw.draw_footprints(d, objs, ix, iy, IS, BLUE, ORANGE, label_font=f_l)
         bw.ego_car(d, ex, ey, 30)
 
-        # ---- bottom row
+        # ---- row 1: the volume rendered THROUGH the camera
+        if not ray:
+            Kr = np.asarray(cam["intrinsic"], np.float64).copy()
+            Kr[0] *= RC_W*RC_SS / cam["width"]; Kr[1] *= RC_H*RC_SS / cam["height"]
+            ray["d"], ray["hh"], ray["ww"] = rc.ray_dirs(
+                Kr, Rs, RC_W*RC_SS, RC_H*RC_SS, 1)
+        mkf = mcam.astype(np.float32)
+        hc, hd, ho, (gt_at_p, mkp) = rc.march(
+            pcls, obs, ray["d"], ts, extra=[gcls.astype(np.float32), mkf])
+        gc, gd, _, (pr_at_g, mkg) = rc.march(
+            gcls, obs, ray["d"], ts, extra=[pcls.astype(np.float32), mkf])
+        U = lambda v: rc.upsample(v, ray["hh"], ray["ww"], 1,
+                                  RC_W*RC_SS, RC_H*RC_SS)
+        hcU, hdU, hoU, gcU = U(hc), U(hd), U(ho), U(gc)
+        views = ((rc.view_semantic(hcU), "semantic", "model"),
+                 (rc.view_depth(hcU, hdU), "range to surface", "0-48 m"),
+                 (rc.view_obs(hcU, hoU), "observability there", "O(v)"),
+                 (rc.view_error(gcU, U(pr_at_g), U(mkg), hcU, U(gt_at_p), U(mkp)),
+                  "error vs truth", "red = missed"))
+        for i, (arr, title, sub) in enumerate(views):
+            x = 32 + i*(RC_W + GAP)
+            cv.paste(Image.fromarray(arr).resize((RC_W, RC_H), Image.LANCZOS),
+                     (x, ROW_Y + 24))
+            panel(d, x, ROW_Y, RC_W, ROW_H, title, f_l, sub)
+
+        # ---- row 2: the same frame in plan
         PH = ROW_H - 24
-        pw_ = (1600 - 3*GAP) // 4
+        pw_ = RC_W
         unv_img, unv_frac = bw.img_unverified(pcls, obs, (PH, PH))
-        err_img, ff = bw.img_error(pcls, gcls, (PH, PH), mcam)
+        _, ff = bw.img_error(pcls, gcls, (PH, PH), mcam)
+        cov, ovl = bw.img_coverage(row["cams"], co.qrot, (PH, PH))
         for i, (img, title, sub) in enumerate((
                 (bw.img_cls(pcls, (PH, PH)), "predicted occupancy", "model"),
                 (bw.img_cls(gcls, (PH, PH)), "ground truth", "Occ3D"),
-                (err_img, "error vs ground truth", f"false free {ff*100:.1f}%"),
-                (unv_img, "unverified free", f"{unv_frac*100:.1f}%"))):
+                (unv_img, "unverified free", f"{unv_frac*100:.1f}%"),
+                (cov, "camera FOV overlap", f"2+ cams {ovl*100:.0f}%"))):
             x = 32 + i*(pw_ + GAP)
             sq, side, pad = square(img, pw_, PH)
-            cv.paste(sq, (x, ROW_Y + 24))
-            panel(d, x, ROW_Y, pw_, ROW_H, title, f_l, sub)
-            bw.ego_car(d, x + pad + side/2, ROW_Y + 24 + side/2, 17)
+            cv.paste(sq, (x, ROW2_Y + 24))
+            panel(d, x, ROW2_Y, pw_, ROW_H, title, f_l, sub)
+            if i == 3:
+                bw.rings(d, x + pad + side/2, ROW2_Y + 24 + side/2, side/2, f_l,
+                         every=20, col=(70, 80, 96), ink=(132, 142, 158))
+            bw.ego_car(d, x + pad + side/2, ROW2_Y + 24 + side/2, 15)
 
         # ---- right column: the rig
         for i, (cn_, lab6) in enumerate(SURROUND):
@@ -241,21 +274,7 @@ def main():
                          (x, y+24))
             panel(d, x, y, COL_W, COL_H, lab6, f_l)
 
-        # ---- right column: observability and camera coverage
         y2 = 124 + 3*(COL_H + GAP)
-        EH = 230
-        cov, blind = bw.img_coverage(row["cams"], co.qrot, (EH-24, EH-24))
-        for i, (img, title, sub) in enumerate((
-                (bw.img_obs(obs, (EH-24, EH-24)), "observability  O(v)",
-                 f"mean {obs.max(-1).mean():.3f}"),
-                (cov, "camera FOV overlap", f"2+ cams {blind*100:.0f}%"))):
-            x = COL_X + i*(COL_W + GAP)
-            sq, side, pad = square(img, COL_W, EH-24)
-            cv.paste(sq, (x, y2 + 24))
-            panel(d, x, y2, COL_W, EH, title, f_l, sub)
-            bw.rings(d, x + pad + side/2, y2 + 24 + side/2, side/2, f_l,
-                     every=20, col=(70, 80, 96), ink=(132, 142, 158))
-            bw.ego_car(d, x + pad + side/2, y2 + 24 + side/2, 15)
 
         # ---- header, telemetry, key
         d.text((32, 34), "SightOcc", font=f_t, fill=INK)
@@ -266,7 +285,7 @@ def main():
         spd = 0.0 if prev is None else np.linalg.norm(p1-prev[0])/max(
             (row["timestamp"]-prev[1])/1e6, 1e-3)
         prev = (p1, row["timestamp"])
-        ty0 = y2 + EH + 16
+        ty0 = y2 + 10
         for i, (lab, val, warn) in enumerate((
                 ("SPEED", f"{spd:.1f} m/s", False),
                 ("OBJECTS", f"{len(objs)}", False),
@@ -292,15 +311,13 @@ def main():
                 d.rectangle([kx, KEY_Y, kx+22, KEY_Y+16], outline=sw, width=3)
             d.text((kx+32, KEY_Y-3), txt, font=f_s, fill=INK2)
             kx += 42 + f_s.getlength(txt)
-        for i, line in enumerate((
-                "Boxes are dataset annotations carrying their nuScenes instance "
-                "ids; the colour is the model's verdict. Error is scored inside",
-                "Occ3D's camera mask, the 14% it evaluates. The six cameras tile "
-                "360 deg, so dark O(v) is resolution and occlusion, not FOV gaps.")):
-            d.text((32, KEY_Y + 28 + i*20), line, font=f_l, fill=(108,114,126))
+        d.text((32, KEY_Y + 28), "Top row renders the occupancy volume through "
+               "the camera; bottom row is the same frame in plan. Error is "
+               "compared at the hit voxel inside Occ3D's camera mask.",
+               font=f_l, fill=(108, 114, 126))
 
         # ---- the missed-object track table
-        TY, TH = ty0 + 150, 300
+        TY, TH = ty0 + 150, 452
         panel(d, COL_X, TY, COL_W*2 + GAP, TH, "MISSED OBJECTS  (tracked)", f_l,
               f"{miss_here} now")
         cols = (0, 60, 230, 330, 450, 600)
@@ -309,7 +326,7 @@ def main():
         d.line([COL_X + 12, TY + 54, COL_X + COL_W*2 + GAP - 12, TY + 54],
                fill=EDGE, width=1)
         shown = sorted([o for o in objs if not o[3]],
-                       key=lambda o: np.linalg.norm(o[0][:2]))[:8]
+                       key=lambda o: np.linalg.norm(o[0][:2]))[:13]
         for r, o in enumerate(shown):
             y = TY + 64 + r*29
             rng_m = np.linalg.norm(o[0][:2])
