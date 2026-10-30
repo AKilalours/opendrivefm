@@ -18,12 +18,13 @@
 </p>
 
 <p align="center">
-  <sub><b>One held-out scene, 41 frames, real predictions.</b>
-  Hero: the front camera with projected 3D boxes, blue where the model found the
-  object and orange where it did not. Panels: the side cameras, predicted
-  occupancy, Occ3D ground truth, observability, and
-  <b><code>unverified free</code></b> &mdash; space the model calls empty where the
-  cameras have almost no evidence. That last panel is what the paper is about.<br>
+  <sub><b>One held-out scene, 41 frames, real predictions, nothing illustrative.</b>
+  The 3D view is the model's own predicted occupancy: static world in grey,
+  dynamic objects in colour, wireframes blue where the model found the object and
+  orange where it missed it. <b>Orange ground</b> is
+  <code>unverified free</code> &mdash; space the model reports as empty where the
+  cameras have almost no evidence. On this frame that is
+  <b>31% of the free space</b>.<br>
   <a href="docs/figs/demo.mp4">full-resolution video</a> &middot;
   regenerate with <code>scripts/figs/make_demo_video.py</code></sub>
 </p>

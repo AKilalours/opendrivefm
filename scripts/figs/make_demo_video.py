@@ -24,12 +24,15 @@ sys.path.insert(0, os.path.join(ROOT, "scripts/eval"))
 _s = importlib.util.spec_from_file_location(
     "co", os.path.join(ROOT, "scripts/eval/combined_object.py"))
 co = importlib.util.module_from_spec(_s); _s.loader.exec_module(co)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import render3d
 
 W, H = 1920, 936
 BG, INK, INK2, EDGE = (11, 14, 19), (240, 239, 236), (150, 155, 164), (38, 43, 52)
 BLUE, ORANGE, WARN = (57, 135, 229), (233, 104, 52), (237, 161, 0)
 FREE, TAU = 17, 0.15
-HERO = (28, 128, 1180, 664)                      # x, y, w, h
+HERO = (28, 128, 1180, 620)                      # x, y, w, h
+CAMI = (420, 236)                                # camera inset w, h
 PAN_W, PAN_H, PAN_X, PAN_GAP = 330, 212, 1236, 12
 
 CLS_RGB = np.array([
@@ -150,7 +153,8 @@ def main():
         cv = Image.new("RGB", (W, H), BG)
         d = ImageDraw.Draw(cv)
         hx, hy, hw, hh = HERO
-        cv.paste(Image.open(jp).convert("RGB").resize((hw, hh)), (hx, hy))
+        scene, proj3, unver_frac = render3d.render(pcls, obs, W=hw, H=hh)
+        cv.paste(Image.fromarray(scene), (hx, hy))
         d.rectangle([hx-1, hy-1, hx+hw, hy+hh], outline=EDGE, width=1)
 
         Re = co.qrot(np.asarray(cam["ego2global_rotation"], np.float64))
@@ -172,43 +176,71 @@ def main():
             if vx is None or not (gcls[vx] == cid).any():
                 continue
             det = bool(np.isin(pcls[vx], list(co.DYN)).any())
-            objs.append((c, ann["size"][k], R, det, cat.split(".")[-1]))
+            leaf = cat.split(".")[-1]
+            nice = {"rigid": "bus", "bendy": "bus", "adult": "pedestrian",
+                    "child": "pedestrian", "police_officer": "pedestrian",
+                    "construction_worker": "pedestrian",
+                    "wheelchair": "pedestrian", "stroller": "pedestrian",
+                    "personal_mobility": "pedestrian",
+                    "police": "motorcycle", "ambulance": "truck"}.get(leaf, leaf)
+            objs.append((c, ann["size"][k], R, det, nice))
             tot += 1
             if not det:
                 miss_here += 1; miss_tot += 1
 
+        ov = Image.new("RGBA", (hw, hh), (0, 0, 0, 0))
+        od = ImageDraw.Draw(ov)
         taken = []
+        EDGES = ((0,1),(1,2),(2,3),(3,0),(4,5),(5,6),(6,7),(7,4),
+                 (0,4),(1,5),(2,6),(3,7))
         for c, size, R, det, lab in sorted(objs, key=lambda o: -np.linalg.norm(o[0][:2])):
             col = BLUE if det else ORANGE
-            pts = cuboid(c, size, R, Rs, ts, K, sx, sy, hx, hy)
-            if pts:
-                xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
-                # an object at the frame edge projects to an enormous quad; a
-                # box wider than most of the frame, or centred outside it, is
-                # that artefact rather than a real detection to draw.
-                if (max(xs)-min(xs) > hw*0.75 or max(ys)-min(ys) > hh*0.75
-                        or not (hx < (min(xs)+max(xs))/2 < hx+hw)):
-                    pts = None
-            if pts:
-                for i0, i1 in ((0,1),(1,2),(2,3),(3,0),(4,5),(5,6),(6,7),(7,4),
-                               (0,4),(1,5),(2,6),(3,7)):
-                    d.line([pts[i0], pts[i1]], fill=col, width=2)
-                tx = min(max(min(p[0] for p in pts), hx+2), hx+hw-150)
-                ty = max(min(p[1] for p in pts) - 22, hy+2)
-                while any(abs(ty-t) < 21 and abs(tx-u) < 150 for u, t in taken):
-                    ty += 21
-                if ty < hy+hh-20:
-                    taken.append((tx, ty))
-                    s = f"{lab} {np.linalg.norm(c[:2]):.1f} m"
-                    d.rectangle([tx, ty, tx + 8 + 7.4*len(s), ty+20], fill=col)
-                    d.text((tx+4, ty+2), s, font=f_l, fill=(10,12,16))
+            w_, l_, h_ = float(size[0]), float(size[1]), float(size[2])
+            X = np.array([[ l_/2, w_/2, h_/2], [ l_/2,-w_/2, h_/2],
+                          [-l_/2,-w_/2, h_/2], [-l_/2, w_/2, h_/2],
+                          [ l_/2, w_/2,-h_/2], [ l_/2,-w_/2,-h_/2],
+                          [-l_/2,-w_/2,-h_/2], [-l_/2, w_/2,-h_/2]])
+            u3, v3, ok3 = proj3((R @ X.T).T + c)
+            if not ok3.all():
+                continue
+            pts = [(u3[i], v3[i]) for i in range(8)]       # hero-local
+            xs = [q[0] for q in pts]; ys = [q[1] for q in pts]
+            # an object very close to the virtual camera projects to a quad
+            # larger than the panel; that is an artefact, not a detection.
+            if (max(xs) < 0 or min(xs) > hw or max(ys) < 0 or min(ys) > hh
+                    or max(xs)-min(xs) > hw*0.55 or max(ys)-min(ys) > hh*0.55):
+                continue
+            for i0, i1 in EDGES:
+                od.line([pts[i0], pts[i1]], fill=col + (255,), width=2)
+            tx = min(max(min(xs), 2), hw-166)
+            ty = max(min(ys) - 21, 2)
+            while any(abs(ty-t) < 21 and abs(tx-u) < 166 for u, t in taken):
+                ty += 21
+            if ty < hh-20:
+                taken.append((tx, ty))
+                lbl = f"{lab} {np.linalg.norm(c[:2]):.1f} m"
+                od.rectangle([tx, ty, tx + 8 + 7.4*len(lbl), ty+20],
+                             fill=col + (255,))
+                od.text((tx+4, ty+2), lbl, font=f_l, fill=(10, 12, 16, 255))
+
+        cv.paste(ov, (hx, hy), ov)
+        d.text((hx+12, hy+10), "predicted occupancy in 3D   -   grey static world, "
+                               "coloured objects, ORANGE = unverified free",
+               font=f_l, fill=INK2)
+
+        # the real camera, inset bottom-right as in a chase-cam view
+        cw, ch = CAMI
+        cxi, cyi = hx + hw - cw - 14, hy + hh - ch - 14
+        cv.paste(Image.open(jp).convert("RGB").resize((cw, ch)), (cxi, cyi))
+        d.rectangle([cxi-1, cyi-1, cxi+cw, cyi+ch], outline=EDGE, width=2)
+        d.text((cxi+8, cyi+6), "CAM_FRONT", font=f_l, fill=INK)
 
         # bird's-eye inset, top-right of the hero
-        IS = 300
+        IS = 240
         ix, iy = hx + hw - IS - 14, hy + 14
         cv.paste(bev_obs(obs, (IS, IS)), (ix, iy))
         d.rectangle([ix-1, iy-1, ix+IS, iy+IS], outline=EDGE, width=1)
-        d.text((ix+7, iy+5), "bird's-eye  observability", font=f_l, fill=INK)
+        d.text((ix+7, iy+5), "bird's-eye  O(v)", font=f_l, fill=INK)
         for c, size, R, det, lab in objs:
             bx, by = (c[0]+40)/80, (c[1]+40)/80
             if 0 <= bx <= 1 and 0 <= by <= 1:
@@ -232,7 +264,7 @@ def main():
                          (x, py0+20))
             panel(d, x, py0, PAN_W, PAN_H, cn.replace("CAM_", "").lower(), f_l)
         PH = PAN_H - 20
-        unver, unver_frac = bev_unverified(pcls, obs, (PH, PH))
+        unver, _ = bev_unverified(pcls, obs, (PH, PH))
         for i, (img, title) in enumerate((
                 (fit(bev_cls(pcls, (PH, PH)), PAN_W, PH), "predicted occupancy"),
                 (fit(bev_cls(gcls, (PH, PH)), PAN_W, PH), "ground truth  (Occ3D)"),
