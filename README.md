@@ -14,6 +14,21 @@
 </p>
 
 <p align="center">
+  <img alt="SightOcc on a held-out nuScenes scene" src="docs/figs/demo.gif" width="100%">
+</p>
+
+<p align="center">
+  <sub>One held-out scene, 41 frames, real predictions. <b>Left:</b> the front camera.
+  <b>Right:</b> observability from above, dark where the cameras have no geometric
+  evidence. <b>Blue circle</b> the model found it, <b>orange cross</b> it did not.
+  Watch the crosses collect inside the dark wedges.<br>
+  <a href="docs/figs/demo.mp4">full-resolution video</a> ·
+  regenerate with <code>scripts/figs/make_demo_video.py</code></sub>
+</p>
+
+---
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/figs/bands-dark.svg">
     <img alt="Miss rate by observability band" src="docs/figs/bands-light.svg" width="100%">
@@ -131,6 +146,9 @@ observability maps under `data/pack/`, which are not in the repository.
 
 Figures regenerate from the committed JSONs with
 `python3 scripts/figs/make_readme_figs.py` — no data, no GPU.
+
+The demo clip regenerates with `python3 scripts/figs/make_demo_video.py --scene scene-0553`,
+which needs the packed maps and the nuScenes images.
 
 </details>
 
