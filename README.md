@@ -144,6 +144,9 @@ scripts/eval/combined_object.py        object-level AUROCs, A76-A78
 scripts/eval/a79_safety_downstream.py  downstream hazard test, A79/A81
 scripts/eval/weighted_miou.py          standard and O(v)-weighted Occ3D mIoU
 scripts/eval/a56_fullpx.py             pi_full sensitivity
+scripts/figs/make_readme_figs.py       the three result figures above
+scripts/figs/make_demo_video.py        the demo reel
+scripts/figs/export_viewer.py          the interactive viewer's frame data
 ```
 
 ```bash
@@ -181,6 +184,7 @@ All three evaluated models reproduce their published Occ3D-nuScenes mIoU:
 
 <p align="center">
   <a href="https://akilanmanivannanak.github.io/opendrivefm/"><b>Project page</b></a> ·
+  <a href="https://akilanmanivannanak.github.io/opendrivefm/viewer/"><b>Interactive viewer</b></a> ·
   <a href="docs/METHOD_FREEZE.md"><b>Method freeze</b></a> ·
   <a href="outputs/artifacts/"><b>Artifacts</b></a>
 </p>
