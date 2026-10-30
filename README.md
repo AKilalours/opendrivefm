@@ -18,13 +18,13 @@
 </p>
 
 <p align="center">
-  <sub><b>One held-out scene, 41 frames, real predictions, nothing illustrative.</b>
-  The 3D view is the model's own predicted occupancy: static world in grey,
-  dynamic objects in colour, wireframes blue where the model found the object and
-  orange where it missed it. <b>Orange ground</b> is
-  <code>unverified free</code> &mdash; space the model reports as empty where the
-  cameras have almost no evidence. On this frame that is
-  <b>31% of the free space</b>.<br>
+  <sub><b>One held-out scene, 40 frames at 12 m/s, real predictions, nothing
+  illustrative.</b> The model's occupancy is projected onto the road plane in the
+  real camera frame: <b>teal</b> where it calls the road clear <i>and</i> the
+  cameras actually saw it, <b>orange</b> where it calls it clear with almost no
+  camera evidence. Boxes are dataset annotations; the colour is the model's
+  verdict, filled for found and hollow for missed. 20.5% of annotated objects in
+  this scene are missed.<br>
   <b><a href="https://akilanmanivannanak.github.io/opendrivefm/viewer/">Open the interactive viewer</a></b>
   &middot; <a href="docs/figs/demo.mp4">full-resolution video</a>
   &middot; regenerate with <code>scripts/figs/make_demo_video.py</code></sub>
