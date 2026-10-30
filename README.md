@@ -25,8 +25,15 @@
   <code>unverified free</code> &mdash; space the model reports as empty where the
   cameras have almost no evidence. On this frame that is
   <b>31% of the free space</b>.<br>
-  <a href="docs/figs/demo.mp4">full-resolution video</a> &middot;
-  regenerate with <code>scripts/figs/make_demo_video.py</code></sub>
+  <b><a href="https://akilanmanivannanak.github.io/opendrivefm/viewer/">Open the interactive viewer</a></b>
+  &middot; <a href="docs/figs/demo.mp4">full-resolution video</a>
+  &middot; regenerate with <code>scripts/figs/make_demo_video.py</code></sub>
+</p>
+
+<p align="center">
+  <sub>The viewer is the same scene, live in the browser: orbit it, scrub the 41
+  frames, and toggle observability shading, the unverified-free overlay and the
+  object boxes. 1.9 MB of frame data, no server, no CDN.</sub>
 </p>
 
 ---

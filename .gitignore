@@ -205,3 +205,7 @@ paper/*.toc
 !outputs/artifacts/a81_downstream.json
 !outputs/artifacts/a79_safety_downstream.json
 !outputs/artifacts/a56_fullpx.json
+# local scratch from figure/viewer work
+_viewer_test.tgz
+docs/figs/_check.png
+docs/figs/_r3d.png

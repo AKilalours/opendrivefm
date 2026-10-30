@@ -1,0 +1,252 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SightOcc viewer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#0b0e13;--panel:#141922;--edge:#262b34;--ink:#f0efec;--ink2:#99a0ac;
+        --blue:#3987e5;--orange:#e96834;--warn:#edA100;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+  .hud{position:absolute;pointer-events:none}
+  #title{top:18px;left:20px;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  #title span{font-weight:400;font-size:14px;color:var(--ink2);margin-left:10px}
+  #stats{top:18px;right:20px;text-align:right;font-size:12px;color:var(--ink2);line-height:1.9}
+  #stats b{color:var(--ink);font-family:var(--mono);font-size:14px}
+  #stats .warn b{color:var(--warn)}
+  #ctl{left:20px;right:20px;bottom:18px;pointer-events:auto;background:rgba(20,25,34,.92);
+    border:1px solid var(--edge);border-radius:10px;padding:12px 16px;
+    display:flex;gap:16px;align-items:center;flex-wrap:wrap;backdrop-filter:blur(8px)}
+  button{background:#1d2430;color:var(--ink);border:1px solid var(--edge);
+    border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer}
+  button:hover{background:#273040}
+  button[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#07111f}
+  input[type=range]{flex:1;min-width:180px;accent-color:var(--blue)}
+  #frame{font-family:var(--mono);font-size:13px;color:var(--ink2);min-width:76px}
+  .key{display:flex;gap:14px;font-size:12px;color:var(--ink2);align-items:center}
+  .sw{width:16px;height:13px;border-radius:2px;display:inline-block;margin-right:5px;
+    vertical-align:-2px}
+  #load{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;color:var(--ink2)}
+  @media (max-width:720px){#stats{display:none}}
+</style>
+
+<div id="app"></div>
+<div class="hud" id="title">SightOcc <span>what the cameras could actually see</span></div>
+<div class="hud" id="stats"></div>
+<div id="load">loading scene&hellip;</div>
+<div class="hud" id="ctl">
+  <button id="play" aria-pressed="true">Pause</button>
+  <input id="scrub" type="range" min="0" max="0" value="0">
+  <span id="frame">--/--</span>
+  <button id="tUnv" aria-pressed="true">Unverified free</button>
+  <button id="tObs" aria-pressed="true">Observability shading</button>
+  <button id="tBox" aria-pressed="true">Objects</button>
+  <div class="key">
+    <span><i class="sw" style="background:var(--blue)"></i>detected</span>
+    <span><i class="sw" style="border:2px solid var(--orange)"></i>missed</span>
+    <span><i class="sw" style="background:var(--warn)"></i>free, no camera evidence</span>
+  </div>
+</div>
+
+<!-- three.js r160 is vendored under vendor/ rather than pulled from a CDN, so
+     the published page has no external dependency and cannot break when a CDN
+     moves or a version is unpublished. -->
+<script type="module">
+import * as THREE from './vendor/three.module.js';
+import {OrbitControls} from './vendor/OrbitControls.js';
+
+const CLS = [[120,120,120],[228,96,96],[216,124,208],[252,152,48],[64,152,252],
+  [252,200,64],[252,96,160],[252,64,64],[252,228,92],[180,132,84],[84,188,252],
+  [64,66,86],[92,84,116],[118,98,138],[88,128,94],[148,148,158],[56,158,88],[0,0,0]];
+const GROUND_RGB = {11:[78,84,104],12:[98,90,124],13:[118,100,142],14:[88,126,94]};
+
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+app.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0e13);
+scene.fog = new THREE.Fog(0x0b0e13, 110, 240);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 400);
+camera.position.set(-34, 27, 0);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(10,0,0); controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI*0.49; controls.minDistance = 8; controls.maxDistance = 140;
+// three r160 uses physical light units, so these are far larger than the
+// pre-r155 equivalents would be. Ambient carries the base so nothing goes
+// black, the hemisphere separates up-facing from side faces, and the sun
+// gives the voxel grid its form.
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+scene.add(new THREE.HemisphereLight(0xcfe0ff, 0x20242c, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(-20,40,16);
+scene.add(sun);
+
+// three's Y is up; the dataset's Z is up and X forward.
+const world = new THREE.Group();
+world.rotation.x = -Math.PI/2;
+scene.add(world);
+
+let META=null, RES=.4, RNG=40, Z0=-1, N=200, NZ=16;
+const show = {unv:true, obs:true, box:true};
+
+const voxGeo = new THREE.BoxGeometry(RES, RES, RES);
+const GROUND_CELLS = 200*200;
+let vox = null;
+const boxGroup = new THREE.Group(); world.add(boxGroup);
+
+const ego = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.6, 4),
+  new THREE.MeshBasicMaterial({color:0xf0efec}));
+ego.rotation.x = Math.PI/2; ego.rotation.y = Math.PI/4;
+ego.position.set(0,0,Z0+1.2); world.add(ego);
+
+const cache = new Map();
+function loadImg(src){
+  return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);
+    im.onerror=rej;im.src=src;});
+}
+function pixels(img){
+  const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0);
+  return x.getImageData(0,0,img.width,img.height).data;
+}
+async function frameData(i){
+  if(cache.has(i)) return cache.get(i);
+  const tag = String(i).padStart(3,'0');
+  const [vi,gi,oi] = await Promise.all([
+    loadImg(`data/v${tag}.png`), loadImg(`data/g${tag}.png`), loadImg(`data/o${tag}.png`)]);
+  const d = {v:pixels(vi), g:pixels(gi), o:pixels(oi)};
+  cache.set(i,d);
+  if(cache.size>14) cache.delete(cache.keys().next().value);
+  return d;
+}
+
+const dummy = new THREE.Object3D(), col = new THREE.Color();
+function drawVoxels(data, n){
+  const total = n + GROUND_CELLS;
+  if(!vox || vox.instanceMatrix.count < total){
+    if(vox){world.remove(vox); vox.dispose();}
+    // NO vertexColors here. InstancedMesh colour arrives through
+    // instanceColor, and r160's color_fragment already handles it:
+    //   #elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )
+    // Setting vertexColors would additionally define USE_COLOR, whose vertex
+    // chunk does `vColor *= color` against a `color` attribute BoxGeometry
+    // does not have. WebGL defaults a missing attribute to (0,0,0), so every
+    // instance renders black.
+    vox = new THREE.InstancedMesh(voxGeo,
+      new THREE.MeshLambertMaterial(), Math.max(total, 140000));
+    vox.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    world.add(vox);
+  }
+  const p = data.v;
+  for(let m=0;m<n;m++){
+    const b = m*4;
+    const idx = p[b] | (p[b+1]<<8) | (p[b+2]<<16);
+    const k = idx % NZ, j = ((idx - k)/NZ) % N, i = ((idx - k)/NZ - j)/N;
+    dummy.position.set((i+.5)*RES-RNG, (j+.5)*RES-RNG, (k+.5)*RES+Z0);
+    dummy.updateMatrix(); vox.setMatrixAt(m, dummy.matrix);
+    const lab = p[b+3]>>3, ob = (p[b+3]&7)/7;
+    const c = CLS[lab] || CLS[0];
+    const lum = 0.22 + 0.78*(show.obs?ob:1);
+    const g = 0.30*c[0]+0.59*c[1]+0.11*c[2];
+    const stat = lab>=11;                       // static world desaturates
+    col.setRGB((stat?g:c[0])/255*lum, (stat?g:c[1])/255*lum,
+               (stat?g*1.06:c[2])/255*lum);
+    vox.setColorAt(m, col);
+  }
+  // the ground sheet: one flat cell per column, same indexing as above
+  let m = n;
+  for(let i=0;i<N;i++) for(let j=0;j<N;j++){
+    const q = (i*N + j)*4;
+    const cls = data.g[q];
+    if(cls === 255) continue;
+    const bad = data.o[q+1] > 128, ob = data.o[q]/255;
+    dummy.position.set((i+.5)*RES-RNG, (j+.5)*RES-RNG, Z0+0.1);
+    dummy.scale.set(1, 1, 0.22);
+    dummy.updateMatrix(); vox.setMatrixAt(m, dummy.matrix);
+    dummy.scale.set(1, 1, 1);
+    if(bad && show.unv){ col.setRGB(0.80, 0.33, 0.02); }
+    else {
+      const b = GROUND_RGB[cls] || [40,44,54];
+      const l = (0.30 + 0.70*(show.obs?ob:1))/255;
+      col.setRGB(b[0]*l, b[1]*l, b[2]*l);
+    }
+    vox.setColorAt(m, col); m++;
+  }
+  vox.count = m;
+  vox.instanceMatrix.needsUpdate = true;
+  if(vox.instanceColor) vox.instanceColor.needsUpdate = true;
+}
+
+function drawBoxes(f){
+  boxGroup.clear();
+  if(!show.box) return;
+  for(const b of f.boxes){
+    const g = new THREE.BoxGeometry(b.s[1], b.s[0], b.s[2]);  // l, w, h
+    const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
+      new THREE.LineBasicMaterial({color: b.d?0x3987e5:0xe96834}));
+    e.position.set(b.c[0], b.c[1], b.c[2]); e.rotation.z = b.y;
+    boxGroup.add(e);
+    if(b.d){
+      const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial(
+        {color:0x3987e5, transparent:true, opacity:0.16}));
+      m.position.copy(e.position); m.rotation.z = b.y; boxGroup.add(m);
+    }
+  }
+}
+
+const statsEl = document.getElementById('stats');
+async function show_frame(i){
+  const f = META.frames[i];
+  const d = await frameData(f.i);
+  drawVoxels(d, f.voxels); drawBoxes(f);
+  document.getElementById('frame').textContent =
+    `${String(i+1).padStart(2,'0')}/${META.frames.length}`;
+  statsEl.innerHTML =
+    `speed <b>${f.speed.toFixed(1)}</b> m/s<br>` +
+    `objects <b>${f.boxes.length}</b> &nbsp; missed <b>${f.missed}</b><br>` +
+    `mean O(v) <b>${f.meanObs.toFixed(3)}</b><br>` +
+    `<span class="warn">unverified free <b>${(f.unverified*100).toFixed(1)}%</b></span>`;
+  for(const n of [i+1,i+2]) if(META.frames[n]) frameData(META.frames[n].i);
+}
+
+let cur=0, playing=true, last=0;
+const scrub=document.getElementById('scrub');
+function tick(t){
+  requestAnimationFrame(tick);
+  controls.update();
+  if(playing && t-last>200){ last=t; cur=(cur+1)%META.frames.length;
+    scrub.value=cur; show_frame(cur); }
+  renderer.render(scene,camera);
+}
+function resize(){
+  const w=innerWidth,h=innerHeight;
+  renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize);
+
+function toggle(id,key){
+  const b=document.getElementById(id);
+  b.onclick=()=>{show[key]=!show[key];b.setAttribute('aria-pressed',show[key]);
+    show_frame(cur);};
+}
+toggle('tUnv','unv'); toggle('tObs','obs'); toggle('tBox','box');
+document.getElementById('play').onclick=e=>{playing=!playing;
+  e.target.textContent=playing?'Pause':'Play';
+  e.target.setAttribute('aria-pressed',playing);};
+scrub.oninput=e=>{playing=false;
+  document.getElementById('play').textContent='Play';
+  cur=+e.target.value; show_frame(cur);};
+
+(async()=>{
+  META = await (await fetch('data/meta.json')).json();
+  RES=META.res; RNG=META.rng; Z0=META.z0; N=META.n; NZ=META.nz;
+  scrub.max = META.frames.length-1;
+  resize();
+  await show_frame(0);
+  document.getElementById('load').remove();
+  requestAnimationFrame(tick);
+})().catch(e=>{document.getElementById('load').textContent =
+  'could not load the scene: '+e;});
+</script>

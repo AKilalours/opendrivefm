@@ -8,8 +8,9 @@
 #
 # It also narrows what is served. Branch-based Pages published the entire
 # repository root, so archive/, paper/ and docs/ were all browsable as part of
-# the site. index.html is self-contained -- no local assets, only Google Fonts
-# and four outbound links -- so staging that one file is enough.
+# the site. This stages two things only: index.html, which is self-contained,
+# and docs/viewer, the interactive occupancy viewer and its ~1.9 MB of frame
+# data. Everything else in the repository stays unpublished.
 #
 # REQUIRES: Settings -> Pages -> Source set to "GitHub Actions". With the
 # source still set to a branch, this workflow fails exactly the way the
@@ -41,8 +42,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Stage only the page
-        run: mkdir -p _site && cp index.html _site/
+      - name: Stage the page and the interactive viewer
+        run: |
+          mkdir -p _site/viewer
+          cp index.html _site/
+          cp -r docs/viewer/. _site/viewer/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
