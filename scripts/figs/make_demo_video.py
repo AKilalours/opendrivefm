@@ -28,14 +28,16 @@ _s = importlib.util.spec_from_file_location(
 co = importlib.util.module_from_spec(_s); _s.loader.exec_module(co)
 import cam_overlay, bev_widgets as bw
 
-W, H = 2560, 1440
+W, H = 2560, 1600
 BG, INK, INK2, EDGE = (11, 14, 19), (240, 239, 236), (150, 155, 164), (38, 43, 52)
 BLUE, ORANGE, WARN, TEAL = (57, 135, 229), (233, 104, 52), (237, 161, 0), (0, 168, 180)
 RED = (231, 72, 72)
 FREE, TAU, GAP = 17, 0.15, 14
 HERO = (32, 124, 1600, 900)
-ROW_Y, ROW_H = 1040, 372
+ROW_Y, ROW_H = 1042, 372
+KEY_Y = 1436
 COL_X, COL_W, COL_H = 1664, 425, 240
+TRAIL = 12          # frames of track history drawn in the bird's-eye
 SURROUND = (("CAM_FRONT_LEFT", "front left"), ("CAM_FRONT", "front"),
             ("CAM_FRONT_RIGHT", "front right"), ("CAM_BACK_LEFT", "back left"),
             ("CAM_BACK", "back"), ("CAM_BACK_RIGHT", "back right"))
@@ -101,6 +103,12 @@ def main():
     rows = sorted([(i, r) for i, r in enumerate(index) if r["scene"] == a.scene],
                   key=lambda t: t[1]["timestamp"])
     frames, tot, miss_tot, prev = [], 0, 0, None
+    # Real tracking: nuScenes gives a persistent instance id per annotation, so
+    # identity across frames is read from the dataset rather than associated by
+    # us. hist keeps each track's recent GLOBAL positions, which are projected
+    # into the current ego frame when drawn; streak counts consecutive frames a
+    # track has been missed, which is the number a safety case cares about.
+    disp_id, hist, streak = {}, {}, {}
     hx, hy, hw, hh = HERO
     print(f"{a.scene}: {len(rows)} frames at {W}x{H}")
 
@@ -146,15 +154,27 @@ def main():
             if vx is None or not (gcls[vx] == cid).any():
                 continue
             det = bool(np.isin(pcls[vx], list(co.DYN)).any())
+            gm = gcls[vx] == cid
+            o_obj = float(obs[vx][gm].max()) if gm.any() else 0.0
+            trk = int(ann["track"][k])
+            if trk not in disp_id:
+                disp_id[trk] = len(disp_id) + 1
+            streak[trk] = 0 if det else streak.get(trk, 0) + 1
+            hist.setdefault(trk, []).append(
+                tuple(ann["translation"][k].astype(np.float64)[:2]))
+            hist[trk] = hist[trk][-TRAIL:]
             objs.append((c, ann["size"][k], R, det,
-                         NICE.get(cat.split(".")[-1], cat.split(".")[-1])))
+                         NICE.get(cat.split(".")[-1], cat.split(".")[-1]),
+                         disp_id[trk], trk, o_obj,
+                         int(ann["visibility"][k])))
             tot += 1
             if not det:
                 miss_here += 1; miss_tot += 1
 
         ov = Image.new("RGBA", (hw, hh), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
         taken = []
-        for c, size_, R, det, lab in sorted(objs, key=lambda o: -np.linalg.norm(o[0][:2])):
+        for c, size_, R, det, lab, did, trk, o_obj, vis in sorted(
+                objs, key=lambda o: -np.linalg.norm(o[0][:2])):
             P = corners(c, size_, R)
             Pc = (Rs.T @ (P - ts).T).T
             if (Pc[:, 2] <= 0.8).any():
@@ -175,7 +195,7 @@ def main():
                 ty += 24
             if ty < hh - 22:
                 taken.append((tx, ty))
-                s = f"{lab} {np.linalg.norm(c[:2]):.0f} m"
+                s = f"#{did:02d} {lab} {np.linalg.norm(c[:2]):.0f} m"
                 od.rectangle([tx, ty, tx + 10 + 8.3*len(s), ty+22], fill=col + (255,))
                 od.text((tx+5, ty+3), s, font=f_l, fill=(10, 12, 16, 255))
         cv.paste(ov, (hx, hy), ov)
@@ -191,7 +211,8 @@ def main():
         d.text((ix+9, iy+6), "bird's-eye  O(v)   metres", font=f_l, fill=INK)
         ex, ey = ix + IS/2, iy + IS/2
         bw.rings(d, ex, ey, IS/2, f_l)
-        bw.draw_footprints(d, objs, ix, iy, IS, BLUE, ORANGE)
+        bw.draw_trails(d, objs, hist, Re, te, ix, iy, IS, BLUE, ORANGE)
+        bw.draw_footprints(d, objs, ix, iy, IS, BLUE, ORANGE, label_font=f_l)
         bw.ego_car(d, ex, ey, 30)
 
         # ---- bottom row
@@ -245,7 +266,7 @@ def main():
         spd = 0.0 if prev is None else np.linalg.norm(p1-prev[0])/max(
             (row["timestamp"]-prev[1])/1e6, 1e-3)
         prev = (p1, row["timestamp"])
-        ty0 = y2 + EH + 18
+        ty0 = y2 + EH + 16
         for i, (lab, val, warn) in enumerate((
                 ("SPEED", f"{spd:.1f} m/s", False),
                 ("OBJECTS", f"{len(objs)}", False),
@@ -257,27 +278,51 @@ def main():
             y = ty0 + (i // 3)*70
             d.text((x, y), lab, font=f_l, fill=INK2)
             d.text((x, y+22), val, font=f_v, fill=WARN if warn else INK)
-        ky = ty0 + 156
-        for i, (sw, txt, filled) in enumerate((
-                (BLUE, "model detected it", True),
-                (TEAL, "road verified clear", True),
-                (ORANGE, "model missed it", False),
-                (WARN, "free, no camera evidence", True),
-                (RED, "label occupied, model empty", True),
-                ((150, 120, 220), "wrong class", True))):
-            x = COL_X + (i % 2)*(COL_W + GAP)
-            y = ky + (i // 2)*30
+        # the key, one row under the bird's-eye panels
+        kx = 32
+        for sw, txt, filled in ((BLUE, "model detected it", True),
+                                (ORANGE, "model missed it", False),
+                                (TEAL, "road verified clear", True),
+                                (WARN, "free, no camera evidence", True),
+                                (RED, "label occupied, model empty", True),
+                                ((150, 120, 220), "wrong class", True)):
             if filled:
-                d.rectangle([x, y, x+22, y+16], fill=sw)
+                d.rectangle([kx, KEY_Y, kx+22, KEY_Y+16], fill=sw)
             else:
-                d.rectangle([x, y, x+22, y+16], outline=sw, width=3)
-            d.text((x+32, y-3), txt, font=f_s, fill=INK2)
+                d.rectangle([kx, KEY_Y, kx+22, KEY_Y+16], outline=sw, width=3)
+            d.text((kx+32, KEY_Y-3), txt, font=f_s, fill=INK2)
+            kx += 42 + f_s.getlength(txt)
         for i, line in enumerate((
-                "Boxes are dataset annotations; the colour is the model's verdict.",
-                "Error is scored inside Occ3D's camera mask, the 14% it evaluates.",
-                "The six cameras tile 360 deg, so dark O(v) is resolution and "
-                "occlusion, not FOV gaps.")):
-            d.text((COL_X, ky + 84 + i*18), line, font=f_l, fill=(108,114,126))
+                "Boxes are dataset annotations carrying their nuScenes instance "
+                "ids; the colour is the model's verdict. Error is scored inside",
+                "Occ3D's camera mask, the 14% it evaluates. The six cameras tile "
+                "360 deg, so dark O(v) is resolution and occlusion, not FOV gaps.")):
+            d.text((32, KEY_Y + 28 + i*20), line, font=f_l, fill=(108,114,126))
+
+        # ---- the missed-object track table
+        TY, TH = ty0 + 150, 300
+        panel(d, COL_X, TY, COL_W*2 + GAP, TH, "MISSED OBJECTS  (tracked)", f_l,
+              f"{miss_here} now")
+        cols = (0, 60, 230, 330, 450, 600)
+        for h, cx_ in zip(("ID", "CLASS", "RANGE", "O(v)", "FRAMES MISSED"), cols):
+            d.text((COL_X + 12 + cx_, TY + 32), h, font=f_l, fill=(120,128,142))
+        d.line([COL_X + 12, TY + 54, COL_X + COL_W*2 + GAP - 12, TY + 54],
+               fill=EDGE, width=1)
+        shown = sorted([o for o in objs if not o[3]],
+                       key=lambda o: np.linalg.norm(o[0][:2]))[:8]
+        for r, o in enumerate(shown):
+            y = TY + 64 + r*29
+            rng_m = np.linalg.norm(o[0][:2])
+            st = streak.get(o[6], 1)
+            for txt, cx_, col in ((f"#{o[5]:02d}", cols[0], ORANGE),
+                                  (o[4], cols[1], INK),
+                                  (f"{rng_m:.1f} m", cols[2], INK),
+                                  (f"{o[7]:.3f}", cols[3], WARN if o[7] < .2 else INK),
+                                  (f"{st}", cols[4], RED if st >= 3 else INK2)):
+                d.text((COL_X + 12 + cx_, y), str(txt), font=f_s, fill=col)
+        if not shown:
+            d.text((COL_X + 12, TY + 64), "none in this frame", font=f_s,
+                   fill=(110,118,132))
         frames.append(cv)
         if (n+1) % 10 == 0:
             print(f"  {n+1}/{len(rows)}", flush=True)

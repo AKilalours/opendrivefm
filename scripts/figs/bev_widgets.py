@@ -153,8 +153,31 @@ def img_coverage(cams, qrot, size, obs=None):
     return Image.fromarray(img, "RGB"), float((acc[inside] >= 2).mean())
 
 
-def draw_footprints(d, objs, ox, oy, side, blue, orange, fill_det=True):
-    for c, size_, R, det, _lab in objs:
+def draw_trails(d, objs, hist, Re, te, ox, oy, side, blue, orange):
+    """Each track's recent path, held in global coordinates and projected into
+    the CURRENT ego frame, so a trail is the object's real motion relative to
+    the vehicle rather than a smear of screen positions."""
+    for o in objs:
+        trk, det = o[6], o[3]
+        h = hist.get(trk, [])
+        if len(h) < 2:
+            continue
+        pts = []
+        for gx, gy in h:
+            e = Re.T @ (np.array([gx, gy, te[2]], np.float64) - te)
+            u = ox + (1 - (e[1] + RNG) / (2*RNG)) * side
+            v = oy + (1 - (e[0] + RNG) / (2*RNG)) * side
+            if ox <= u <= ox+side and oy <= v <= oy+side:
+                pts.append((u, v))
+        if len(pts) > 1:
+            d.line(pts, fill=(blue if det else orange), width=2)
+
+
+def draw_footprints(d, objs, ox, oy, side, blue, orange, fill_det=True,
+                    label_font=None):
+    for o in objs:
+        c, size_, R, det = o[0], o[1], o[2], o[3]
+        did = o[5] if len(o) > 5 else None
         w_, l_ = float(size_[0]), float(size_[1])
         cn = np.array([[ l_/2, w_/2], [ l_/2,-w_/2], [-l_/2,-w_/2], [-l_/2, w_/2]])
         pw = (R[:2, :2] @ cn.T).T + c[:2]
@@ -166,3 +189,6 @@ def draw_footprints(d, objs, ox, oy, side, blue, orange, fill_det=True):
                 d.polygon(q, fill=col)
             else:
                 d.line(q + [q[0]], fill=col, width=2)
+            if label_font is not None and not det and did is not None:
+                d.text((max(u for u, _ in q) + 3, min(v for _, v in q) - 2),
+                       f"#{did:02d}", font=label_font, fill=col)

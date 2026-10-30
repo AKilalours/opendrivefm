@@ -18,14 +18,14 @@
 </p>
 
 <p align="center">
-  <sub><b>One held-out scene, 40 frames at 12 m/s, 2560&times;1440, every panel
+  <sub><b>One held-out scene, 40 frames at 12 m/s, 2560&times;1600, every panel
   read from the dataset.</b> The hero is CAM_FRONT at its native 1600&times;900
   with the occupancy projected onto the road plane: <b>teal</b> where the model
   calls the road clear <i>and</i> the cameras saw it, <b>orange</b> where it calls
-  it clear on almost no evidence. Below: predicted occupancy, Occ3D ground truth,
-  the error map scored inside Occ3D's own camera mask, and unverified free. Right:
-  the full six-camera rig, observability, and FOV overlap computed from the six
-  intrinsics and extrinsics. 20.5% of annotated objects in this scene are missed.<br>
+  it clear on almost no evidence. Objects carry their nuScenes instance ids and
+  are tracked across frames, and the table lists every currently missed object
+  with its range, its observability, and how many consecutive frames it has been
+  missed. 20.5% of annotated objects in this scene are missed.<br>
   <b><a href="https://akilanmanivannanak.github.io/opendrivefm/viewer/">Open the interactive viewer</a></b>
   &middot; <a href="docs/figs/demo.mp4">full-resolution video</a>
   &middot; regenerate with <code>scripts/figs/make_demo_video.py</code></sub>
