@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""The SightOcc demo reel. Every panel is read from the dataset.
+"""The SightOcc demo reel, 2560x1440. Every panel is read from the dataset.
 
-    hero      CAM_FRONT with the occupancy projected onto the road plane:
-              teal where the model calls it clear AND the cameras saw it,
-              ORANGE where it calls it clear with almost no evidence.
-              3D boxes over it, filled where the model found the object and
-              hollow where it missed it.
-    inset     bird's-eye observability with range rings and plan-view
-              footprints at true extent and heading.
-    bottom    the predicted volume in 3D, observability, unverified free.
-    right     the full six-camera rig, telemetry, and the key.
+The hero is the CAM_FRONT frame at its NATIVE 1600x900 with the occupancy
+projected onto the road plane, so nothing in it is upscaled. Around it:
+
+    bird's-eye   observability, range rings, the ego car, and every object at
+                 its true plan extent and heading
+    bottom       predicted occupancy, Occ3D ground truth, the error map inside
+                 the benchmark's own evaluation mask, and unverified free
+    right        the full six-camera rig, observability, camera coverage
+                 computed from the six intrinsics and extrinsics, telemetry
 
 The detected/missed verdict is imported from combined_object.py, so the reel
 cannot disagree with the reported numbers.
@@ -26,15 +26,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 _s = importlib.util.spec_from_file_location(
     "co", os.path.join(ROOT, "scripts/eval/combined_object.py"))
 co = importlib.util.module_from_spec(_s); _s.loader.exec_module(co)
-import render3d, cam_overlay
+import cam_overlay, bev_widgets as bw
 
-W, H = 1920, 1030
+W, H = 2560, 1440
 BG, INK, INK2, EDGE = (11, 14, 19), (240, 239, 236), (150, 155, 164), (38, 43, 52)
 BLUE, ORANGE, WARN, TEAL = (57, 135, 229), (233, 104, 52), (237, 161, 0), (0, 168, 180)
-FREE, TAU = 17, 0.15
-HERO = (28, 120, 1180, 664)
-ROW_Y, ROW_H, GAP = 798, 212, 12
-COL_X, COL_W, COL_H = 1236, 322, 186
+RED = (231, 72, 72)
+FREE, TAU, GAP = 17, 0.15, 14
+HERO = (32, 124, 1600, 900)
+ROW_Y, ROW_H = 1040, 372
+COL_X, COL_W, COL_H = 1664, 425, 240
 SURROUND = (("CAM_FRONT_LEFT", "front left"), ("CAM_FRONT", "front"),
             ("CAM_FRONT_RIGHT", "front right"), ("CAM_BACK_LEFT", "back left"),
             ("CAM_BACK", "back"), ("CAM_BACK_RIGHT", "back right"))
@@ -47,8 +48,8 @@ NICE = {"rigid": "bus", "bendy": "bus", "adult": "pedestrian",
 
 def font(sz, bold=False):
     """matplotlib ships DejaVu. macOS system fonts are NOT reachable from the
-    sandbox that renders this; pointing at /System/Library fails silently to
-    PIL's bitmap default and every label comes out unreadable."""
+    sandbox that renders this; /System/Library paths fail silently to PIL's
+    bitmap default and every label comes out unreadable."""
     import matplotlib
     b = os.path.join(os.path.dirname(matplotlib.__file__), "mpl-data/fonts/ttf")
     for n in (("DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"), "DejaVuSans.ttf"):
@@ -59,51 +60,18 @@ def font(sz, bold=False):
     return ImageFont.load_default()
 
 
-def panel(d, x, y, w, h, title, f):
+def panel(d, x, y, w, h, title, f, sub=None):
     d.rectangle([x-1, y-1, x+w, y+h], outline=EDGE, width=1)
-    d.text((x + 8, y + 5), title, font=f, fill=INK2)
+    d.text((x + 9, y + 6), title, font=f, fill=INK2)
+    if sub:
+        d.text((x + w - 9 - f.getlength(sub), y + 6), sub, font=f, fill=(110,118,132))
 
 
-def fit(img, w, h):
+def square(img, w, h):
     side = min(w, h)
     bg = Image.new("RGB", (w, h), BG)
     bg.paste(img.resize((side, side), Image.NEAREST), ((w - side)//2, 0))
-    return bg
-
-
-def bev_obs(obs, size):
-    m = np.clip(obs.max(-1), 0, 1) ** 0.75
-    img = np.dstack([(14 + m*116).astype(np.uint8), (20 + m*164).astype(np.uint8),
-                     (30 + m*206).astype(np.uint8)])
-    return Image.fromarray(np.rot90(img), "RGB").resize(size, Image.NEAREST)
-
-
-CLS_RGB = np.array([
-    (120,120,120),(228, 96, 96),(216,124,208),(252,152, 48),( 64,152,252),
-    (252,200, 64),(252, 96,160),(252, 64, 64),(252,228, 92),(180,132, 84),
-    ( 84,188,252),( 64, 66, 86),( 92, 84,116),(118, 98,138),( 88,128, 94),
-    (148,148,158),( 56,158, 88),( 16, 20, 27)], np.uint8)
-
-
-def bev_cls(cls, size):
-    """Topmost non-free class per column, so the road shows under objects."""
-    top = np.full(cls.shape[:2], FREE, np.int16)
-    for k in range(cls.shape[2]):
-        sl = cls[:, :, k]; m = sl != FREE
-        top[m] = sl[m]
-    return Image.fromarray(np.rot90(CLS_RGB[top]), "RGB").resize(size, Image.NEAREST)
-
-
-def bev_unverified(cls, obs, size):
-    free = cls == FREE
-    seen = (free & (obs >= TAU)).any(-1)
-    bad = (free & (obs < TAU)).any(-1) & ~seen
-    img = np.full(cls.shape[:2] + (3,), 0, np.uint8)
-    img[...] = (16, 20, 27)
-    img[seen] = (34, 58, 92)
-    img[bad] = WARN
-    img[(cls != FREE).any(-1) & ~bad] = (70, 76, 86)
-    return Image.fromarray(np.rot90(img), "RGB").resize(size, Image.NEAREST)
+    return bg, side, (w - side)//2
 
 
 def corners(c, size, R):
@@ -129,13 +97,12 @@ def main():
     gt_map = {os.path.basename(os.path.dirname(p)): p for p in glob.glob(
         os.path.join(ROOT, "data/occ3d/Occupancy3D-nuScenes-trainval/gts",
                      "*", "*", "labels.npz"))}
-    f_t, f_s, f_l = font(38, True), font(19), font(15)
-    f_v = font(27, True)
+    f_t, f_s, f_l, f_v = font(46, True), font(21), font(17), font(32, True)
     rows = sorted([(i, r) for i, r in enumerate(index) if r["scene"] == a.scene],
                   key=lambda t: t[1]["timestamp"])
     frames, tot, miss_tot, prev = [], 0, 0, None
     hx, hy, hw, hh = HERO
-    print(f"{a.scene}: {len(rows)} frames")
+    print(f"{a.scene}: {len(rows)} frames at {W}x{H}")
 
     for n, (fi, row) in enumerate(rows):
         tok = row["token"]
@@ -148,12 +115,14 @@ def main():
             continue
         obs = np.load(op).astype(np.float32) / 255.0
         pcls = np.load(pp)["cls"].astype(np.int16)
-        gcls = np.load(gt_map[tok])["semantics"].astype(np.int16)
+        z = np.load(gt_map[tok])
+        gcls = z["semantics"].astype(np.int16)
+        mcam = z["mask_camera"]
 
         cv = Image.new("RGB", (W, H), BG)
         d = ImageDraw.Draw(cv)
 
-        # hero: the real frame with the occupancy projected onto the road plane
+        # ---- hero: native-resolution camera with the occupancy on the road
         im = np.asarray(Image.open(jp).convert("RGB").resize((hw, hh)))
         K = np.asarray(cam["intrinsic"], np.float64).copy()
         K[0] *= hw / cam["width"]; K[1] *= hh / cam["height"]
@@ -185,8 +154,8 @@ def main():
 
         ov = Image.new("RGBA", (hw, hh), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
         taken = []
-        for c, size, R, det, lab in sorted(objs, key=lambda o: -np.linalg.norm(o[0][:2])):
-            P = corners(c, size, R)
+        for c, size_, R, det, lab in sorted(objs, key=lambda o: -np.linalg.norm(o[0][:2])):
+            P = corners(c, size_, R)
             Pc = (Rs.T @ (P - ts).T).T
             if (Pc[:, 2] <= 0.8).any():
                 continue
@@ -198,110 +167,117 @@ def main():
             col = BLUE if det else ORANGE
             pts = [(u, v) for u, v in uv]
             if det:
-                od.polygon([pts[i] for i in (0, 1, 2, 3)], fill=col + (60,))
+                od.polygon([pts[i] for i in (0, 1, 2, 3)], fill=col + (58,))
             for i0, i1 in EDGES:
                 od.line([pts[i0], pts[i1]], fill=col + (255,), width=2 if det else 3)
-            tx = min(max(min(xs), 2), hw-150)
-            ty = max(min(ys) - 21, 2)
-            while any(abs(ty-t) < 21 and abs(tx-u) < 150 for u, t in taken):
-                ty += 21
-            if ty < hh - 20:
+            tx = min(max(min(xs), 2), hw-170); ty = max(min(ys) - 24, 2)
+            while any(abs(ty-t) < 24 and abs(tx-u) < 170 for u, t in taken):
+                ty += 24
+            if ty < hh - 22:
                 taken.append((tx, ty))
                 s = f"{lab} {np.linalg.norm(c[:2]):.0f} m"
-                od.rectangle([tx, ty, tx + 8 + 7.4*len(s), ty+20], fill=col + (255,))
-                od.text((tx+4, ty+2), s, font=f_l, fill=(10, 12, 16, 255))
+                od.rectangle([tx, ty, tx + 10 + 8.3*len(s), ty+22], fill=col + (255,))
+                od.text((tx+5, ty+3), s, font=f_l, fill=(10, 12, 16, 255))
         cv.paste(ov, (hx, hy), ov)
-        d.text((hx+12, hy+10), "CAM_FRONT   occupancy on the road plane:  "
-                               "TEAL verified clear,  ORANGE no camera evidence",
-               font=f_l, fill=INK)
+        d.text((hx+14, hy+11), "CAM_FRONT 1600x900 native   occupancy on the road "
+                               "plane:  TEAL verified clear,  ORANGE no camera "
+                               "evidence", font=f_l, fill=INK)
 
-        # bird's-eye inset
-        IS = 236
-        ix, iy = hx + hw - IS - 14, hy + 14
-        cv.paste(bev_obs(obs, (IS, IS)), (ix, iy))
+        # ---- bird's-eye inset
+        IS = 320
+        ix, iy = hx + hw - IS - 16, hy + 16
+        cv.paste(bw.img_obs(obs, (IS, IS)), (ix, iy))
         d.rectangle([ix-1, iy-1, ix+IS, iy+IS], outline=EDGE, width=1)
-        d.text((ix+7, iy+5), "bird's-eye  O(v)", font=f_l, fill=INK)
+        d.text((ix+9, iy+6), "bird's-eye  O(v)   metres", font=f_l, fill=INK)
         ex, ey = ix + IS/2, iy + IS/2
-        for rng in (10, 20, 30):
-            r = rng / 40.0 * IS / 2
-            d.ellipse([ex-r, ey-r, ex+r, ey+r], outline=(58, 66, 80), width=1)
-            d.text((ex + 4, ey - r - 2), f"{rng}", font=f_l, fill=(112,120,134))
-        for c, size, R, det, lab in objs:
-            w_, l_ = float(size[0]), float(size[1])
-            cn = np.array([[ l_/2, w_/2], [ l_/2,-w_/2], [-l_/2,-w_/2], [-l_/2, w_/2]])
-            pw = (R[:2, :2] @ cn.T).T + c[:2]
-            q = [(ix + (1 - (y+40)/80)*IS, iy + (1 - (x+40)/80)*IS) for x, y in pw]
-            if all(ix <= u <= ix+IS and iy <= v <= iy+IS for u, v in q):
-                col = BLUE if det else ORANGE
-                if det:
-                    d.polygon(q, fill=col)
-                else:
-                    d.line(q + [q[0]], fill=col, width=2)
-        d.polygon([(ex, ey-9), (ex-6, ey+7), (ex+6, ey+7)], fill=INK)
+        bw.rings(d, ex, ey, IS/2, f_l)
+        bw.draw_footprints(d, objs, ix, iy, IS, BLUE, ORANGE)
+        bw.ego_car(d, ex, ey, 30)
 
-        # bottom row
-        # Four square bird's-eye panels. The 3D volume used to sit here, but
-        # at 586x192 a perspective render is an unreadable letterbox slit; 3D
-        # belongs in the interactive viewer, where it can be orbited.
-        PH = ROW_H - 20
-        bw = (1180 - 3*GAP) // 4
-        free_m = pcls == FREE
-        seen_m = (free_m & (obs >= TAU)).any(-1)
-        unver_frac = float(((free_m & (obs < TAU)).any(-1) & ~seen_m).mean())
-        for i, (img, title) in enumerate((
-                (fit(bev_cls(pcls, (PH, PH)), bw, PH), "predicted occupancy"),
-                (fit(bev_cls(gcls, (PH, PH)), bw, PH), "ground truth  (Occ3D)"),
-                (fit(bev_obs(obs, (PH, PH)), bw, PH), "observability  O(v)"),
-                (fit(bev_unverified(pcls, obs, (PH, PH)), bw, PH),
-                 "unverified free"))):
-            x = 28 + i*(bw + GAP)
-            cv.paste(img, (x, ROW_Y + 20))
-            panel(d, x, ROW_Y, bw, ROW_H, title, f_l)
+        # ---- bottom row
+        PH = ROW_H - 24
+        pw_ = (1600 - 3*GAP) // 4
+        unv_img, unv_frac = bw.img_unverified(pcls, obs, (PH, PH))
+        err_img, ff = bw.img_error(pcls, gcls, (PH, PH), mcam)
+        for i, (img, title, sub) in enumerate((
+                (bw.img_cls(pcls, (PH, PH)), "predicted occupancy", "model"),
+                (bw.img_cls(gcls, (PH, PH)), "ground truth", "Occ3D"),
+                (err_img, "error vs ground truth", f"false free {ff*100:.1f}%"),
+                (unv_img, "unverified free", f"{unv_frac*100:.1f}%"))):
+            x = 32 + i*(pw_ + GAP)
+            sq, side, pad = square(img, pw_, PH)
+            cv.paste(sq, (x, ROW_Y + 24))
+            panel(d, x, ROW_Y, pw_, ROW_H, title, f_l, sub)
+            bw.ego_car(d, x + pad + side/2, ROW_Y + 24 + side/2, 17)
 
-        # right column: the full rig
+        # ---- right column: the rig
         for i, (cn_, lab6) in enumerate(SURROUND):
             x = COL_X + (i % 2)*(COL_W + GAP)
-            y = 120 + (i // 2)*(COL_H + GAP)
+            y = 124 + (i // 2)*(COL_H + GAP)
             cp = os.path.join(ROOT, "data/nuscenes", row["cams"][cn_]["filename"])
             if os.path.exists(cp):
-                cv.paste(Image.open(cp).convert("RGB").resize((COL_W, COL_H-20)),
-                         (x, y+20))
+                cv.paste(Image.open(cp).convert("RGB").resize((COL_W, COL_H-24)),
+                         (x, y+24))
             panel(d, x, y, COL_W, COL_H, lab6, f_l)
 
-        # header, telemetry, key
-        d.text((28, 30), "SightOcc", font=f_t, fill=INK)
-        d.text((226, 46), "what the cameras could actually see", font=f_s, fill=INK2)
-        d.text((COL_X, 46), f"{a.scene}   frame {n+1:02d}/{len(rows)}   "
+        # ---- right column: observability and camera coverage
+        y2 = 124 + 3*(COL_H + GAP)
+        EH = 230
+        cov, blind = bw.img_coverage(row["cams"], co.qrot, (EH-24, EH-24))
+        for i, (img, title, sub) in enumerate((
+                (bw.img_obs(obs, (EH-24, EH-24)), "observability  O(v)",
+                 f"mean {obs.max(-1).mean():.3f}"),
+                (cov, "camera FOV overlap", f"2+ cams {blind*100:.0f}%"))):
+            x = COL_X + i*(COL_W + GAP)
+            sq, side, pad = square(img, COL_W, EH-24)
+            cv.paste(sq, (x, y2 + 24))
+            panel(d, x, y2, COL_W, EH, title, f_l, sub)
+            bw.rings(d, x + pad + side/2, y2 + 24 + side/2, side/2, f_l,
+                     every=20, col=(70, 80, 96), ink=(132, 142, 158))
+            bw.ego_car(d, x + pad + side/2, y2 + 24 + side/2, 15)
+
+        # ---- header, telemetry, key
+        d.text((32, 34), "SightOcc", font=f_t, fill=INK)
+        d.text((272, 54), "what the cameras could actually see", font=f_s, fill=INK2)
+        d.text((COL_X, 54), f"{a.scene}   frame {n+1:02d}/{len(rows)}   "
                             f"Occ3D-nuScenes, held-out scene", font=f_s, fill=INK2)
         p1 = np.asarray(cam["ego2global_translation"], np.float64)
         spd = 0.0 if prev is None else np.linalg.norm(p1-prev[0])/max(
             (row["timestamp"]-prev[1])/1e6, 1e-3)
         prev = (p1, row["timestamp"])
-        ty0 = 120 + 3*(COL_H + GAP) + 10
+        ty0 = y2 + EH + 18
         for i, (lab, val, warn) in enumerate((
                 ("SPEED", f"{spd:.1f} m/s", False),
                 ("OBJECTS", f"{len(objs)}", False),
                 ("MISSED", f"{miss_here}", False),
                 ("MEAN O(V)", f"{obs.max(-1).mean():.3f}", False),
-                ("UNVERIFIED FREE", f"{unver_frac*100:.1f}%", True))):
-            x = COL_X + (i % 3)*228
-            y = ty0 + (i // 3)*62
+                ("UNVERIFIED FREE", f"{unv_frac*100:.1f}%", True),
+                ("FALSE FREE", f"{ff*100:.1f}%", True))):
+            x = COL_X + (i % 3)*290
+            y = ty0 + (i // 3)*70
             d.text((x, y), lab, font=f_l, fill=INK2)
-            d.text((x, y+19), val, font=f_v, fill=WARN if warn else INK)
-        ky = ty0 + 136
+            d.text((x, y+22), val, font=f_v, fill=WARN if warn else INK)
+        ky = ty0 + 156
         for i, (sw, txt, filled) in enumerate((
-                (BLUE, "object the model detected", True),
-                (ORANGE, "object the model missed", False),
-                (TEAL, "road verified clear by the cameras", True),
-                (WARN, "called free, no camera evidence", True))):
-            y = ky + i*30
+                (BLUE, "model detected it", True),
+                (TEAL, "road verified clear", True),
+                (ORANGE, "model missed it", False),
+                (WARN, "free, no camera evidence", True),
+                (RED, "label occupied, model empty", True),
+                ((150, 120, 220), "wrong class", True))):
+            x = COL_X + (i % 2)*(COL_W + GAP)
+            y = ky + (i // 2)*30
             if filled:
-                d.rectangle([COL_X, y, COL_X+20, y+15], fill=sw)
+                d.rectangle([x, y, x+22, y+16], fill=sw)
             else:
-                d.rectangle([COL_X, y, COL_X+20, y+15], outline=sw, width=3)
-            d.text((COL_X+32, y-2), txt, font=f_s, fill=INK2)
-        d.text((COL_X, ky + 132), "Boxes are dataset annotations; the colour is "
-                                  "the model's verdict.", font=f_l, fill=(108,114,126))
+                d.rectangle([x, y, x+22, y+16], outline=sw, width=3)
+            d.text((x+32, y-3), txt, font=f_s, fill=INK2)
+        for i, line in enumerate((
+                "Boxes are dataset annotations; the colour is the model's verdict.",
+                "Error is scored inside Occ3D's camera mask, the 14% it evaluates.",
+                "The six cameras tile 360 deg, so dark O(v) is resolution and "
+                "occlusion, not FOV gaps.")):
+            d.text((COL_X, ky + 84 + i*18), line, font=f_l, fill=(108,114,126))
         frames.append(cv)
         if (n+1) % 10 == 0:
             print(f"  {n+1}/{len(rows)}", flush=True)
@@ -312,7 +288,7 @@ def main():
     iio.mimsave(mp4, [np.asarray(f) for f in frames], fps=a.fps,
                 codec="libx264", quality=8, macro_block_size=8)
     gif = os.path.join(ROOT, a.out + ".gif")
-    gw = 820; gh = int(round(gw * H / W / 2) * 2)
+    gw = 860; gh = int(round(gw * H / W / 2) * 2)
     sm = [f.resize((gw, gh), Image.LANCZOS).convert(
         "P", palette=Image.ADAPTIVE, colors=96) for f in frames]
     sm[0].save(gif, save_all=True, append_images=sm[1:],
