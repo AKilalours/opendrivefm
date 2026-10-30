@@ -27,12 +27,16 @@ co = importlib.util.module_from_spec(_s); _s.loader.exec_module(co)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import render3d
 
-W, H = 1920, 936
+W, H = 1920, 1080
 BG, INK, INK2, EDGE = (11, 14, 19), (240, 239, 236), (150, 155, 164), (38, 43, 52)
 BLUE, ORANGE, WARN = (57, 135, 229), (233, 104, 52), (237, 161, 0)
 FREE, TAU = 17, 0.15
-HERO = (28, 128, 1180, 620)                      # x, y, w, h
-CAMI = (420, 236)                                # camera inset w, h
+HERO = (28, 120, 1180, 624)                      # x, y, w, h
+BEVROW_Y, BEVROW_H = 760, 214                    # four BEV panels under hero
+CAMCOL_X, CAMCOL_W, CAMCOL_H = 1236, 330, 196    # six cameras, 2 x 3
+SURROUND = (("CAM_FRONT_LEFT", "front left"), ("CAM_FRONT", "front"),
+            ("CAM_FRONT_RIGHT", "front right"), ("CAM_BACK_LEFT", "back left"),
+            ("CAM_BACK", "back"), ("CAM_BACK_RIGHT", "back right"))
 PAN_W, PAN_H, PAN_X, PAN_GAP = 330, 212, 1236, 12
 
 CLS_RGB = np.array([
@@ -210,8 +214,11 @@ def main():
             if (max(xs) < 0 or min(xs) > hw or max(ys) < 0 or min(ys) > hh
                     or max(xs)-min(xs) > hw*0.55 or max(ys)-min(ys) > hh*0.55):
                 continue
+            if det:
+                od.polygon([pts[i] for i in (0, 1, 2, 3)], fill=col + (70,))
             for i0, i1 in EDGES:
-                od.line([pts[i0], pts[i1]], fill=col + (255,), width=2)
+                od.line([pts[i0], pts[i1]], fill=col + (255,),
+                        width=2 if det else 3)
             tx = min(max(min(xs), 2), hw-166)
             ty = max(min(ys) - 21, 2)
             while any(abs(ty-t) < 21 and abs(tx-u) < 166 for u, t in taken):
@@ -228,52 +235,60 @@ def main():
                                "coloured objects, ORANGE = unverified free",
                font=f_l, fill=INK2)
 
-        # the real camera, inset bottom-right as in a chase-cam view
-        cw, ch = CAMI
-        cxi, cyi = hx + hw - cw - 14, hy + hh - ch - 14
-        cv.paste(Image.open(jp).convert("RGB").resize((cw, ch)), (cxi, cyi))
-        d.rectangle([cxi-1, cyi-1, cxi+cw, cyi+ch], outline=EDGE, width=2)
-        d.text((cxi+8, cyi+6), "CAM_FRONT", font=f_l, fill=INK)
-
         # bird's-eye inset, top-right of the hero
         IS = 240
         ix, iy = hx + hw - IS - 14, hy + 14
         cv.paste(bev_obs(obs, (IS, IS)), (ix, iy))
         d.rectangle([ix-1, iy-1, ix+IS, iy+IS], outline=EDGE, width=1)
         d.text((ix+7, iy+5), "bird's-eye  O(v)", font=f_l, fill=INK)
+        ex, ey = ix + IS/2, iy + IS/2
+        for rng in (10, 20, 30):                       # range rings, metres
+            r = rng / 40.0 * IS / 2
+            d.ellipse([ex-r, ey-r, ex+r, ey+r], outline=(58, 66, 80), width=1)
+            k = r * 0.7071
+            d.text((ex + k - 16, ey - k - 2), f"{rng}m", font=f_l,
+                   fill=(104, 112, 126))
+        # oriented footprints, not symbols: each box is drawn at its true
+        # plan-view extent and heading, filled for detected and hollow for
+        # missed, so status reads without a glyph.
         for c, size, R, det, lab in objs:
-            bx, by = (c[0]+40)/80, (c[1]+40)/80
-            if 0 <= bx <= 1 and 0 <= by <= 1:
-                px, py = ix + (1-by)*IS, iy + (1-bx)*IS
+            w_, l_ = float(size[0]), float(size[1])
+            corners = np.array([[ l_/2, w_/2], [ l_/2,-w_/2],
+                                [-l_/2,-w_/2], [-l_/2, w_/2]])
+            pw = (R[:2, :2] @ corners.T).T + c[:2]
+            q = [(ix + (1 - (y+40)/80)*IS, iy + (1 - (x+40)/80)*IS)
+                 for x, y in pw]
+            if all(ix <= u <= ix+IS and iy <= v <= iy+IS for u, v in q):
+                col = BLUE if det else ORANGE
                 if det:
-                    d.ellipse([px-4, py-4, px+4, py+4], outline=BLUE, width=2)
+                    d.polygon(q, fill=col)
                 else:
-                    d.line([px-5,py-5,px+5,py+5], fill=ORANGE, width=3)
-                    d.line([px-5,py+5,px+5,py-5], fill=ORANGE, width=3)
-        ex, ey = ix+IS/2, iy+IS/2
-        d.polygon([(ex, ey-8), (ex-6, ey+7), (ex+6, ey+7)], fill=INK)
+                    d.polygon(q, outline=col)
+                    d.line(q + [q[0]], fill=col, width=2)
+        d.polygon([(ex, ey-9), (ex-6, ey+7), (ex+6, ey+7)], fill=INK)
 
-        # right-hand panel stack
-        py0 = 128
-        cams = ("CAM_FRONT_LEFT", "CAM_FRONT_RIGHT")
-        for i, cn in enumerate(cams):
-            p = os.path.join(ROOT, "data/nuscenes", row["cams"][cn]["filename"])
-            x = PAN_X + i*(PAN_W + PAN_GAP)
-            if os.path.exists(p):
-                cv.paste(Image.open(p).convert("RGB").resize((PAN_W, PAN_H-20)),
-                         (x, py0+20))
-            panel(d, x, py0, PAN_W, PAN_H, cn.replace("CAM_", "").lower(), f_l)
-        PH = PAN_H - 20
+        # four BEV panels in a row beneath the hero
+        PH = BEVROW_H - 20
+        bw = (1180 - 3*PAN_GAP) // 4
         unver, _ = bev_unverified(pcls, obs, (PH, PH))
         for i, (img, title) in enumerate((
-                (fit(bev_cls(pcls, (PH, PH)), PAN_W, PH), "predicted occupancy"),
-                (fit(bev_cls(gcls, (PH, PH)), PAN_W, PH), "ground truth  (Occ3D)"),
-                (fit(bev_obs(obs, (PH, PH)), PAN_W, PH), "observability  O(v)"),
-                (fit(unver, PAN_W, PH), "unverified free  -  called free, not seen"))):
-            x = PAN_X + (i % 2)*(PAN_W + PAN_GAP)
-            y = py0 + (1 + i//2)*(PAN_H + PAN_GAP)
-            cv.paste(img, (x, y+20))
-            panel(d, x, y, PAN_W, PAN_H, title, f_l)
+                (fit(bev_cls(pcls, (PH, PH)), bw, PH), "predicted occupancy"),
+                (fit(bev_cls(gcls, (PH, PH)), bw, PH), "ground truth  (Occ3D)"),
+                (fit(bev_obs(obs, (PH, PH)), bw, PH), "observability  O(v)"),
+                (fit(unver, bw, PH), "unverified free"))):
+            x = 28 + i*(bw + PAN_GAP)
+            cv.paste(img, (x, BEVROW_Y + 20))
+            panel(d, x, BEVROW_Y, bw, BEVROW_H, title, f_l)
+
+        # the full six-camera rig on the right, in rig order
+        for i, (cn, lab6) in enumerate(SURROUND):
+            x = CAMCOL_X + (i % 2)*(CAMCOL_W + PAN_GAP)
+            y = 120 + (i // 2)*(CAMCOL_H + PAN_GAP)
+            cp = os.path.join(ROOT, "data/nuscenes", row["cams"][cn]["filename"])
+            if os.path.exists(cp):
+                cv.paste(Image.open(cp).convert("RGB").resize(
+                    (CAMCOL_W, CAMCOL_H - 20)), (x, y + 20))
+            panel(d, x, y, CAMCOL_W, CAMCOL_H, lab6, f_l)
 
         # header and telemetry
         d.text((28, 34), "SightOcc", font=f_t, fill=INK)
@@ -284,7 +299,7 @@ def main():
         spd = 0.0 if prev is None else np.linalg.norm(p1-prev[0])/max(
             (row["timestamp"]-prev[1])/1e6, 1e-3)
         prev = (p1, row["timestamp"])
-        ty = hy + hh + 28
+        ty = BEVROW_Y + BEVROW_H + 26
         for i, (lab, val) in enumerate((
                 ("speed", f"{spd:4.1f} m/s"),
                 ("objects", f"{len(objs)}"),
@@ -295,14 +310,27 @@ def main():
             d.text((x, ty), lab.upper(), font=f_l, fill=INK2)
             d.text((x, ty+20), val, font=font(26, True),
                    fill=WARN if lab == "unverified free" else INK)
-        ly = H - 42
-        d.ellipse([28, ly-7, 42, ly+7], outline=BLUE, width=3)
-        d.text((52, ly-9), "detected", font=f_s, fill=INK2)
-        d.line([172, ly-7, 186, ly+7], fill=ORANGE, width=4)
-        d.line([172, ly+7, 186, ly-7], fill=ORANGE, width=4)
-        d.text((198, ly-9), "missed by the model", font=f_s, fill=INK2)
-        d.rectangle([410, ly-7, 424, ly+7], fill=WARN)
-        d.text((436, ly-9), "free space with no camera evidence", font=f_s, fill=INK2)
+        lx, ly = CAMCOL_X, BEVROW_Y + 6
+        d.text((lx, ly), "KEY", font=f_l, fill=INK2)
+        for i, (sw, txt, filled) in enumerate((
+                (BLUE, "object the model detected", True),
+                (ORANGE, "object the model missed", False),
+                (WARN, "free space with no camera evidence", True))):
+            y = ly + 30 + i*34
+            if filled:
+                d.rectangle([lx, y, lx+22, y+17], fill=sw)
+            else:
+                d.rectangle([lx, y, lx+22, y+17], outline=sw, width=3)
+            d.text((lx+34, y-1), txt, font=f_s, fill=INK2)
+        d.text((lx, ly + 142),
+               "Observability O(v) is computed from camera intrinsics and",
+               font=f_s, fill=INK2)
+        d.text((lx, ly + 166),
+               "extrinsics alone. No training, no LiDAR, available at",
+               font=f_s, fill=INK2)
+        d.text((lx, ly + 190),
+               "deployment time from calibration the vehicle already has.",
+               font=f_s, fill=INK2)
         frames.append(cv)
 
     os.makedirs(os.path.join(ROOT, os.path.dirname(a.out)), exist_ok=True)

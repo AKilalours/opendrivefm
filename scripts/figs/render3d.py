@@ -43,7 +43,7 @@ def project(P, Rv, eye, fpx, W, H):
     return u, v, z, ok
 
 
-def render(pcls, obs, W=1180, H=620, eye=(-13.0, 0.0, 14.0),
+def render(pcls, obs, carpet=None, W=1180, H=620, eye=(-13.0, 0.0, 14.0),
            target=(26.0, 0.0, -0.5), fpx=None, bg=(11, 14, 19), tau=0.15):
     """Returns (RGB uint8 array, projector) so callers can overlay in 3D."""
     fpx = fpx or W * 0.78
@@ -93,6 +93,16 @@ def render(pcls, obs, W=1180, H=620, eye=(-13.0, 0.0, 14.0),
         P = np.stack([(bi + .5) * RES - RNG, (bj + .5) * RES - RNG,
                       np.full(len(bi), Z0 + 0.9)], 1)
         splat(P, np.tile(np.array([[237., 161., 0.]]), (len(bi), 1)), RES * 1.1)
+
+    # the verified-free corridor: predicted free AND camera-observed, the
+    # quantity A81 tests. Drawn as the one cool-coloured carpet on the ground.
+    if carpet is not None:
+        ci_, cj_ = np.nonzero(carpet)
+        if len(ci_):
+            P = np.stack([(ci_ + .5) * RES - RNG, (cj_ + .5) * RES - RNG,
+                          np.full(len(ci_), Z0 + 0.95)], 1)
+            splat(P, np.tile(np.array([[40., 190., 130.]]), (len(ci_), 1)),
+                  RES * 1.1)
 
     def proj(pts):
         pts = np.atleast_2d(np.asarray(pts, np.float64))
